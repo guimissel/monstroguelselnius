@@ -39,3 +39,13 @@
     - Ultra Bola: 1000 pokedóllars
       - 100% de chance de vir pokémon básico e sua evolução
 - Exibir o preço em vermelho para produtos que o usuário não consegue comprar
+
+## 2. Tipos de ataque e pokémon
+### Para ataques
+- Supereficaz: 2x o dano padrão. Se os dois tipos do pokémon defensor forem fracos contra o tipo do ataque, o dano é 4x.
+- Pouco eficaz: 0.5x o dano padrão. Se os dois tipos do pokémon defensor forem fortes contra o tipo do ataque, o dano é 0.25x.
+
+### Tabel de tipos
+![tabela de tipos e suas fraquezas](https://i.pinimg.com/1200x/37/92/15/379215f6cee9fbd568e23c6d30c835fe.jpg)
+
+## 3. Pokémons
