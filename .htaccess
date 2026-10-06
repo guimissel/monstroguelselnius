@@ -4,5 +4,11 @@ RewriteEngine On
 # Definição da rota principal
 RewriteBase /
 
+# Se for um arquivo ou diretório existente,
+# não passa pelo roteador
+RewriteCond %{REQUEST_FILENAME} -f [OR]
+RewriteCond %{REQUEST_FILENAME} -d
+RewriteRule ^ - [L]
+
 # Rewrite Rule, redirecionar todas as requests para o index.php 
 RewriteRule ^(.+)$ index.php [QSA,L]

@@ -4,12 +4,38 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Entrar</title>
+    <link rel="stylesheet" href="../style/login.css">
 </head>
 <body>
     <form action="" method="post">
-        <input type="text" name="usuario" id="">
-        <input type="password" name="senha" id="">
-        <button>Entrar</button>
+        <div class="formCapsula">
+            <div class="formDivInput">
+                <label for="usuario">Usuário</label>
+                <div class="formInput">
+                    <div class="inputIcone">
+                        <img src="../img/icons/person.svg" alt="">
+                    </div>
+                    <input type="text" name="usuario" id="usuario" placeholder="JoaoPedro67">
+                </div>
+            </div>
+            <div br></div>
+            <div class="formDivInput">
+                <label for="senha">Senha</label>
+                <div class="formInput">
+                    <div class="inputIcone">
+                        <img src="../img/icons/password.svg" alt="">
+                    </div>
+                    <input type="password" name="senha" id="senha" placeholder="*************">
+                </div>
+            </div>
+            <div br2></div>
+            <div class="formDivInput">
+                <button class="formSubmit" type="submit">Entrar</button>
+            </div>
+
+            <div br></div>
+            <p>Não possui conta? crie <a href="/signup">aqui</a></p>
+        </div>
     </form>
 </body>
 </html>
