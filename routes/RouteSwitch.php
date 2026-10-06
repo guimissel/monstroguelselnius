@@ -12,4 +12,11 @@ abstract class TrocarRota
         global $caminhoBase;
         require __DIR__ . $caminhoBase . "home.html";
     }
+
+    // GET /login
+    protected function login ()
+    {
+        global $caminhoBase;
+        require __DIR__ . $caminhoBase . "login.html";
+    }
 }
