@@ -1,14 +1,15 @@
 <?php
 
 // caminho base das paginas
-$basePath = "../public_html/pages/";
+$caminhoBase = "/../public_html/pages/";
 
 // classe abstrata com funções que retornam arquivos html
-abstract class RouteSwitch 
+abstract class TrocarRota 
 {
     // GET /
     protected function home ()
     {
-        require __DIR__ . $basePath . "home.html";
+        global $caminhoBase;
+        require __DIR__ . $caminhoBase . "home.html";
     }
 }

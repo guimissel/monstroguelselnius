@@ -1,18 +1,18 @@
 <?php
 
-require_once __DIR__ . "RouteSwitch.php";
+require_once __DIR__ . "/RouteSwitch.php";
 
-class Router extends RouteSwitch 
+class Roteador extends TrocarRota
 {
-    public function run (string $requestPath)
+    public function run (string $caminhoRequisitado)
     {
         // remove a barra da requisição
-        $route = substr($requestPath, 1);
+        $rota = substr($caminhoRequisitado, 1);
 
         // retorno do GET /
-        if ($route === "") $this.home();
+        if ($rota === "") $this->home();
 
         // retorno do GET /*
-        else $this.$route();
+        else $this->$rota();
     }
 }
