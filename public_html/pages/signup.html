@@ -8,7 +8,8 @@
     <link rel="stylesheet" href="public_html/style/login.css">
 </head>
 <body>
-    <form action="/monstroguelselnius/api/usuario/criar" method="post">
+    <!-- /monstroguelselnius/api/usuario/criar -->
+    <form method="post" id="formularioSignup">
         <div class="formCapsula">
             <div class="formDivInput">
                 <img src="public_html/img/logo.png" alt="logo" class="logo">
@@ -20,7 +21,7 @@
                     <div class="inputIcone">
                         <img src="public_html/img/icons/person.svg" alt="">
                     </div>
-                    <input type="text" name="usuario" id="usuario" placeholder="JoaoPedro67">
+                    <input type="text" autocomplete="nickname" name="usuario" id="usuario" placeholder="JoaoPedro67">
                 </div>
             </div>
             <div br></div>
@@ -30,7 +31,7 @@
                     <div class="inputIcone">
                         <img src="public_html/img/icons/password.svg" alt="">
                     </div>
-                    <input type="password" name="senha" id="senha" placeholder="*************">
+                    <input type="password" autocomplete="new-password" name="senha" id="senha" placeholder="*************">
                 </div>
             </div>
             <div br2></div>
@@ -42,5 +43,7 @@
             <p>Possui conta? entre <a href="/monstroguelselnius/login">aqui</a></p>
         </div>
     </form>
+
+    <script src="public_html/javascript/signup.js"></script>
 </body>
 </html>

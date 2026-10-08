@@ -1,11 +1,17 @@
 <?php
 
 // crie as todas rotas da api
-$rotasApi = [
+define("ROTAS_API", [
     "GET" => [
+        "olamundo" => function () {
+            echo "hello world";
+        }
     ],
 
     "POST" => [
+        "api/usuario/criar" => function () {
+            require __DIR__ . "/user/create.php";
+        }
     ],
 
     "PUT" => [
@@ -19,4 +25,4 @@ $rotasApi = [
 
     "QUERY" => [
     ]
-]
+]);

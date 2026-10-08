@@ -12,6 +12,13 @@ class Roteador
         $this->$rotas["GET"][$caminho] = $funcao;
     }
 
+    // adiciona uma rota do tipo POST
+    public function post(string $caminho, callable $funcao): void
+    {
+        // adiciona ao array associativo
+        $this->$rotas["POST"][$caminho] = $funcao;
+    }
+
     // despachar para uma rota
     public function despacharRota(): void
     {
