@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Entrar</title>
+    <base href="/monstroguelselnius/">
+    <link rel="stylesheet" href="public_html/style/login.css">
+</head>
+<body>
+    <form action="/monstroguelselnius/api/usuario/entrar" method="post">
+        <div class="formCapsula">
+            <div class="formDivInput">
+                <img src="public_html/img/logo.png" alt="logo" class="logo">
+            </div>
+            <div br></div>
+            <div class="formDivInput">
+                <label for="usuario">Usuário</label>
+                <div class="formInput">
+                    <div class="inputIcone">
+                        <img src="public_html/img/icons/person.svg" alt="">
+                    </div>
+                    <input type="text" name="usuario" id="usuario" placeholder="JoaoPedro67">
+                </div>
+            </div>
+            <div br></div>
+            <div class="formDivInput">
+                <label for="senha">Senha</label>
+                <div class="formInput">
+                    <div class="inputIcone">
+                        <img src="public_html/img/icons/password.svg" alt="">
+                    </div>
+                    <input type="password" name="senha" id="senha" placeholder="*************">
+                </div>
+            </div>
+            <div br2></div>
+            <div class="formDivInput">
+                <button class="formSubmit" type="submit">Entrar</button>
+            </div>
+
+            <div br></div>
+            <p>Não possui conta? crie <a href="/monstroguelselnius/signup">aqui</a></p>
+        </div>
+    </form>
+</body>
+</html>
