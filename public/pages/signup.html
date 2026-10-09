@@ -3,24 +3,30 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Entrar</title>
+    <title>Crie sua conta</title>
     <base href="/monstroguelselnius/">
-    <link rel="stylesheet" href="public_html/style/login.css">
+    <link rel="stylesheet" href="public/style/signup.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css"/>
+
 </head>
 <body>
-    <form action="/monstroguelselnius/api/usuario/criar" method="post">
+    
+    <form method="post" id="formularioSignup">
+        <div class="mensagem" id="mensagem">
+            <p id="textoMensagem">usuário criado com sucesso</p>
+        </div>
         <div class="formCapsula">
             <div class="formDivInput">
-                <img src="public_html/img/logo.png" alt="logo" class="logo">
+                <img src="public/img/logo.png" alt="logo" class="logo">
             </div>
             <div br></div>
             <div class="formDivInput">
                 <label for="usuario">Usuário</label>
                 <div class="formInput">
                     <div class="inputIcone">
-                        <img src="public_html/img/icons/person.svg" alt="">
+                        <img src="public/img/icons/person.svg" alt="">
                     </div>
-                    <input type="text" name="usuario" id="usuario" placeholder="JoaoPedro67">
+                    <input type="text" autocomplete="nickname" name="usuario" id="usuario" placeholder="JoaoPedro67">
                 </div>
             </div>
             <div br></div>
@@ -28,9 +34,9 @@
                 <label for="senha">Senha</label>
                 <div class="formInput">
                     <div class="inputIcone">
-                        <img src="public_html/img/icons/password.svg" alt="">
+                        <img src="public/img/icons/password.svg" alt="">
                     </div>
-                    <input type="password" name="senha" id="senha" placeholder="*************">
+                    <input type="password" autocomplete="new-password" name="senha" id="senha" placeholder="*************">
                 </div>
             </div>
             <div br2></div>
@@ -42,5 +48,7 @@
             <p>Possui conta? entre <a href="/monstroguelselnius/login">aqui</a></p>
         </div>
     </form>
+
+    <script src="public/javascript/signup.js"></script>
 </body>
 </html>
