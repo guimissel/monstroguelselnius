@@ -36,4 +36,5 @@ formulario.addEventListener("submit", async (e) => {
     }
 
     pMensagem.innerText = resultado.mensagem;
+    console.log(resultado)
 })

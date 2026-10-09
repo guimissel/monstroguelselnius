@@ -13,7 +13,9 @@ define("ROTAS_API", [
             require __DIR__ . "/user/create.php";
         },
 
-        "api/usuario/"
+        "api/usuario/entrar" => function () {
+            require __DIR__ . "/user/signin.php";
+        }
     ],
 
     "PUT" => [
