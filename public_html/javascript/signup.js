@@ -1,4 +1,6 @@
 const formulario = document.getElementById("formularioSignup");
+const mensagem = document.getElementById("mensagem");
+const pMensagem = document.getElementById("textoMensagem");
 
 // adicionar evento de envio
 formulario.addEventListener("submit", async (e) => {
@@ -18,10 +20,20 @@ formulario.addEventListener("submit", async (e) => {
     // recebe o resultado
     const resultado = await resposta.json();
 
-    if (resultado.status == 400)
+    // remove caso tenha ocorrido um erro antes
+    if (mensagem.classList.contains("erro")) mensagem.classList.remove("erro");
+
+    // se resultado for êxito
+    if(resultado.status == 200) 
     {
-        alert(resultado.mensagem);
-        return;
+        mensagem.classList.add("sucesso");
     }
-    console.log(resultado);
+
+    // caso dde erro
+    else 
+    {
+        mensagem.classList.add("erro");
+    }
+
+    pMensagem.innerText = resultado.mensagem;
 })
