@@ -10,7 +10,6 @@ body {
     justify-content: center;
     font-family: "Comic Neue", "Comic Sans MS", "Comic Sans", cursive;
     color: #ffd83a;
-    /* TODO: ajustar o caminho da imagem de fundo */
     background: #0b1a3a url("img/fundo.png") center / cover no-repeat fixed;
 }
 
