@@ -1,155 +1,110 @@
-:root 
-{
-    --tamanho-base: 70%;
-    --vermelho: #f71d1d;
-    --branco: #fff;
-    --branco-fumaca: #f0f0f0;
-    --cinza-forte: #333;
-    --preto: #000;
-    --icone-tamanho: 52px;
+* {
+    box-sizing: border-box;
 }
 
-body 
-{
-    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+body {
     margin: 0;
-}
-
-.mensagem
-{
-    width: 40%;
-    height: 48px;
-    display: none;
+    min-height: 100vh;
+    display: flex;
     align-items: center;
     justify-content: center;
-    border-radius: 4px;
-    position: fixed;
-    left:50%;
-    font-weight: 800;
-    translate: -50%;
-    top:24px;
-
+    font-family: "Comic Neue", "Comic Sans MS", "Comic Sans", cursive;
+    color: #ffd83a;
+    /* TODO: ajustar o caminho da imagem de fundo */
+    background: #0b1a3a url("img/fundo.png") center / cover no-repeat fixed;
 }
 
-.sucesso {
+.card {
+    width: 100%;
+    max-width: 340px;
+    min-height: 490px;
+    padding: 40px 30px 30px;
+    background: rgba(20, 90, 160, 0.45);
+    border: 1px solid rgba(255, 216, 58, 0.15);
+    border-radius: 30px;
+}
+
+.logo {
+    display: block;
+    width: 100%;
+    margin-bottom: 25px;
+}
+
+label {
+    display: block;
+    margin-bottom: 3px;
+    font-size: 14px;
+}
+
+.campo {
     display: flex;
-    background: var(--verde);
-    color: var(--branco);
+    height: 32px;
+    margin-bottom: 40px;
+    border: 1px solid #ffd83a;
+    border-radius: 8px;
+    overflow: hidden;
 }
 
-.erro {
+.icone {
+    width: 32px;
     display: flex;
-    background: var(--vermelho);
-    color: var(--branco);
-    animation: shake-x 0.3s ease;
-}
-
-div[br]
-{
-    height: 24px;
-    width: 100%;
-}
-
-div[br2]
-{
-    height: 40px;
-    width: 100%;
-}
-
-.logo 
-{
-    width: var(--tamanho-base);
-}
-
-.formCapsula
-{
-    display:flex;
-    flex-direction: column;
-    height: 100dvh;
-    width: 100%;
     align-items: center;
     justify-content: center;
-    background-color: var(--branco-fumaca);
-
-    .formDivInput {
-        width: 30%;
-        display: flex;
-        align-items: center;
-        flex-direction: column;
-        gap: 8px;
-
-        label {
-            width: var(--tamanho-base);
-            font-size: 16px;
-            color: var(--cinza-forte);
-            user-select: none;
-        }
-    }
+    background: #1a6fb5;
+    border-right: 1px solid #ffd83a;
 }
 
-.formInput {
-    height: 40px;
-    display: flex;
-    align-items: center;
-    width: var(--tamanho-base);
-    border: 1px solid var(--preto);
-    background: var(--vermelho);
-
-    .inputIcone {
-        height: var(--icone-tamanho);
-        width: var(--icone-tamanho);
-        display:flex;
-        align-items: center;
-        user-select: none;
-        justify-content: center;
-
-        img {
-            height: 32px;
-            width: 32px;
-        }
-    }
-
-    input {
-        height: 40px;
-        width: 100%;
-        padding: 4px 12px;
-        display: flex;
-        align-items: center;
-        box-sizing: border-box;
-        outline:none;
-        font-size: 18px;
-        margin:0;
-        border:none;
-        
-    }
+.icone svg {
+    width: 18px;
+    height: 18px;
+    fill: #ffd83a;
 }
 
-.formSubmit {
-    width: var(--tamanho-base);
-    height: 40px;
-    background-color: var(--vermelho);
-    border:none;
-    outline:none;
-    font-weight: 900;
-    color: var(--branco);
-    font-size: 16px;
+.campo input {
+    flex: 1;
+    min-width: 0;
+    border: none;
+    outline: none;
+    padding: 0 8px;
+    font-family: inherit;
+    font-size: 14px;
+    color: #ffd83a;
+    background: rgba(150, 120, 40, 0.55);
+}
+
+.campo:focus-within {
+    box-shadow: 0 0 0 2px rgba(255, 216, 58, 0.4);
+}
+
+button {
+    width: 100%;
+    height: 32px;
+    margin-top: 10px;
+    font-family: inherit;
+    font-size: 14px;
+    color: #ffd83a;
+    background: #1a6fb5;
+    border: 1px solid #ffd83a;
+    border-radius: 8px;
     cursor: pointer;
 }
 
-@keyframes shake-x {
-    0% {
-        transform: translateX(-12px);
-    }
+button:hover {
+    background: #2384d1;
+}
 
-    25% {
-        transform: translateX(0px);
-    }
+.erro {
+    margin: -25px 0 15px;
+    font-size: 13px;
+    color: #ff9a9a;
+}
 
-    50% {
-        transform: translateX(12px);
-    }
+.esqueceu {
+    margin-top: 45px;
+    text-align: center;
+    font-size: 14px;
+}
 
-    100% {
-        transform: translateX(0px);
-    }
+.esqueceu a {
+    color: #ffd83a;
 }
