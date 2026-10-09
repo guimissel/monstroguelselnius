@@ -9,14 +9,14 @@ class Roteador
     public function get(string $caminho, callable $funcao): void
     {
         // adiciona ao array associativo
-        $this->$rotas["GET"][$caminho] = $funcao;
+        $this->rotas["GET"][$caminho] = $funcao;
     }
 
     // adiciona uma rota do tipo POST
     public function post(string $caminho, callable $funcao): void
     {
         // adiciona ao array associativo
-        $this->$rotas["POST"][$caminho] = $funcao;
+        $this->rotas["POST"][$caminho] = $funcao;
     }
 
     // despachar para uma rota
@@ -30,14 +30,14 @@ class Roteador
 
         // se a rota não for definida
         // retorne 404
-        if (!isset($this->$rotas[$metodo][$caminho])) {
+        if (!isset($this->rotas[$metodo][$caminho])) {
             http_response_code(404);
             echo '404 - Rota não encontrada';
             return;
         }
 
         // função que deve executada pela rota
-        $funcaoDaRota = $this->$rotas[$metodo][$caminho];
+        $funcaoDaRota = $this->rotas[$metodo][$caminho];
 
         // executa a função
         call_user_func($funcaoDaRota);
