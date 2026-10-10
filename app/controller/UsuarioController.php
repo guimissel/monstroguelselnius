@@ -228,7 +228,6 @@ class UsuarioController
         $role = $_SESSION["role"];
 
         echo json_encode([
-            "usuarioExiste"=>true,
             "id"=>$meuUsuario->getId(),
             "nome"=>$meuUsuario->getUsuario(),
             "role"=>$role

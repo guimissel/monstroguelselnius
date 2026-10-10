@@ -158,8 +158,15 @@ label {
     font-weight: 800;
 }
 
-.formSubmit:hover {
+.formSubmit:hover
+{
+    transform: scale(1.03);
     background: var(--cor-fundo-botao-hover);
+}
+
+.formSubmit:active
+{
+    transform: scale(0.97);
 }
 
 /* Mensagem de feedback */

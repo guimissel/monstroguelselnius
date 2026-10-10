@@ -1,18 +1,55 @@
 :root {
     --vermelho: #ff1818;
+    --vermelho-escuro: rgb(116, 2, 2);
     --branco: #fff;
+    --branco-fumaca: #f1f1f1;
+    --cinza-leve: #bbb;
+    --azul: #00f;
+    --azul-escuro: rgb(1, 1, 134);
     --preto: #000;
+    --segundo-preto: #131212;
+    --terceiro-preto: rgb(21, 5, 39);
+
 }
 
 body 
 {
     margin:0;
+    background-color: var(--branco-fumaca);
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+
+.headerHome {
+    width: 100%;
+    display: flex;
+    justify-content: space-between;
+    padding: 8px 24px;
+    box-sizing: border-box;
+    align-items: center;
+    height: 60px;
+    background-color: var(--branco);
+    border-bottom: 4px solid var(--cinza-leve);
+
+    h1 {
+        font-size: 20px;
+    }
 }
 
 .botaoSair {
     background: var(--vermelho);
     color: var(--branco);
-    border: 1px solid var(--preto);
+    border: 1px solid var(--vermelho-escuro);
+}
+
+.botaoJogar {
+    background: var(--azul);
+    color: var(--branco);
+    border: 1px solid var(--azul-escuro);   
+}
+
+.botaoSair, .botaoJogar {
+    border-bottom-width: 4px;
+    border-radius: 4px;
     font-weight: 800;
     font-size: 20px;
     outline: none;
@@ -20,5 +57,29 @@ body
     align-items: center;
     justify-content: center;
     height: 40px;
+    cursor: pointer;
+    gap: 12px;
     width: 200px;
+}
+
+.botaoSair:hover, .botaoJogar:hover
+{
+    transform: scale(1.03);
+}
+
+.botaoSair:active, .botaoJogar:active
+{
+    transform: scale(0.97);
+}
+
+.logo 
+{
+    height: 60px;
+}
+
+.divConta 
+{
+display: flex;
+align-items: center;
+gap: 16px;
 }
