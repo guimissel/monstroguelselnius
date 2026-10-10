@@ -23,6 +23,28 @@ class UsuarioController
             }    
         }
 
+        // caso o campo usuario ultrapasse o tamanho
+        if (strlen($_POST["usuario"]) > 50)
+        {
+            http_response_code(400);
+            echo json_encode([
+                "status"=>400,
+                "mensagem"=>"O campo \"usuario\" ultrapassa o tamanho maximo"
+            ]);
+            return;
+        }
+
+        // caso o campo de senha ultrapasse o tamanho
+        else if (strlen($_POST["senha"]) > 256)
+        {
+            http_response_code(400);
+            echo json_encode([
+                "status"=>400,
+                "mensagem"=>"O campo \"senha\" ultrapassa o tamanho maximo"
+            ]);
+            return;
+        }
+
         try 
         {
             // criar uma nova conexao ao banco

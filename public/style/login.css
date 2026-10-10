@@ -20,7 +20,10 @@
     --cor-borda-botao: none;
 
     /* Mensagens */
-    --cor-erro: #ff9a9a;
+    --vermelho: #ff1f1f;
+    --verde: #25ff11;
+    --branco: #fff;
+    --preto: #000;
 }
 
 /* Configuração geral */
@@ -51,21 +54,19 @@ body {
     left:50%;
     font-weight: 800;
     translate: -50%;
-    top:24px;
-
+    top:12px;
 }
 
 .sucesso {
     display: flex;
     background: var(--verde);
-    color: var(--branco);
+    color: var(--preto) !important;
 }
 
 .erro {
     display: flex;
     background: var(--vermelho);
-    color: var(--branco);
-    animation: shake-x 0.3s ease;
+    color: var(--branco) !important;
 }
 
 
@@ -171,13 +172,6 @@ label {
     margin: 0;
 }
 
-/* Erros */
-.erro {
-    margin: -10px 0 15px;
-    font-size: 13px;
-    color: var(--cor-erro);
-}
-
 /* Texto e links */
 .formCapsula > p {
     margin-top: 20px;
@@ -187,12 +181,4 @@ label {
 
 .formCapsula a {
     color: var(--cor-texto);
-}
-
-/* Responsividade */
-@media (max-width: 400px) {
-    .formCapsula {
-        max-width: calc(100% - 24px);
-        padding: 30px 20px;
-    }
 }
