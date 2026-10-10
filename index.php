@@ -28,6 +28,14 @@ $roteador->get($caminhoBase . "signup", function () {
     view("signup");
 });
 
+$roteador->get($caminhoBase . "home", function () {
+    view("home");
+});
+
+$roteador->get($caminhoBase , function() {
+    header("location: ".$caminhoBase."home");
+});
+
 // criar rotas api
 // numero de tipos de requisição (index)
 $contagemTiposRequisicao = count(ROTAS_API);

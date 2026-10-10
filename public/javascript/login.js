@@ -1,3 +1,18 @@
+document.addEventListener("DOMContentLoaded", async() => {
+    // faz o fetch para a api
+    const resposta = await fetch("/monstroguelselnius/api/usuario/eu", {
+        method: "GET"
+    });
+
+    // recebe o resultado
+    const resultado = await resposta.json();
+
+    if (resultado.usuarioExiste == true)
+    {
+        window.location = "/monstroguelselnius/home";
+    }
+})
+
 const formulario = document.getElementById("formularioLogin");
 const mensagem = document.getElementById("mensagem");
 const pMensagem = document.getElementById("textoMensagem");
@@ -23,18 +38,15 @@ formulario.addEventListener("submit", async (e) => {
     // remove caso tenha ocorrido um erro antes
     if (mensagem.classList.contains("erro")) mensagem.classList.remove("erro");
 
+    pMensagem.innerText = resultado.mensagem;
+    
     // se resultado for êxito
-    if(resultado.status == 200) 
-    {
-        mensagem.classList.add("sucesso");
-    }
-
-    // caso dde erro
-    else 
+    if(resultado.status != 200) 
     {
         mensagem.classList.add("erro");
+        return;
     }
 
-    pMensagem.innerText = resultado.mensagem;
-    console.log(resultado)
+    mensagem.classList.add("sucesso");
+    window.location = "/monstroguelselnius/"
 })

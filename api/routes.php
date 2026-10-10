@@ -5,6 +5,10 @@ require_once __DIR__ . "/../app/controller/UsuarioController.php";
 // crie as todas rotas da api
 define("ROTAS_API", [
     "GET" => [
+        "api/usuario/eu" => function () {
+            $controlador = new UsuarioController();
+            $controlador->eu();
+        }
     ],
 
     "POST" => [
@@ -16,7 +20,13 @@ define("ROTAS_API", [
         },
 
         "api/usuario/entrar" => function () {
-            // funcao entrar
+            $controlador = new UsuarioController();
+            $controlador->entrar();
+        },
+
+        "api/usuario/sair" => function () {
+            $controlador = new UsuarioController();
+            $controlador->sair();
         }
     ],
 

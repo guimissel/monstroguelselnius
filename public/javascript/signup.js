@@ -1,3 +1,18 @@
+document.addEventListener("DOMContentLoaded", async() => {
+    // faz o fetch para a api
+    const resposta = await fetch("/monstroguelselnius/api/usuario/eu", {
+        method: "GET"
+    });
+
+    // recebe o resultado
+    const resultado = await resposta.json();
+
+    if (resultado.usuarioExiste == true)
+    {
+        window.location = "/monstroguelselnius/home";
+    }
+})
+
 const formulario = document.getElementById("formularioSignup");
 const mensagem = document.getElementById("mensagem");
 const pMensagem = document.getElementById("textoMensagem");

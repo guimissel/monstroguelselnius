@@ -1,4 +1,5 @@
 <?php
+session_start();
 
 require_once __DIR__ . "/../database/Conexao.php";
 require_once __DIR__ . "/../model/Usuario.php";
@@ -78,11 +79,165 @@ class UsuarioController
 
         catch (PDOException $e)
         {    
+            http_response_code(500);
             echo json_encode([
                 "status" => 500,
                 "mensagem" => "Nao foi possivel criar esse usuario"
             ]);
             return;
         }
+
+        catch (Exception $e)
+        {
+            http_response_code(500);
+            echo json_encode([
+                "status" => 500,
+                "mensagem" => "Erro interno! tente novamente mais tarde"
+            ]);
+            return;
+        }
+    }
+
+    public function entrar () :void
+    {
+        // define que a resposta será JSON
+        header("Content-Type: application/json");
+
+        // verifica se todos os campos estão preenchidos
+        foreach ($_POST as $chave => $valor) {
+            if (trim((string) $valor) === '')
+            {
+                echo json_encode([
+                    "status" => 400,
+                    "mensagem" => "O campo \"" . $chave . "\" está vazio"
+                ]);
+                return;
+            }    
+        }
+
+        // caso o campo usuario ultrapasse o tamanho
+        if (strlen($_POST["usuario"]) > 50)
+        {
+            http_response_code(400);
+            echo json_encode([
+                "status"=>400,
+                "mensagem"=>"O campo \"usuario\" ultrapassa o tamanho maximo"
+            ]);
+            return;
+        }
+
+        // caso o campo de senha ultrapasse o tamanho
+        else if (strlen($_POST["senha"]) > 256)
+        {
+            http_response_code(400);
+            echo json_encode([
+                "status"=>400,
+                "mensagem"=>"O campo \"senha\" ultrapassa o tamanho maximo"
+            ]);
+            return;
+        }
+
+        try 
+        {
+            $conexao = Conexao::getConexao();
+            $nome = $_POST["usuario"];
+            $senha = $_POST["senha"];
+
+            $usuarioDAO = new UsuarioDAO($conexao);
+            $usuario = $usuarioDAO->buscar(TipoBusca::NOME, $nome);
+
+            // caso não exista o usuario
+            if (!isset($usuario)) 
+            {
+                // retorna sucesso ao usuario
+                echo json_encode([
+                    "status" => 401,
+                    "mensagem" => "usuario ou senha incorretos"
+                ]);
+                return;
+            }
+
+            // caso senha incorreta
+            else if (!password_verify($senha, $usuario->getSenhaHash()))
+            {
+                // retorna sucesso ao usuario
+                echo json_encode([
+                    "status" => 401,
+                    "mensagem" => "usuario ou senha incorretos"
+                ]);
+                return;
+            }
+
+            $_SESSION["id"] = $usuario->getId();
+
+            // retorna sucesso ao usuario
+            echo json_encode([
+                "status" => 200,
+                "mensagem" => "acesso liberado com sucesso",
+            ]);
+            return;
+        }
+
+        catch (PDOException $e)
+        {    
+            http_response_code(500);
+            echo json_encode([
+                "status" => 500,
+                "mensagem" => "Nao foi possivel criar esse usuario"
+            ]);
+            return;
+        }
+
+        catch (Exception $e)
+        {
+            http_response_code(500);
+            echo json_encode([
+                "status" => 500,
+                "mensagem" => "Erro interno! tente novamente mais tarde"
+            ]);
+            return;
+        }
+    }
+
+    public function eu () :void
+    {
+        $conexao = Conexao::getConexao();
+        $meuId = $_SESSION["id"];
+
+         // define que a resposta será JSON
+        header("Content-Type: application/json");
+
+        if (!isset($meuId))
+        {
+            echo json_encode([
+                "status"=> 401,
+                "mensagem"=> "usuario nao foi identificado"
+            ]);
+            return;
+        }
+
+        $usuarioDAO = new UsuarioDAO($conexao);
+        $meuUsuario = $usuarioDAO->buscar(TipoBusca::ID, $meuId);
+
+        echo json_encode([
+            "usuarioExiste"=>true,
+            "id"=>$meuUsuario->getId(),
+            "nome"=>$meuUsuario->getUsuario()
+        ]);
+        return;
+    }
+
+    public function sair () :void
+    {
+         // define que a resposta será JSON
+        header("Content-Type: application/json");
+
+        $_SESSION["id"] = null;
+        
+        echo json_encode([
+            "status"=>200,
+            "mensagem"=>"usuario saiu de sua conta"
+        ]);
+        return;
     }
 }

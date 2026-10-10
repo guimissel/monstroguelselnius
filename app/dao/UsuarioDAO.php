@@ -1,6 +1,12 @@
 <?php
 
 require_once __DIR__ . "/../model/Usuario.php";
+
+enum TipoBusca: int{
+    case ID = 0;
+    case NOME = 1;
+};
+
 class UsuarioDAO
 {
     private PDO $pdo;
@@ -29,7 +35,41 @@ class UsuarioDAO
 
         // finaliza transação
         $this->pdo->commit();
-        
+
         return;
+    }
+
+    public function buscar (TipoBusca $tipoBusca, mixed $chaveBusca): ?Usuario
+    {
+        switch ($tipoBusca) {
+            case TipoBusca::ID:
+                $sql = "SELECT * FROM usuario WHERE id_usuario = :id";
+                $prepare = $this->pdo->prepare($sql);
+                $prepare->execute([
+                    "id"=>$chaveBusca
+                ]);
+            break;
+            
+            case TipoBusca::NOME:
+            default:
+                $sql = "SELECT * FROM usuario WHERE nome = :nome";
+                $prepare = $this->pdo->prepare($sql);
+                $prepare->execute([
+                    "nome"=>$chaveBusca
+                ]);
+            break;
+        }
+
+        $dado = $prepare->fetch();
+
+        if ($dado === false) {
+            return null;
+        }
+
+        return new Usuario(
+            (int) $dado["id_usuario"],
+            $dado["nome"],
+            $dado["senha"]
+        );
     }
 }
