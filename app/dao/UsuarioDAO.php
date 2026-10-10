@@ -27,6 +27,9 @@ class UsuarioDAO
             "senha"=> $senha
         ]);
 
+        // finaliza transação
+        $this->pdo->commit();
+        
         return;
     }
 }

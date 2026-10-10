@@ -26,7 +26,7 @@ class UsuarioController
         try 
         {
             // criar uma nova conexao ao banco
-            $conexao = new Conexao();
+            $conexao = Conexao::getConexao();
 
             // variaveis para facilitar
             $nome = $_POST["usuario"];
@@ -35,6 +35,7 @@ class UsuarioController
 
             // uma nova instancia de usuario
             $usuario = new Usuario(
+                null,
                 $nome,
                 $senhaHash
             );
@@ -57,7 +58,7 @@ class UsuarioController
         {    
             echo json_encode([
                 "status" => 500,
-                "mensagem" => "Não foi possivel criar esse usuario"
+                "mensagem" => "Nao foi possivel criar esse usuario"
             ]);
             return;
         }
