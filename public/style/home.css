@@ -96,16 +96,8 @@ main
 /* Painel de atualização */
 .atualizar {
     width: 100%;
-    max-width: 520px;
+    max-width: 330px;
     margin-top: 28px;
-    padding: 28px;
-    box-sizing: border-box;
-
-    background: var(--branco);
-    border: 1px solid #e5e5e5;
-    border-radius: 12px;
-
-    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.05);
 }
 
 /* Cabeçalho do formulário */
