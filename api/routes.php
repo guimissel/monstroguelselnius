@@ -37,6 +37,10 @@ define("ROTAS_API", [
     ],
 
     "DELETE" => [
+        "api/usuario/excluir" => function () {
+            $controlador = new UsuarioController();
+            $controlador->excluirConta();
+        }
     ],
 
     "QUERY" => [

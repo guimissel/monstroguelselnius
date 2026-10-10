@@ -1,11 +1,11 @@
 :root {
     /* Cores principais */
-    --cor-texto: #3a78ff;
+    --cor-texto: #0051ff;
     --cor-fundo: #0b1a3a;
     --cor-fundo-cartao: #ffffff;
 
     /* Bordas */
-    --cor-borda: none;
+    --cor-borda: #999;
     --cor-borda-suave: rgba(58, 193, 255, 0.15);
     --cor-borda-foco: rgba(69, 154, 252, 0.4);
 
@@ -103,9 +103,9 @@ label {
 
 /* Campo e ícone */
 .formInput {
+    border: 1px solid var(--cor-borda);
     display: flex;
     height: 38px;
-    border: 1px solid var(--cor-borda);
     border-radius: 4px;
     overflow: hidden;
 }

@@ -17,16 +17,96 @@
                 <img src="public/img/icons/play.svg" alt="">
             </button>
             <button class="botaoSair" id="sair">
-                <span>Sair</span>
                 <img src="public/img/icons/logout.svg" alt="">
+                <span>Sair</span>
             </button>
         </div>
     </header>
 
-    <h1>
-        <span>Olá</span>
-        <span id="nomeUsuario"></span>
-    </h1>
+    <main>
+        <div>
+            <h1>
+                <span>Olá</span>
+                <span id="nomeUsuario"></span> !
+            </h1>
+             <div class="atualizar">
+    <div class="tituloFormulario">
+        <h2>Meu perfil</h2>
+        <p>Visualize e atualize suas informações pessoais.</p>
+    </div>
+
+    <form method="post" id="formAtualizar">
+        <div class="campoFormulario">
+            <label for="nomeUsuarioInput">Nome de usuário</label>
+
+            <div class="formDivInput">
+                <div class="inputIcone">
+                    <img src="public/img/icons/person.svg" alt="">
+                </div>
+
+                <input
+                    type="text"
+                    id="nomeUsuarioInput"
+                    name="nome"
+                    class="formInput"
+                    placeholder="Digite seu nome de usuário"
+                    autocomplete="username"
+                >
+            </div>
+        </div>
+
+        <div class="campoFormulario">
+            <label for="senhaInput">Senha</label>
+
+            <div class="formDivInput">
+                <div class="inputIcone">
+                    <img src="public/img/icons/password.svg" alt="">
+                </div>
+
+                <input
+                    type="password"
+                    id="senhaInput"
+                    name="senha"
+                    class="formInput"
+                    placeholder="***************"
+                    autocomplete="new-password"
+                >
+            </div>
+        </div>
+
+        <div class="campoFormulario">
+            <label for="senhaInput">Confirmar Senha</label>
+
+            <div class="formDivInput">
+                <div class="inputIcone">
+                    <img src="public/img/icons/password.svg" alt="">
+                </div>
+
+                <input
+                    type="password"
+                    id="CsenhaInput"
+                    name="Csenha"
+                    class="formInput"
+                    placeholder="***************"
+                    autocomplete="new-password"
+                >
+            </div>
+        </div>
+
+        <div class="acoesFormulario">
+            <button class="botaoExcluir" id="excluir" type="button">Excluir conta</button>
+            <button type="submit" class="botaoSalvar" id="salvar">
+                Salvar alterações
+            </button>
+        </div>
+    </form>
+</div>
+        </div>
+
+        <div>
+
+        </div>
+    </main>
     <script src="public/javascript/home.js"></script>
 </body>
 </html>

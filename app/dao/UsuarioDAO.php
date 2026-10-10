@@ -72,4 +72,22 @@ class UsuarioDAO
             $dado["senha"]
         );
     }
+
+    public function excluir (Usuario $usuario): void
+    {
+        // inicia a transação
+        $this->pdo->beginTransaction();
+
+        // prepara a query
+        $prepare = $this->pdo->prepare("DELETE FROM usuario WHERE id_usuario = :id");
+
+        $id = $usuario->getId();
+        $prepare->execute([
+            "id"=> $id
+        ]);
+
+        // finaliza a transação
+        $this->pdo->commit();
+        return;
+    }
 }

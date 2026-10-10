@@ -36,6 +36,19 @@ class Roteador
         $this->rolesPermitidos["POST"][$caminho] = $rolesPermitidos;
     }
 
+    // adiciona uma rota do tipo DELETE
+    public function delete(
+        string $caminho, 
+        callable $funcao, 
+        array $rolesPermitidos,
+        string $redirecionamento = "/monstroguelselnius/login"): void
+    {
+        // adiciona ao array associativo
+        $this->rotas["DELETE"][$caminho] = $funcao;
+        $this->redirecionamentos["DELETE"][$caminho] = $redirecionamento;
+        $this->rolesPermitidos["DELETE"][$caminho] = $rolesPermitidos;
+    }
+
     // despachar para uma rota
     public function despacharRota(): void
     {

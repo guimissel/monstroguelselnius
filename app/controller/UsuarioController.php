@@ -250,4 +250,51 @@ class UsuarioController
         ]);
         return;
     }
+
+    public function excluirConta () :void
+    {
+        // define que a resposta será JSON
+        header("Content-Type: application/json");
+        $id = $_SESSION["id"];
+
+        $usuarioDAO = new UsuarioDAO(Conexao::getConexao());
+        $usuarioExclusao = $usuarioDAO->buscar(TipoBusca::ID, $id);
+
+        if (!isset($usuarioExclusao))
+        {
+            http_response_code(401);
+            echo json_encode([
+                "status"=>401,
+                "mensagem"=>"Não foi possivel excluir"
+            ]);
+            return;
+        }
+
+        try {
+            $usuarioDAO->excluir($usuarioExclusao);
+            $this->sair();
+            return;
+        }
+
+        catch (PDOException $e)
+        {
+            http_response_code(500);
+            echo json_encode([
+                "status"=>500,
+                "mensagem"=>"O servidor não consegui excluir essa conta"
+            ]);
+            return;
+        }
+
+        catch (Exception $e) 
+        {
+            http_response_code(500);
+            echo json_encode([
+                "status"=>500,
+                "mensagem"=>"O servidor não consegui excluir essa conta"
+            ]);
+            return;
+        }
+        
+    }
 }
