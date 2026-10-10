@@ -1,6 +1,7 @@
 <?php
-session_start();
 
+
+require_once __DIR__ . "/AutenticacaoController.php";
 require_once __DIR__ . "/../database/Conexao.php";
 require_once __DIR__ . "/../model/Usuario.php";
 require_once __DIR__ . "/../dao/UsuarioDAO.php";
@@ -16,6 +17,7 @@ class UsuarioController
         foreach ($_POST as $chave => $valor) {
             if (trim((string) $valor) === '')
             {
+                http_response_code(400);
                 echo json_encode([
                     "status" => 400,
                     "mensagem" => "O campo \"" . $chave . "\" está vazio"
@@ -107,6 +109,7 @@ class UsuarioController
         foreach ($_POST as $chave => $valor) {
             if (trim((string) $valor) === '')
             {
+                http_response_code(400);
                 echo json_encode([
                     "status" => 400,
                     "mensagem" => "O campo \"" . $chave . "\" está vazio"
@@ -149,6 +152,7 @@ class UsuarioController
             // caso não exista o usuario
             if (!isset($usuario)) 
             {
+                http_response_code(401);
                 // retorna sucesso ao usuario
                 echo json_encode([
                     "status" => 401,
@@ -160,6 +164,7 @@ class UsuarioController
             // caso senha incorreta
             else if (!password_verify($senha, $usuario->getSenhaHash()))
             {
+                http_response_code(401);
                 // retorna sucesso ao usuario
                 echo json_encode([
                     "status" => 401,
@@ -169,6 +174,7 @@ class UsuarioController
             }
 
             $_SESSION["id"] = $usuario->getId();
+            $_SESSION["role"] = Acesso::USUARIO->value;
 
             // retorna sucesso ao usuario
             echo json_encode([
@@ -204,11 +210,12 @@ class UsuarioController
         $conexao = Conexao::getConexao();
         $meuId = $_SESSION["id"];
 
-         // define que a resposta será JSON
+        // define que a resposta será JSON
         header("Content-Type: application/json");
 
         if (!isset($meuId))
         {
+            http_response_code(401);
             echo json_encode([
                 "status"=> 401,
                 "mensagem"=> "usuario nao foi identificado"
@@ -218,11 +225,13 @@ class UsuarioController
 
         $usuarioDAO = new UsuarioDAO($conexao);
         $meuUsuario = $usuarioDAO->buscar(TipoBusca::ID, $meuId);
+        $role = $_SESSION["role"];
 
         echo json_encode([
             "usuarioExiste"=>true,
             "id"=>$meuUsuario->getId(),
-            "nome"=>$meuUsuario->getUsuario()
+            "nome"=>$meuUsuario->getUsuario(),
+            "role"=>$role
         ]);
         return;
     }
@@ -233,10 +242,12 @@ class UsuarioController
         header("Content-Type: application/json");
 
         $_SESSION["id"] = null;
+        $_SESSION["role"] = Acesso::VISITANTE->value;
         
         echo json_encode([
             "status"=>200,
-            "mensagem"=>"usuario saiu de sua conta"
+            "mensagem"=>"usuario saiu de sua conta",
+            "refresh"=>true
         ]);
         return;
     }

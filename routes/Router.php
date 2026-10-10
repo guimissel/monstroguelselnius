@@ -1,22 +1,39 @@
 <?php
+require_once __DIR__ . "/../app/controller/AutenticacaoController.php";
 
 class Roteador
 {
     // array das rotas
     private array $rotas = [];
 
+    // array dos redirecionamento (são efetuados caso ocorra um 403 - forbidden)
+    private array $redirecionamentos = [];
+    private array $rolesPermitidos = [];
+
     // adiciona uma rota do tipo GET
-    public function get(string $caminho, callable $funcao): void
+    public function get(
+        string $caminho, 
+        callable $funcao, 
+        array $rolesPermitidos, 
+        string $redirecionamento = "/monstroguelselnius/login"): void
     {
         // adiciona ao array associativo
         $this->rotas["GET"][$caminho] = $funcao;
+        $this->redirecionamentos["GET"][$caminho] = $redirecionamento;
+        $this->rolesPermitidos["GET"][$caminho] = $rolesPermitidos;
     }
 
     // adiciona uma rota do tipo POST
-    public function post(string $caminho, callable $funcao): void
+    public function post(
+        string $caminho, 
+        callable $funcao, 
+        array $rolesPermitidos,
+        string $redirecionamento = "/monstroguelselnius/login"): void
     {
         // adiciona ao array associativo
         $this->rotas["POST"][$caminho] = $funcao;
+        $this->redirecionamentos["POST"][$caminho] = $redirecionamento;
+        $this->rolesPermitidos["POST"][$caminho] = $rolesPermitidos;
     }
 
     // despachar para uma rota
@@ -38,7 +55,19 @@ class Roteador
 
         // função que deve executada pela rota
         $funcaoDaRota = $this->rotas[$metodo][$caminho];
+        $redirecionamento = $this->redirecionamentos[$metodo][$caminho];
+        $rolesPermitidos = $this->rolesPermitidos[$metodo][$caminho];
 
+        // instancia de autenticacao
+        $autenticacao = new AutenticacaoController($rolesPermitidos, $caminho, $redirecionamento);
+        $retornoAutenticacao = json_decode($autenticacao->acessar(), true);
+        
+        if ($retornoAutenticacao["status"] != 200) {
+            http_response_code($retornoAutenticacao["status"]);
+            header("location: ".$retornoAutenticacao["redirecione"]);
+            return;
+        };
+        
         // executa a função
         call_user_func($funcaoDaRota);
     }

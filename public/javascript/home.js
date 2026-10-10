@@ -23,8 +23,5 @@ botaoSair.addEventListener("click", async () => {
     // recebe o resultado
     const resultado = await resposta.json();
 
-    if(resultado.status == 200)
-    {
-        window.location = "/monstroguelselnius/login";
-    }
+    if (resultado.refresh) window.location.reload();
 })

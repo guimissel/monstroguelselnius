@@ -3,6 +3,8 @@ ini_set('display_errors', '1');
 ini_set('display_startup_errors', '1');
 error_reporting(E_ALL);
 
+require_once __DIR__ . "/app/controller/AutenticacaoController.php";
+
 // chamar roteador
 require_once __DIR__ . '/routes/Router.php';
 
@@ -10,31 +12,48 @@ require_once __DIR__ . '/routes/Router.php';
 require_once __DIR__ . '/api/routes.php';
 
 // caminho base para todas rotas
-$caminhoBase = "/monstroguelselnius/";
+$caminhoBase = "/monstroguelselnius";
+$caminhoApi = "/monstroguelselnius/";
 
 // instancia um roteador
 $roteador = new Roteador();
 
 // adicionar rota /login
-$roteador->get($caminhoBase . "login", function () {
+$roteador->get(
+    "$caminhoBase/login", 
+    function () {
+        view("login");
+    },
+    [Acesso::VISITANTE], 
+    "$caminhoBase/home"
+);
 
-    // chamar view login
-    view("login");
-});
+$roteador->get(
+    "$caminhoBase/signup", 
+    function () {
+        view("signup");
+    },
+    [Acesso::VISITANTE],
+    "$caminhoBase/home"
+);
 
-$roteador->get($caminhoBase . "signup", function () {
+$roteador->get(
+    "$caminhoBase/home",
+    function () {
+        view("home");
+    },
+    [Acesso::USUARIO, Acesso::ADMIN],
+    "$caminhoBase/login"
+);
 
-    // chamar view login
-    view("signup");
-});
-
-$roteador->get($caminhoBase . "home", function () {
-    view("home");
-});
-
-$roteador->get($caminhoBase , function() {
-    header("location: ".$caminhoBase."home");
-});
+$roteador->get(
+    "$caminhoBase/",
+    function () {
+        header("location: ".$caminhoBase."home");
+    },
+    [Acesso::USUARIO, Acesso::ADMIN],
+    "$caminhoBase/login"
+);
 
 // criar rotas api
 // numero de tipos de requisição (index)
@@ -64,10 +83,13 @@ for ($i = 0; $i < $contagemTiposRequisicao; $i++)
         $rota = array_keys(ROTAS_API[$tipoRequisicao])[$j];
 
         // cria uma nova rota
-        $roteador->$tipoRequisicao($caminhoBase . $rota, ROTAS_API[$tipoRequisicao][$rota]);
+        $roteador->$tipoRequisicao(
+            $caminhoApi . $rota, 
+            ROTAS_API[$tipoRequisicao][$rota], 
+            [Acesso::VISITANTE, Acesso::USUARIO, Acesso::ADMIN]
+        );
     }
 }
-
 
 // despachar usuario para a rota
 $roteador->despacharRota();
