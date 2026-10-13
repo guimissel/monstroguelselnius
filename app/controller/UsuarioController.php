@@ -251,11 +251,10 @@ class UsuarioController
         return;
     }
 
-    public function excluir () :void
+    public function excluir ($id) :void
     {
         // define que a resposta será JSON
         header("Content-Type: application/json");
-        $id = $_SESSION["id"];
 
         $usuarioDAO = new UsuarioDAO(Conexao::getConexao());
         $usuarioExclusao = $usuarioDAO->buscar(TipoBusca::ID, $id);
@@ -300,10 +299,14 @@ class UsuarioController
 
     public function atualizar () :void 
     {
+        // define que a resposta será JSON
+        header("Content-Type: application/json");
+
         echo json_encode([
-            "status"=>000
+            "status"=>200,
+            "mensagem"=>""
         ]);
-        
+
         return;
     }
 }

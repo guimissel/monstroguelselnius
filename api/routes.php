@@ -8,7 +8,7 @@ define("ROTAS_API", [
         "api/usuario/eu" => function () {
             $controlador = new UsuarioController();
             $controlador->eu();
-        }
+        },
     ],
 
     "POST" => [
@@ -34,16 +34,16 @@ define("ROTAS_API", [
     ],
 
     "PATCH" => [
-        "api/usuario/atualizar" => function () {
+        "api/usuario/{id}/atualizar" => function () {
             $controlador = new UsuarioController();
             $controlador->atualizar();
         }
     ],
 
     "DELETE" => [
-        "api/usuario/excluir" => function () {
+        "api/usuario/{id}/excluir" => function ($id) {
             $controlador = new UsuarioController();
-            $controlador->excluir();
+            $controlador->excluir(id);
         }
     ],
 

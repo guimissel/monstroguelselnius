@@ -49,6 +49,19 @@ class Roteador
         $this->rolesPermitidos["DELETE"][$caminho] = $rolesPermitidos;
     }
 
+    // adiciona uma rota do tipo PATCH
+    public function patch(
+        string $caminho, 
+        callable $funcao, 
+        array $rolesPermitidos,
+        string $redirecionamento = "/monstroguelselnius/login"): void
+    {
+        // adiciona ao array associativo
+        $this->rotas["PATCH"][$caminho] = $funcao;
+        $this->redirecionamentos["PATCH"][$caminho] = $redirecionamento;
+        $this->rolesPermitidos["PATCH"][$caminho] = $rolesPermitidos;
+    }
+
     // despachar para uma rota
     public function despacharRota(): void
     {
@@ -56,20 +69,42 @@ class Roteador
         $metodo = $_SERVER["REQUEST_METHOD"];
 
         // caminho da requisição
-        $caminho = $_SERVER["REQUEST_URI"];
+        $caminho = parse_url($_SERVER["REQUEST_URI"], PHP_URL_PATH);
 
-        // se a rota não for definida
-        // retorne 404
-        if (!isset($this->rotas[$metodo][$caminho])) {
+        $funcaoDaRota = null;
+        $rotaEncontrada = null;
+        $parametros = [];
+
+        // Percorre as rotas do método HTTP solicitado
+        foreach ($this->rotas[$metodo] ?? [] as $rota => $funcao) {
+
+            $regex = preg_replace('/\{\w+\}/', '([^/]+)', $rota);
+
+            // Garante correspondência com o caminho completo
+            $regex = '#^' . $regex . '$#';
+
+            if (preg_match($regex, $caminho, $matches)) {
+                $funcaoDaRota = $funcao;
+                $rotaEncontrada = $rota;
+
+                // Remove a correspondência completa
+                array_shift($matches);
+
+                $parametros = array_values($matches);
+
+                break;
+            }
+        }
+        
+        // rota não encontrada 404
+        if ($rotaEncontrada === null) {
             http_response_code(404);
             echo '404 - Rota não encontrada';
             return;
         }
 
-        // função que deve executada pela rota
-        $funcaoDaRota = $this->rotas[$metodo][$caminho];
-        $redirecionamento = $this->redirecionamentos[$metodo][$caminho];
-        $rolesPermitidos = $this->rolesPermitidos[$metodo][$caminho];
+        $redirecionamento = $this->redirecionamentos[$metodo][$rotaEncontrada] ?? null;
+        $rolesPermitidos = $this->rolesPermitidos[$metodo][$rotaEncontrada] ?? [];
 
         // instancia de autenticacao
         $autenticacao = new AutenticacaoController($rolesPermitidos, $caminho, $redirecionamento);
@@ -80,9 +115,9 @@ class Roteador
             header("location: ".$retornoAutenticacao["redirecione"]);
             return;
         };
-        
+
         // executa a função
-        call_user_func($funcaoDaRota);
+        call_user_func_array($funcaoDaRota, $parametros);
     }
 }
 

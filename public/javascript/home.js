@@ -29,12 +29,30 @@ botaoSair.addEventListener("click", async () => {
 const botaoExcluir = document.getElementById("excluir");
 botaoExcluir.addEventListener("click", async () => {
     // faz o fetch para a api
-    const resposta = await fetch("/monstroguelselnius/api/usuario/excluir", {
+    const resposta = await fetch(`/monstroguelselnius/api/usuario//excluir`, {
         method: "DELETE"
     });
 
     // recebe o resultado
     const resultado = await resposta.json();
     if (resultado.refresh) window.location.reload();
-    console.log(resultado);
+})
+
+const formAtualizar = document.getElementById("formAtualizar");
+formAtualizar.addEventListener("submit", async (e) => {
+
+    e.preventDefault();
+
+    // resgata os dados do formulario
+    const dados = new FormData(formAtualizar);
+
+    // faz o fetch para a api
+    const resposta = await fetch("/monstroguelselnius/api/usuario/atualizar", {
+        method: "PATCH",
+        body: dados
+    });
+
+    // recebe o resultado
+    const resultado = await resposta.json();
+    if (resultado.refresh) window.location.reload();
 })
