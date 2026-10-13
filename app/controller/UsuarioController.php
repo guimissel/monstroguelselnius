@@ -251,7 +251,7 @@ class UsuarioController
         return;
     }
 
-    public function excluirConta () :void
+    public function excluir () :void
     {
         // define que a resposta será JSON
         header("Content-Type: application/json");
@@ -296,5 +296,14 @@ class UsuarioController
             return;
         }
         
+    }
+
+    public function atualizar () :void 
+    {
+        echo json_encode([
+            "status"=>000
+        ]);
+        
+        return;
     }
 }

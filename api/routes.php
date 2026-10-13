@@ -34,12 +34,16 @@ define("ROTAS_API", [
     ],
 
     "PATCH" => [
+        "api/usuario/atualizar" => function () {
+            $controlador = new UsuarioController();
+            $controlador->atualizar();
+        }
     ],
 
     "DELETE" => [
         "api/usuario/excluir" => function () {
             $controlador = new UsuarioController();
-            $controlador->excluirConta();
+            $controlador->excluir();
         }
     ],
 
