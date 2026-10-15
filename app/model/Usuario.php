@@ -4,9 +4,9 @@ class Usuario
 {
     private ?int $id;
     private string $usuario;
-    private string $senhaHash;
+    private ?string $senhaHash;
 
-    public function __construct(?int $id, string $usuario, string $senhaHash) 
+    public function __construct(?int $id, string $usuario, ?string $senhaHash) 
     {
         $this->id = $id;
         $this->usuario = $usuario;

@@ -16,7 +16,7 @@ class UsuarioDAO
         $this->pdo = $pdo;
     }
 
-    public function criar (Usuario $usuario): void
+    public function criar (Usuario $usuario): Usuario
     {
         // inicia uma transação
         $this->pdo->beginTransaction();
@@ -36,7 +36,7 @@ class UsuarioDAO
         // finaliza transação
         $this->pdo->commit();
 
-        return;
+        return new Usuario($this->pdo->lastInsertId(), $nome, null);
     }
 
     public function buscar (TipoBusca $tipoBusca, mixed $chaveBusca): ?Usuario

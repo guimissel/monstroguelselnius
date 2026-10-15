@@ -69,7 +69,10 @@ class UsuarioController
             $usuarioDAO = new UsuarioDAO($conexao);
 
             // cria o usuario
-            $usuarioDAO->criar($usuario);
+            $usuario = $usuarioDAO->criar($usuario);
+
+            $_SESSION["id"] = $usuario->getId();
+            $_SESSION["role"] = Acesso::USUARIO->value;
 
             // retorna sucesso ao usuario
             echo json_encode([
@@ -84,7 +87,7 @@ class UsuarioController
             http_response_code(500);
             echo json_encode([
                 "status" => 500,
-                "mensagem" => "Nao foi possivel criar esse usuario"
+                "mensagem" => "Nao foi possivel criar esse usuario: " . $e->getMessage()
             ]);
             return;
         }
