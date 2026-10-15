@@ -1,5 +1,7 @@
 <?php
 
+require_once __DIR__ . "/../app/controller/UsuarioController.php";
+
 // crie as todas rotas da api
 define("ROTAS_API", [
     "GET" => [
@@ -41,7 +43,7 @@ define("ROTAS_API", [
     "DELETE" => [
         "api/usuario/{id}/excluir" => function ($id) {
             $controlador = new UsuarioController();
-            $controlador->excluir($id);
+            $controlador->excluir(id);
         }
     ],
 

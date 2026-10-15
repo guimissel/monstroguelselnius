@@ -1,5 +1,11 @@
 <?php
 
+
+require_once __DIR__ . "/AutenticacaoController.php";
+require_once __DIR__ . "/../database/Conexao.php";
+require_once __DIR__ . "/../model/Usuario.php";
+require_once __DIR__ . "/../dao/UsuarioDAO.php";
+
 class UsuarioController 
 {
     public function criar () :void
