@@ -49,3 +49,6 @@
 ![tabela de tipos e suas fraquezas](https://i.pinimg.com/1200x/37/92/15/379215f6cee9fbd568e23c6d30c835fe.jpg)
 
 ## 3. Pokémons
+- Apenas os pokémons da primeira geração
+- Atributos que o pokémon deve ter:
+  - 

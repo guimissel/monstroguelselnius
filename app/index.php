@@ -3,13 +3,10 @@ ini_set('display_errors', '1');
 ini_set('display_startup_errors', '1');
 error_reporting(E_ALL);
 
-require_once __DIR__ . "/app/controller/AutenticacaoController.php";
-
-// chamar roteador
-require_once __DIR__ . '/routes/Router.php';
+require_once __DIR__ . "/autoload.php";
 
 // chamar rotas da api
-require_once __DIR__ . '/api/routes.php';
+require_once __DIR__ . "/api/routes.php";
 
 // caminho base para todas rotas
 $caminhoBase = "/monstroguelselnius";
