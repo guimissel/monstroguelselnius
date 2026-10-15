@@ -28,8 +28,15 @@ botaoSair.addEventListener("click", async () => {
 
 const botaoExcluir = document.getElementById("excluir");
 botaoExcluir.addEventListener("click", async () => {
+    const me = await fetch("/monstroguelselnius/api/usuario/eu", {
+        method: "GET"
+    });
+
+    // recebe o resultado
+    const mejson = await me.json();
+
     // faz o fetch para a api
-    const resposta = await fetch(`/monstroguelselnius/api/usuario//excluir`, {
+    const resposta = await fetch(`/monstroguelselnius/api/usuario/${mejson.id}/excluir`, {
         method: "DELETE"
     });
 

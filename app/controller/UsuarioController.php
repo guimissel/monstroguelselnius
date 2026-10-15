@@ -297,7 +297,7 @@ class UsuarioController
         
     }
 
-    public function atualizar () :void 
+    public function atualizar ($id) :void 
     {
         // define que a resposta será JSON
         header("Content-Type: application/json");

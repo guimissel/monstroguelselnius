@@ -9,7 +9,7 @@ require_once __DIR__ . "/app/controller/AutenticacaoController.php";
 require_once __DIR__ . '/routes/Router.php';
 
 // chamar rotas da api
-require_once __DIR__ . '/api/routes.php';
+require_once __DIR__ . '/routes/ApiRoutes.php';
 
 // caminho base para todas rotas
 $caminhoBase = "/monstroguelselnius";
