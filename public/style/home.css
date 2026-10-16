@@ -85,7 +85,9 @@ gap: 16px;
 
 main 
 {
+    display: flex;
     padding: 24px;
+    justify-content: space-between;
 
     h1 {
         font-size: 22px;
@@ -239,4 +241,22 @@ main
 
 .botaoSalvar:active, .botaoExcluir:active {
     transform: scale(0.98);
+}
+
+.coroa {
+    height: 70dvh;
+    justify-content: center;
+    align-items: center;
+    display: flex;
+}
+
+.cabelo {
+    height: max-content;
+
+}
+
+.manureis {
+    position: fixed;
+    background-color: #000;
+    color: var(--branco);
 }
