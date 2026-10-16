@@ -36,4 +36,6 @@ formulario.addEventListener("submit", async (e) => {
     }
 
     pMensagem.innerText = resultado.mensagem;
+
+    if(resultado.refresh) window.location.reload();
 })

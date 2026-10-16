@@ -70,7 +70,7 @@ class UsuarioController
 
             // cria o usuario
             $usuario = $usuarioDAO->criar($usuario);
-
+            
             $_SESSION["id"] = $usuario->getId();
             $_SESSION["role"] = Acesso::USUARIO->value;
 
@@ -78,6 +78,7 @@ class UsuarioController
             echo json_encode([
                 "status" => 200,
                 "mensagem" => "usuario criado com sucesso",
+                "refresh"=>true
             ]);
             return;
         }

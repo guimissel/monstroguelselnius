@@ -16,27 +16,38 @@ class UsuarioDAO
         $this->pdo = $pdo;
     }
 
-    public function criar (Usuario $usuario): Usuario
+    public function criar(Usuario $usuario): Usuario
     {
-        // inicia uma transação
-        $this->pdo->beginTransaction();
+        try {
+            // inicia uma transaction
+            $this->pdo->beginTransaction();
 
-        $nome = $usuario->getUsuario();
-        $senha = $usuario->getSenhaHash();
+            $nome = $usuario->getUsuario();
+            $senha = $usuario->getSenhaHash();
 
-        // prepara o sql
-        $prepare = $this->pdo->prepare("INSERT INTO usuario (nome, senha) VALUES (:nome, :senha)");
+            $sql = "INSERT INTO usuario (nome, senha) VALUES (:nome, :senha)";
+            $prepare = $this->pdo->prepare($sql);
+
+            $prepare->execute([
+                "nome" => $nome,
+                "senha" => $senha
+            ]);
+
+            $id = (int) $this->pdo->lastInsertId();
+
+            // finaliza a transaction
+            $this->pdo->commit();
+
+            return new Usuario($id, $nome, null);
+        } 
         
-        // insere os valores
-        $prepare->execute([
-            "nome"=> $nome,
-            "senha"=> $senha
-        ]);
+        catch (Throwable $e) {
+            if ($this->pdo->inTransaction()) {
+                $this->pdo->rollBack();
+            }
 
-        // finaliza transação
-        $this->pdo->commit();
-
-        return new Usuario($this->pdo->lastInsertId(), $nome, null);
+            throw $e;
+        }
     }
 
     public function buscar (TipoBusca $tipoBusca, mixed $chaveBusca): ?Usuario
@@ -61,7 +72,6 @@ class UsuarioDAO
         }
 
         $dado = $prepare->fetch();
-
         if ($dado === false) {
             return null;
         }

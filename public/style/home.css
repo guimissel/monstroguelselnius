@@ -198,11 +198,6 @@ main
     box-shadow: 0 0 0 3px rgba(0, 0, 255, 0.09);
 }
 
-.formDivInput:focus-within .inputIcone {
-    background: #ededff;
-    border-right-color: #d5d5ff;
-}
-
 /* Área dos botões */
 .acoesFormulario {
     display: flex;
