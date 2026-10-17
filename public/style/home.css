@@ -1,9 +1,9 @@
 :root {
     --vermelho: #ff1818;
     --vermelho-escuro: rgb(116, 2, 2);
-    --branco: #fff;
+    --escuro: #202020;
     --branco-fumaca: #f1f1f1;
-    --cinza-leve: #ccc;
+    --cinza-medio: #3a3a3a;
     --azul: #00f;
     --azul-escuro: rgb(1, 1, 134);
     --preto: #000;
@@ -14,8 +14,14 @@
 
 body 
 {
-    margin:0;
-    background-color: var(--branco-fumaca);
+    color: var(--branco-fumaca);
+    background: var(--preto) url("../img/fundo\ home.webp");
+    margin: 0;
+    background-size: 1600px;
+    background-position: center;
+    background-repeat: no-repeat;
+    background-attachment: fixed;
+    
     font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
 }
 
@@ -27,8 +33,8 @@ body
     box-sizing: border-box;
     align-items: center;
     height: 60px;
-    background-color: var(--branco);
-    border-bottom: 2px solid var(--cinza-leve);
+    background-color: var(--escuro);
+    border-bottom: 1px solid var(--cinza-medio);
 
 }
 
