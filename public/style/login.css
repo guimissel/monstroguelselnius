@@ -5,12 +5,12 @@
     --cor-fundo-cartao: rgba(33, 90, 177, 0.5);
 
     /* Bordas */
-    --cor-borda: #999;
+    --cor-borda: #999999;
     --cor-borda-suave: rgba(58, 193, 255, 0.15);
     --cor-borda-foco: rgba(69, 154, 252, 0.4);
 
     /* Campos de entrada */
-    --cor-fundo-input: rgba(33, 90, 177, 0,5);
+    --cor-fundo-input: rgba(33, 90, 177, 0.5);
     --cor-fundo-icone: #1a6fb5;
 
     /* Botão */
