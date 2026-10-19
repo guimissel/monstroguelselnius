@@ -34,10 +34,6 @@ define("ROTAS_API", [
     ],
 
     "PATCH" => [
-        "api/usuario/{id}/atualizar" => function ($id) {
-            $controlador = new UsuarioController();
-            $controlador->atualizar($id);
-        }
     ],
 
     "DELETE" => [

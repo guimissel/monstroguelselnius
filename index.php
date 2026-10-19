@@ -38,6 +38,15 @@ $roteador->get(
 );
 
 $roteador->get(
+    "$caminhoBase/jogo",
+    function () {
+        view("jogo");
+    },
+    [Acesso::USUARIO, Acesso::ADMIN],
+    "$caminhoBase/login"
+);
+
+$roteador->get(
     "$caminhoBase/home",
     function () {
         view("home");

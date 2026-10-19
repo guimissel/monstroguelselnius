@@ -300,17 +300,4 @@ class UsuarioController
         }
         
     }
-
-    public function atualizar ($id) :void 
-    {
-        // define que a resposta será JSON
-        header("Content-Type: application/json");
-
-        echo json_encode([
-            "status"=>200,
-            "mensagem"=>""
-        ]);
-
-        return;
-    }
 }
