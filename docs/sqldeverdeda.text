@@ -1,0 +1,88 @@
+
+CREATE TABLE usuario (
+    id_usuario INT NOT NULL,
+    nome VARCHAR(255) NOT NULL,
+    senha VARCHAR(255) NOT NULL,
+    PRIMARY KEY (id_usuario)
+) ENGINE=InnoDB;
+
+CREATE TABLE tipo (
+    id_tipo INT NOT NULL,
+    PRIMARY KEY (id_tipo)
+) ENGINE=InnoDB;
+
+CREATE TABLE monstro (
+    id_monstro INT NOT NULL,
+    PRIMARY KEY (id_monstro)
+) ENGINE=InnoDB;
+
+CREATE TABLE item_loja (
+    id_item_loja INT NOT NULL,
+    PRIMARY KEY (id_item_loja)
+) ENGINE=InnoDB;
+
+CREATE TABLE batalha (
+    id_batalha INT NOT NULL,
+    id_usuario INT NOT NULL,
+    PRIMARY KEY (id_batalha),
+    FOREIGN KEY (id_usuario) REFERENCES usuario(id_usuario)
+) ENGINE=InnoDB;
+
+CREATE TABLE ataque (
+    id_ataque INT NOT NULL,
+    id_tipo INT NOT NULL,
+    PRIMARY KEY (id_ataque),
+    FOREIGN KEY (id_tipo) REFERENCES tipo(id_tipo)
+) ENGINE=InnoDB;
+
+CREATE TABLE ataque_monstro (
+    id_ataque INT NOT NULL,
+    id_monstro INT NOT NULL,
+    FOREIGN KEY (id_ataque) REFERENCES ataque(id_ataque),
+    FOREIGN KEY (id_monstro) REFERENCES monstro(id_monstro)
+) ENGINE=InnoDB;
+
+CREATE TABLE eficaz_tipo (
+    id_tipo INT NOT NULL,
+    id_tipo_eficaz INT NOT NULL,
+    PRIMARY KEY (id_tipo, id_tipo_eficaz),
+    FOREIGN KEY (id_tipo) REFERENCES tipo(id_tipo),
+    FOREIGN KEY (id_tipo_eficaz) REFERENCES tipo(id_tipo)
+) ENGINE=InnoDB;
+
+CREATE TABLE imagem_monstro (
+    id_imagem_monstro INT NOT NULL,
+    id_monstro INT NOT NULL,
+    caminho VARCHAR(255) NOT NULL,
+    PRIMARY KEY (id_imagem_monstro),
+    FOREIGN KEY (id_monstro) REFERENCES monstro(id_monstro)
+) ENGINE=InnoDB;
+
+CREATE TABLE item_usuario (
+    id_usuario INT NOT NULL,
+    id_item_loja INT NOT NULL,
+    FOREIGN KEY (id_usuario) REFERENCES usuario(id_usuario),
+    FOREIGN KEY (id_item_loja) REFERENCES item_loja(id_item_loja)
+) ENGINE=InnoDB;
+
+CREATE TABLE `log` (
+    id_log INT NOT NULL,
+    id_batalha INT NOT NULL,
+    PRIMARY KEY (id_log),
+    FOREIGN KEY (id_batalha) REFERENCES batalha(id_batalha)
+) ENGINE=InnoDB;
+
+CREATE TABLE monstro_batalha (
+    id_monstro INT NOT NULL,
+    id_batalha INT NOT NULL,
+    PRIMARY KEY (id_monstro, id_batalha),
+    FOREIGN KEY (id_monstro) REFERENCES monstro(id_monstro),
+    FOREIGN KEY (id_batalha) REFERENCES batalha(id_batalha)
+) ENGINE=InnoDB;
+
+CREATE TABLE tipo_monstro (
+    id_monstro INT NOT NULL,
+    id_tipo INT NOT NULL,
+    FOREIGN KEY (id_monstro) REFERENCES monstro(id_monstro),
+    FOREIGN KEY (id_tipo) REFERENCES tipo(id_tipo)
+) ENGINE=InnoDB;
