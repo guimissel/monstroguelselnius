@@ -1,0 +1,273 @@
+/* todas as medidas usam cqw (1% da largura do palco)
+   assim o jogo escala junto com a janela mantendo 16:9 */
+
+* { box-sizing: border-box; }
+
+body {
+    margin: 0;
+    height: 100dvh;
+    background: #000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+    font-family: "Pixelify Sans", monospace;
+}
+
+#palco {
+    position: relative;
+    width: min(100vw, calc(100dvh * 16 / 9));
+    aspect-ratio: 16 / 9;
+    container-type: inline-size;
+    overflow: hidden;
+    background: url("../img/arena do if.png") center / 100% 100%;
+    image-rendering: pixelated;
+    color: #222;
+    user-select: none;
+}
+
+button { font-family: inherit; cursor: pointer; }
+button:disabled { cursor: not-allowed; }
+
+/* ---------- sprites ---------- */
+
+.sprite {
+    position: absolute;
+    image-rendering: pixelated;
+    transition: transform .35s, opacity .35s;
+}
+
+.sprite:not([src]) { visibility: hidden; }
+
+#spriteRobo    { width: 17cqw; left: 56%; top: 20%; }
+#spriteJogador { width: 25cqw; left: 15%; top: 31%; }
+
+.sprite.desmaiou { transform: translateY(35%); opacity: 0; }
+.sprite.entrando { transform: scale(.2); opacity: 0; transition: none; }
+
+.sprite.ataqueJogador { animation: investidaJogador .35s; }
+.sprite.ataqueRobo    { animation: investidaRobo .35s; }
+.sprite.dano          { animation: piscar .6s steps(2, jump-none); }
+
+@keyframes investidaJogador { 50% { transform: translate(5cqw, -3cqw); } }
+@keyframes investidaRobo    { 50% { transform: translate(-5cqw, 3cqw); } }
+@keyframes piscar { 0%, 100% { opacity: 1; } 50% { opacity: 0; } }
+
+/* ---------- caixas de info (imagem recortada pelo bounding box) ---------- */
+
+.info {
+    position: absolute;
+    --W: 2092; --H: 752; --bx: 70; --by: 148; --bw: 1958; --bh: 439;
+    aspect-ratio: calc(var(--bw) / var(--bh));
+    background: url("../img/caixa info batalha.png") no-repeat;
+    background-size: calc(var(--W) / var(--bw) * 100%) calc(var(--H) / var(--bh) * 100%);
+    background-position: calc(var(--bx) / (var(--W) - var(--bw)) * 100%) calc(var(--by) / (var(--H) - var(--bh)) * 100%);
+}
+
+#infoRobo    { width: 40%; left: 2%;  top: 6%; }
+#infoJogador { width: 40%; left: 51%; top: 53%; }
+
+/* area branca interna da caixa */
+.infoConteudo {
+    position: absolute;
+    left: 10%; right: 4%; top: 14%; bottom: 24%;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    gap: .5cqw;
+}
+
+.info .linha { display: flex; align-items: center; gap: 1cqw; }
+.info .nome  { font-size: 2.5cqw; line-height: 1; flex: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.info .nivel { font-size: 1.9cqw; }
+.info .rotuloHp { font-size: 1.6cqw; color: #c8501f; }
+.info .hpTexto  { font-size: 1.9cqw; min-width: 8cqw; text-align: right; }
+
+.hp {
+    flex: 1;
+    height: 1.4cqw;
+    background: #444;
+    border: .25cqw solid #222;
+    border-radius: .8cqw;
+    overflow: hidden;
+}
+
+.barra {
+    height: 100%;
+    width: 100%;
+    background: #3cc83c;
+    transition: width .8s steps(24), background-color .3s;
+}
+.barra.amarelo  { background: #f0c020; }
+.barra.vermelho { background: #e03030; }
+
+.status {
+    font-size: 1.4cqw;
+    padding: .2cqw .8cqw;
+    border-radius: .5cqw;
+    color: #fff;
+}
+.status:empty { display: none; }
+.status.paralysis { background: #c9a400; }
+.status.burn      { background: #e06020; }
+.status.poison    { background: #9040c0; }
+.status.sleep     { background: #607080; }
+.status.freeze    { background: #40a8d8; }
+
+/* ---------- log ---------- */
+
+#log {
+    position: absolute;
+    left: 2.7%; top: 74.5%; width: 49.5%;
+    --W: 2030; --H: 775; --bx: 49; --by: 124; --bw: 1932; --bh: 518;
+    aspect-ratio: calc(var(--bw) / var(--bh));
+    background: url("../img/caixa log batalha.png") no-repeat;
+    background-size: calc(var(--W) / var(--bw) * 100%) calc(var(--H) / var(--bh) * 100%);
+    background-position: calc(var(--bx) / (var(--W) - var(--bw)) * 100%) calc(var(--by) / (var(--H) - var(--bh)) * 100%);
+}
+
+#logTexto {
+    position: absolute;
+    left: 7%; right: 7%; top: 17%; bottom: 17%;
+    overflow-y: auto;
+    scrollbar-width: none;
+    font-size: 2.4cqw;
+    line-height: 2.9cqw;   /* cabem 3 linhas */
+    cursor: pointer;
+}
+#logTexto::-webkit-scrollbar { display: none; }
+#logTexto p { margin: 0; }
+
+#tempo {
+    position: absolute;
+    right: 7.5%; top: 2%;
+    font-size: 1.8cqw;
+    color: #fff;
+    background: #2a2a2a;
+    padding: .1cqw .8cqw;
+    border-radius: .6cqw;
+}
+#tempo.urgente { background: #d02020; }
+
+#voltar {
+    position: absolute;
+    left: 7.5%; top: 2%;
+    font-size: 1.8cqw;
+    padding: .1cqw 1cqw;
+    border: 0;
+    border-radius: .6cqw;
+    background: #f5b800;
+    color: #222;
+}
+
+/* ---------- botoes ---------- */
+
+#menu {
+    position: absolute;
+    left: 56.5%; top: 74.5%;
+    width: 42%;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: .3cqw 1cqw;
+}
+
+#menu.bloqueado { opacity: .55; pointer-events: none; }
+
+.botao {
+    aspect-ratio: 3 / 1;
+    border: 0;
+    padding: 0 8%;
+    background-color: transparent;
+    background-repeat: no-repeat;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    font-size: 2.5cqw;
+    line-height: 1.05;
+    color: #3a1010;
+    white-space: nowrap;
+    overflow: hidden;
+    transition: transform .08s, filter .1s;
+}
+.botao small { font-size: 1.4cqw; opacity: .75; }
+.botao:hover:not(:disabled)  { transform: scale(1.04); filter: brightness(1.08); }
+.botao:active:not(:disabled) { transform: scale(.97); }
+.botao:disabled { filter: grayscale(.8) brightness(.9); }
+
+.botao span { max-width: 100%; overflow: hidden; text-overflow: ellipsis; }
+
+.botao.c0 { --W: 1950; --H: 807; --bx: 65;  --by: 95;  --bw: 1819; --bh: 596; background-image: url("../img/botao vermelho.png"); }
+.botao.c1 { --W: 1950; --H: 807; --bx: 99;  --by: 105; --bw: 1753; --bh: 573; background-image: url("../img/botao amarelo.png"); }
+.botao.c2 { --W: 1950; --H: 807; --bx: 80;  --by: 110; --bw: 1790; --bh: 580; background-image: url("../img/botao verde.png"); }
+.botao.c3 { --W: 1950; --H: 807; --bx: 39;  --by: 115; --bw: 1872; --bh: 570; background-image: url("../img/botao azul.png"); }
+
+.botao {
+    background-size: calc(var(--W) / var(--bw) * 100%) calc(var(--H) / var(--bh) * 100%);
+    background-position: calc(var(--bx) / (var(--W) - var(--bw)) * 100%) calc(var(--by) / (var(--H) - var(--bh)) * 100%);
+}
+
+/* ---------- painel (pokemons e inventario) ---------- */
+
+#painel {
+    position: absolute;
+    left: 7%; top: 5%; width: 86%; height: 63%;
+    padding: 1.6cqw 2.2cqw;
+    background: #fafafa;
+    border: .5cqw solid #4b4b5a;
+    border-radius: .8cqw;
+    box-shadow:
+        0 0 0 .4cqw #f5b800,
+        0 0 0 .8cqw #0a0a0a,
+        0 0 0 1.2cqw #5ccf5c,
+        0 0 0 1.6cqw #0a0a0a;
+    display: flex;
+    flex-direction: column;
+    gap: .8cqw;
+}
+#painel[hidden] { display: none; }
+
+#painel h2 { margin: 0; font-size: 2.8cqw; font-weight: 400; color: #1f5c8a; }
+#painel p  { margin: 0; font-size: 1.8cqw; color: #a03020; min-height: 2cqw; }
+
+#painelLista { flex: 1; min-height: 0; display: flex; flex-direction: column; gap: .8cqw; }
+#painelLista.grade { display: grid; grid-template-columns: repeat(6, 1fr); grid-template-rows: repeat(2, 1fr); }
+
+.linhaPokemon {
+    flex: 1;
+    min-height: 0;
+    display: flex;
+    align-items: center;
+    gap: 1.5cqw;
+    padding: 0 1.5cqw;
+    font-size: 2.3cqw;
+    text-align: left;
+    background: #e8f0f8;
+    border: .3cqw solid #4b4b5a;
+    border-radius: .8cqw;
+}
+.linhaPokemon img { height: 100%; aspect-ratio: 1; image-rendering: pixelated; }
+.linhaPokemon .dados { flex: 1; display: flex; flex-direction: column; gap: .3cqw; }
+.linhaPokemon .hp { flex: none; width: 100%; }
+.linhaPokemon small { font-size: 1.6cqw; color: #555; }
+.linhaPokemon:hover:not(:disabled) { background: #cfe3f5; }
+.linhaPokemon:disabled { opacity: .5; }
+
+.slotItem {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: .4cqw;
+    padding: .6cqw;
+    font-size: 1.8cqw;
+    line-height: 1.1;
+    text-align: center;
+    background: radial-gradient(ellipse at center, #f8e1b0 50%, #efc888 78%, #d9993f 100%);
+    border: .3cqw solid #2a1204;
+    border-radius: .8cqw;
+    color: #3a1d08;
+}
+.slotItem img { width: 4.5cqw; height: 4.5cqw; object-fit: contain; image-rendering: pixelated; }
+.slotItem:hover:not(:disabled) { filter: brightness(1.08); }
+.slotItem:disabled { opacity: .45; }

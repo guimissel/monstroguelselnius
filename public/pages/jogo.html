@@ -1,11 +1,69 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="pt-BR">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Jogo</title>
+    <title>Batalha</title>
+    <base href="/monstroguelselnius/">
+    <link href="https://fonts.googleapis.com/css2?family=Pixelify+Sans&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="public/style/jogo.css">
 </head>
 <body>
-    <button onclick="location.href='inventario'">Inventário</button>
+    <div id="palco">
+
+        <!-- pokemons -->
+        <img id="spriteRobo" class="sprite" alt="">
+        <img id="spriteJogador" class="sprite" alt="">
+
+        <!-- info do pokemon inimigo (em cima, a esquerda) -->
+        <div id="infoRobo" class="info">
+            <div class="infoConteudo">
+                <div class="linha">
+                    <span class="nome"></span>
+                    <span class="status"></span>
+                    <span class="nivel"></span>
+                </div>
+                <div class="linha">
+                    <span class="rotuloHp">HP</span>
+                    <div class="hp"><div class="barra"></div></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- info do seu pokemon (no meio, a direita) -->
+        <div id="infoJogador" class="info">
+            <div class="infoConteudo">
+                <div class="linha">
+                    <span class="nome"></span>
+                    <span class="status"></span>
+                    <span class="nivel"></span>
+                </div>
+                <div class="linha">
+                    <span class="rotuloHp">HP</span>
+                    <div class="hp"><div class="barra"></div></div>
+                    <span class="hpTexto"></span>
+                </div>
+            </div>
+        </div>
+
+        <!-- log de batalha -->
+        <div id="log">
+            <div id="logTexto"></div>
+            <span id="tempo" hidden></span>
+            <button id="voltar" hidden>voltar</button>
+        </div>
+
+        <!-- botoes: ataque, inventario, pokemon e fugir -->
+        <div id="menu"></div>
+
+        <!-- painel de pokemons / inventario -->
+        <div id="painel" hidden>
+            <h2 id="painelTitulo"></h2>
+            <p id="painelAviso"></p>
+            <div id="painelLista"></div>
+        </div>
+    </div>
+
+    <script src="public/javascript/jogo.js"></script>
 </body>
 </html>
