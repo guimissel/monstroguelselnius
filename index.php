@@ -3,10 +3,7 @@ ini_set('display_errors', '1');
 ini_set('display_startup_errors', '1');
 error_reporting(E_ALL);
 
-require_once __DIR__ . "/app/controller/AutenticacaoController.php";
-
-// chamar roteador
-require_once __DIR__ . '/routes/Router.php';
+require_once __DIR__ . "/autoload.php";
 
 // chamar rotas da api
 require_once __DIR__ . '/routes/ApiRoutes.php';
@@ -66,8 +63,8 @@ $roteador->get(
 
 $roteador->get(
     "$caminhoBase/",
-    function () {
-        header("location: ".$caminhoBase."home");
+    function () use ($caminhoBase) {
+        header("location: " . $caminhoBase . "/home");
     },
     [Acesso::USUARIO, Acesso::ADMIN],
     "$caminhoBase/login"
