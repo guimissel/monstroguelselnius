@@ -44,19 +44,19 @@ CREATE TABLE item_usuario (
 
 -- itens do jogo (precos sao ponto de partida, podem ser ajustados aqui)
 INSERT INTO item_loja (chave, nome, descricao, categoria, preco, imagem, cura_hp, cura_status, reviver, kit_inicial) VALUES
-('potion',        'Poção',          'Recupera 20 de HP de um pokémon.',                       'pocao_hp',      50,  'potion.png',              20,   NULL,       0, 5),
-('super-potion',  'Super Poção',    'Recupera 60 de HP de um pokémon.',                       'pocao_hp',      120, 'super potion.png',        60,   NULL,       0, 3),
-('hyper-potion',  'Hiper Poção',    'Recupera 120 de HP de um pokémon.',                      'pocao_hp',      250, 'hiper potion.png',        120,  NULL,       0, 2),
-('max-potion',    'Poção Máxima',   'Recupera todo o HP de um pokémon.',                      'pocao_hp',      400, 'max potion.png',          -1,   NULL,       0, 1),
-('full-restore',  'Restaurar Tudo', 'Recupera todo o HP e cura qualquer condição.',           'pocao_hp',      600, 'full restore potion.png', -1,   'todos',    0, 1),
-('revive',        'Reviver',        'Traz um pokémon desmaiado de volta com metade do HP.',   'pocao_hp',      350, 'reviver.webp',            0,    NULL,       1, 1),
-('antidote',      'Antídoto',       'Cura um pokémon envenenado.',                            'pocao_condicao', 60, 'antidote.png',            0,    'poison',   0, 2),
-('paralyze-heal', 'Anti-Paralisia', 'Cura um pokémon paralisado.',                            'pocao_condicao', 60, 'paralyse heal.png',       0,    'paralysis',0, 2),
-('awakening',     'Despertar',      'Acorda um pokémon que está dormindo.',                   'pocao_condicao', 60, 'awakening.png',           0,    'sleep',    0, 2),
-('ice-heal',      'Anti-Gelo',      'Descongela um pokémon congelado.',                       'pocao_condicao', 60, 'ice heal.png',            0,    'freeze',   0, 2),
-('full-heal',     'Cura Total',     'Cura qualquer condição de um pokémon.',                  'pocao_condicao', 150,'full heal.webp',          0,    'todos',    0, 1);
+('potion',        'Poção',          'Recupera 20 de HP de um pokémon.',                       'pocao_hp',      50,  'potion.png',              20,   NULL,       0, 3),
+('super-potion',  'Super Poção',    'Recupera 60 de HP de um pokémon.',                       'pocao_hp',      120, 'super potion.png',        60,   NULL,       0, 0),
+('hyper-potion',  'Hiper Poção',    'Recupera 120 de HP de um pokémon.',                      'pocao_hp',      250, 'hiper potion.png',        120,  NULL,       0, 0),
+('max-potion',    'Poção Máxima',   'Recupera todo o HP de um pokémon.',                      'pocao_hp',      400, 'max potion.png',          -1,   NULL,       0, 0),
+('full-restore',  'Restaurar Tudo', 'Recupera todo o HP e cura qualquer condição.',           'pocao_hp',      600, 'full restore potion.png', -1,   'todos',    0, 0),
+('revive',        'Reviver',        'Traz um pokémon desmaiado de volta com metade do HP.',   'pocao_hp',      350, 'reviver.webp',            0,    NULL,       1, 0),
+('antidote',      'Antídoto',       'Cura um pokémon envenenado.',                            'pocao_condicao', 60, 'antidote.png',            0,    'poison',   0, 0),
+('paralyze-heal', 'Anti-Paralisia', 'Cura um pokémon paralisado.',                            'pocao_condicao', 60, 'paralyse heal.png',       0,    'paralysis',0, 0),
+('awakening',     'Despertar',      'Acorda um pokémon que está dormindo.',                   'pocao_condicao', 60, 'awakening.png',           0,    'sleep',    0, 0),
+('ice-heal',      'Anti-Gelo',      'Descongela um pokémon congelado.',                       'pocao_condicao', 60, 'ice heal.png',            0,    'freeze',   0, 0),
+('full-heal',     'Cura Total',     'Cura qualquer condição de um pokémon.',                  'pocao_condicao', 150,'full heal.webp',          0,    'todos',    0, 0);
 
--- jogadores que ja existem recebem o kit inicial (contas novas recebem pelo cadastro)
+-- jogadores que ja existem recebem o kit inicial (3 pocoes de vida) (contas novas recebem pelo cadastro)
 INSERT IGNORE INTO item_usuario (id_usuario, id_item_loja, quantidade)
 SELECT u.id_usuario, i.id_item_loja, i.kit_inicial
 FROM usuario u CROSS JOIN item_loja i

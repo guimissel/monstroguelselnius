@@ -7,6 +7,7 @@ const COOLDOWN_TROCA = 3;      // 3 porque o round da troca tambem conta (sobram
 const MAX_POKEMON_ID = 151;    // sorteia pokemons da 1a geracao
 const URL_HOME = "/monstroguelselnius/home";
 const URL_LOGIN = "/monstroguelselnius/login";
+const URL_LOJA = "/monstroguelselnius/loja";
 
 // para escolher o seu time: jogo?time=4,7,25 (3 ids da pokeapi)
 // sem o parametro o time e sorteado
@@ -82,6 +83,7 @@ function novoEstado() {
         cooldownTroca: 0,
         itens: {},                 // chave -> quantidade (preenchido por carregarInventario)
         fim: false,
+        idBatalha: null,           // batalha aberta no servidor (para receber a recompensa)
         timer: null
     };
 }
@@ -147,6 +149,43 @@ async function gastarItemNoBanco(chave) {
         return resposta.ok;
     } catch (erro) {
         return false;
+    }
+}
+
+// ===================== batalha (recompensa no servidor) =====================
+
+// abre a batalha no servidor. sem isso o jogo funciona, mas nao paga pokedolares
+async function abrirBatalhaNoServidor() {
+    try {
+        const resposta = await fetch("/monstroguelselnius/api/batalha/iniciar", { method: "POST" });
+        if (!resposta.ok) return null;
+        return (await resposta.json()).id;
+    } catch (erro) {
+        console.error(erro);
+        return null;
+    }
+}
+
+// avisa como a batalha terminou. quem calcula o dinheiro e o servidor
+async function fecharBatalhaNoServidor(resultado, vivos) {
+    if (!estado.idBatalha) return { erro: "Não consegui registrar a batalha, então não há recompensa." };
+
+    try {
+        const dados = new FormData();
+        dados.append("resultado", resultado);   // vitoria, derrota ou fuga
+        dados.append("vivos", vivos);
+
+        const resposta = await fetch(`/monstroguelselnius/api/batalha/${estado.idBatalha}/finalizar`, {
+            method: "POST",
+            body: dados
+        });
+        const corpo = await resposta.json();
+
+        if (!resposta.ok) return { erro: corpo.mensagem || "Não consegui registrar a recompensa." };
+        return corpo;
+    } catch (erro) {
+        console.error(erro);
+        return { erro: "Não consegui registrar a recompensa." };
     }
 }
 
@@ -896,22 +935,23 @@ async function terminar(vitoria, fugiu = false) {
     pararTempo();
     fecharPainel();
 
-    let ganho = 0;
-    if (vitoria) {
-        const vivos = estado.jogador.time.filter((p) => p.hp > 0).length;
-        ganho = 50 * (vivos === 3 ? 2 : vivos === 2 ? 1.5 : 1);
-        await dizer("Você venceu a batalha!");
-    } else if (!fugiu) {
-        ganho = 20;
-        await dizer("Todos os seus pokémons desmaiaram...");
-    }
+    const resultado = fugiu ? "fuga" : (vitoria ? "vitoria" : "derrota");
+    const vivos = estado.jogador.time.filter((p) => p.hp > 0).length;
 
-    await dizer(ganho > 0 ? `Você ganhou ${ganho} pokédollars!` : "Você não ganhou pokédollars.");
+    if (vitoria) await dizer("Você venceu a batalha!");
+    else if (!fugiu) await dizer("Todos os seus pokémons desmaiaram...");
+
+    const resposta = await fecharBatalhaNoServidor(resultado, vivos);
+
+    if (resposta.erro) await dizer(resposta.erro);
+    else if (resposta.recompensa > 0) await dizer(`Você ganhou ${resposta.recompensa} pokédollars! Agora você tem ${resposta.pokedolares}.`);
+    else await dizer("Você não ganhou pokédollars.");
 
     bloquearMenu(false);
     mostrarVoltar(null);
     montarBotoes([
         { texto: "Revanche", onclick: () => location.reload() },
+        { texto: "Loja", onclick: () => (location.href = URL_LOJA) },
         { texto: "Início", onclick: () => (location.href = URL_HOME) }
     ]);
 }
@@ -956,9 +996,12 @@ async function iniciar() {
         return;
     }
 
+    estado.idBatalha = await abrirBatalhaNoServidor();
+
     logTexto.innerHTML = "";
     mostrarPokemon("robo");
     if (!inventarioOk) await dizer("Não consegui carregar o seu inventário, então você vai sem itens nesta batalha.");
+    if (!estado.idBatalha) await dizer("Não consegui registrar a batalha, então você não vai ganhar pokédollars.");
     await dizer("Um treinador robô quer batalhar!");
     await dizer(`Ele enviou ${ativo("robo").nome}!`);
     mostrarPokemon("jogador");

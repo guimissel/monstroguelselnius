@@ -1,0 +1,102 @@
+<?php
+
+class BatalhaDAO
+{
+    // uma batalha de verdade dura mais que isso (so contando as mensagens do log)
+    private const SEGUNDOS_MINIMOS = 10;
+
+    private PDO $pdo;
+
+    public function __construct(PDO $pdo)
+    {
+        $this->pdo = $pdo;
+    }
+
+    // abre uma batalha para o jogador e devolve o id
+    public function iniciar(int $idUsuario): int
+    {
+        $prepare = $this->pdo->prepare("INSERT INTO batalha (id_usuario) VALUES (:id)");
+        $prepare->execute(["id" => $idUsuario]);
+
+        return (int) $this->pdo->lastInsertId();
+    }
+
+    // quem decide quanto vale a batalha e o servidor, nunca o navegador
+    // vitoria: 50 com 1 pokemon vivo, 75 com 2, 100 com 3 | derrota: 20 | fuga: 0
+    public static function calcularRecompensa(string $resultado, int $vivos): int
+    {
+        if ($resultado === "vitoria") {
+            $vivos = max(1, min(3, $vivos));
+            return (int) (50 * [1 => 1, 2 => 1.5, 3 => 2][$vivos]);
+        }
+
+        if ($resultado === "derrota") {
+            return 20;
+        }
+
+        return 0;
+    }
+
+    // fecha a batalha e paga a recompensa. so funciona uma vez por batalha.
+    // erros esperados saem como DomainException (o codigo e o status http)
+    public function finalizar(int $idBatalha, int $idUsuario, string $resultado, int $vivos): array
+    {
+        $this->pdo->beginTransaction();
+
+        try {
+            // trava a batalha (so a do proprio jogador) ate o fim da transaction
+            $prepare = $this->pdo->prepare(
+                "SELECT status, TIMESTAMPDIFF(SECOND, iniciada_em, NOW()) AS segundos
+                 FROM batalha
+                 WHERE id_batalha = :batalha AND id_usuario = :usuario
+                 FOR UPDATE"
+            );
+            $prepare->execute(["batalha" => $idBatalha, "usuario" => $idUsuario]);
+            $batalha = $prepare->fetch();
+
+            if (!$batalha) {
+                throw new DomainException("Batalha nao encontrada", 404);
+            }
+
+            if ($batalha["status"] !== "em_andamento") {
+                throw new DomainException("Essa batalha ja foi finalizada", 409);
+            }
+
+            // fugir nao paga nada, entao pode ser a qualquer momento
+            if ($resultado !== "fuga" && (int) $batalha["segundos"] < self::SEGUNDOS_MINIMOS) {
+                throw new DomainException("Batalha rapida demais", 409);
+            }
+
+            $recompensa = self::calcularRecompensa($resultado, $vivos);
+
+            $prepare = $this->pdo->prepare(
+                "UPDATE batalha
+                 SET status = :status, recompensa = :recompensa, finalizada_em = NOW()
+                 WHERE id_batalha = :batalha"
+            );
+            $prepare->execute([
+                "status" => $resultado,
+                "recompensa" => $recompensa,
+                "batalha" => $idBatalha
+            ]);
+
+            $prepare = $this->pdo->prepare(
+                "UPDATE usuario SET pokedolares = pokedolares + :recompensa WHERE id_usuario = :usuario"
+            );
+            $prepare->execute(["recompensa" => $recompensa, "usuario" => $idUsuario]);
+
+            $prepare = $this->pdo->prepare("SELECT pokedolares FROM usuario WHERE id_usuario = :usuario");
+            $prepare->execute(["usuario" => $idUsuario]);
+            $saldo = (int) $prepare->fetchColumn();
+
+            $this->pdo->commit();
+
+            return ["recompensa" => $recompensa, "pokedolares" => $saldo];
+        } catch (Throwable $erro) {
+            if ($this->pdo->inTransaction()) {
+                $this->pdo->rollBack();
+            }
+            throw $erro;
+        }
+    }
+}

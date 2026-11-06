@@ -97,10 +97,14 @@ class UsuarioDAO
         // inicia a transação
         $this->pdo->beginTransaction();
 
+        $id = $usuario->getId();
+
+        // as batalhas do jogador precisam sair antes (batalha referencia usuario)
+        $apagarBatalhas = $this->pdo->prepare("DELETE FROM batalha WHERE id_usuario = :id");
+        $apagarBatalhas->execute(["id" => $id]);
+
         // prepara a query
         $prepare = $this->pdo->prepare("DELETE FROM usuario WHERE id_usuario = :id");
-
-        $id = $usuario->getId();
         $prepare->execute([
             "id"=> $id
         ]);
