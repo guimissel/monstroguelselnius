@@ -41,7 +41,9 @@
       "Lan-mSxUXaGvNPeUlZ-Ij",
       "Zga1g2MB8ivms8uELPBgM",
       "xVHm1JIqC5kzlqCKr28Df",
-      "03h6ibh4o37pef7pnadsfx11k"
+      "03h6ibh4o37pef7pnadsfx11k",
+      "03h6q8y0b4e2024e58vsyg5qs",
+      "03h6qaaefk4f5rfx8dviv5dih"
     ],
     "relationshipIds": [
       "VpLL9-aT-5OL4eQTkzQ-X",
@@ -59,7 +61,17 @@
       "XNUtayEp0xGhIAvVXr5Mr",
       "e10cnfY1UKLa0R92vIixo",
       "03h6iblpfi8zb4oy76vtrh8xy",
-      "03h6ibptirkaagmamsnez6bxx"
+      "03h6ibptirkaagmamsnez6bxx",
+      "03h6q998oo68ckg8f7ljhl6ie",
+      "03h6qal7af0gzarxttepov2lc",
+      "03h6qapjr72kw3uv3nl1v82ey",
+      "03h6qdrj990t8h1q44l17udqs",
+      "03h6qehjyadhvumr7dnz7p1g1",
+      "03h6qf1kb2f0kotz3mjmhcbvd",
+      "03h6qg0cih50l7lp0ctlthp39",
+      "03h6qg4sqqx0l6ufxim7s1u3x",
+      "03h6qg9c3fht4eusa7yyqrll5",
+      "03h6qgab2dteewncl20519um5"
     ]
   },
   "collections": {
@@ -77,16 +89,50 @@
           "y": -774.9395
         }
       },
-      "7u6Lba8BssSgz3LrIT_aY": {
-        "id": "7u6Lba8BssSgz3LrIT_aY",
-        "name": "monstro_batalha",
+      "03h6q8y0b4e2024e58vsyg5qs": {
+        "id": "03h6q8y0b4e2024e58vsyg5qs",
+        "name": "efeito",
         "columnIds": [
-          "KVRP3gm4bPA7em9EFImTs",
-          "9-cwkNLXdPZLRX97MjWkW"
+          "03h6q92pcv7hc3ojdwnmtx4p8",
+          "03h6q94ckc5uya33ubvka8tkf"
         ],
         "ui": {
-          "x": -1456.7558,
-          "y": -895.4185
+          "x": -983.7179,
+          "y": -78.9448
+        }
+      },
+      "03h6qaaefk4f5rfx8dviv5dih": {
+        "id": "03h6qaaefk4f5rfx8dviv5dih",
+        "name": "imune_tipo",
+        "comment": "armazena as imunidades do tipo",
+        "columnIds": [
+          "03h6qal7af0gzarxttcr7lwxb",
+          "03h6qapjr1osg0n7tlpnnr5a4"
+        ],
+        "ui": {
+          "x": 580.1299,
+          "y": -921.4926
+        }
+      },
+      "7u6Lba8BssSgz3LrIT_aY": {
+        "id": "7u6Lba8BssSgz3LrIT_aY",
+        "name": "monstro_batalha_jogador",
+        "columnIds": [
+          "KVRP3gm4bPA7em9EFImTs",
+          "9-cwkNLXdPZLRX97MjWkW",
+          "03h6qehjyadhvumr7dl2g20ej",
+          "03h6qejbrs9osk6zft6004z41",
+          "03h6qemn3j6g1xzolm4u3xuz7",
+          "03h6qf1kb2f0kotz3mhib0ak1",
+          "03h6qf2m4uyervxiqtw1is2a3",
+          "03h6qg0cih50l7lp0csomkgkt",
+          "03h6qg4sqqx0l6ufxikilyplq",
+          "03h6qg9c3fht4eusa7xeuaiev",
+          "03h6qgab2dteewncl1yebvul6"
+        ],
+        "ui": {
+          "x": -949.6972,
+          "y": -654.2418
         }
       },
       "FiIiOWBYa19NcbrtfwJ3l": {
@@ -131,11 +177,13 @@
         "columnIds": [
           "eZvHsX3CHHrP-X9-7qu1V",
           "NnNc4Xac08DKOglqLpyqW",
-          "q26eP5tNhPjrZpEu5nUSR"
+          "q26eP5tNhPjrZpEu5nUSR",
+          "03h6qd98fhemheulqt696ymsf",
+          "03h6qd59y3rtle1bjli9av4sm"
         ],
         "ui": {
-          "x": -1456.8745,
-          "y": -391.3818
+          "x": -1459.2275,
+          "y": -431.3817
         }
       },
       "PHShaIkdYJd-eSXGCEjKZ": {
@@ -167,7 +215,8 @@
         "id": "WRRj36aQY7RRyJt-SW1fD",
         "name": "tipo",
         "columnIds": [
-          "o1A0Unn5Xx1DzC6vdviTQ"
+          "o1A0Unn5Xx1DzC6vdviTQ",
+          "03h6q835qv80rm7t6l6sja1cx"
         ],
         "ui": {
           "x": 77.555,
@@ -179,11 +228,17 @@
         "name": "ataque",
         "columnIds": [
           "J6NiBaMYG3iYEVT4xzE1q",
-          "XFWEkCjHgaLFuK8ffhG8Y"
+          "03h6q9bcnhlmpobhope6y7sje",
+          "03h6q9lx0f6e8zhd5mws0p384",
+          "03h6qc1x1v3w3kdyhuop73lwh",
+          "03h6q9ofs41e7fjtto2l8xmda",
+          "03h6q9skib0x48w951ipodrcr",
+          "XFWEkCjHgaLFuK8ffhG8Y",
+          "03h6q998oirbkckpxjh3nhfcw"
         ],
         "ui": {
-          "x": -581.0965,
-          "y": -349.6437
+          "x": -349.3319,
+          "y": -323.7614
         }
       },
       "ZhRpSzx-fOS1MmWujXjEa": {
@@ -191,11 +246,15 @@
         "name": "batalha",
         "columnIds": [
           "ElpcvqcCeixpwrzDdcIZt",
-          "7M1kKawrYNyXuorCSTwvV"
+          "7M1kKawrYNyXuorCSTwvV",
+          "03h6qdrj990t8h1q44k4x4fxc",
+          "03h6qdtvxlftrsg6ld6n7zt53",
+          "03h6qdvawjxsp0zmm40nn82le",
+          "03h6qdyss7e5l3errjmpbz4yr"
         ],
         "ui": {
-          "x": -1457.3753,
-          "y": -633.3183
+          "x": -1478.552,
+          "y": -680.3773
         }
       },
       "dXiJRb0ShLWI4f_mWdTim": {
@@ -206,31 +265,38 @@
           "hYw_2gVLvLTLkOyQ4B6ig"
         ],
         "ui": {
-          "x": -586.9419,
-          "y": -1194.6001
+          "x": -284.5034,
+          "y": -1156.7955
         }
       },
       "pKbfL43y4jWKgMF0lTnhs": {
         "id": "pKbfL43y4jWKgMF0lTnhs",
         "name": "monstro",
         "columnIds": [
-          "W6PaqySKapII2e5njMkqI"
+          "W6PaqySKapII2e5njMkqI",
+          "03h6q85rbezxddlmxejhfa4y9",
+          "03h6q89o1lyi5k3ipfxs7gxo1",
+          "03h6q8denuhxm6197oevn4b44",
+          "03h6q8fm6ve93uchewwsscfqj",
+          "03h6q8ghnfw67hjlxtmhpbbck",
+          "03h6q8ho0iun4reehfxzad7l0",
+          "03h6q8ipr4h9catmj49inq7vu"
         ],
         "ui": {
-          "x": -583.4144,
-          "y": -895.8761
+          "x": -601.7069,
+          "y": -969.0461
         }
       },
       "xVHm1JIqC5kzlqCKr28Df": {
         "id": "xVHm1JIqC5kzlqCKr28Df",
-        "name": "ataque_monstro",
+        "name": "ataque_possivel_monstro",
         "columnIds": [
           "c25X3LiN-g7WsaE7g6aVK",
           "wohDnsQkO1amqm6XSa8ou"
         ],
         "ui": {
-          "x": -588.5904,
-          "y": -646.0057
+          "x": -379.1786,
+          "y": -650.7116
         }
       }
     },
@@ -246,8 +312,101 @@
         "id": "03h6ibptirkaagmamslnjctup",
         "tableId": "03h6ibh4o37pef7pnadsfx11k",
         "name": "id_tipo_fraqueza",
+        "comment": "o tipo que id_tipo é fraco",
         "dataType": "int",
         "options": 10
+      },
+      "03h6q92pcv7hc3ojdwnmtx4p8": {
+        "id": "03h6q92pcv7hc3ojdwnmtx4p8",
+        "tableId": "03h6q8y0b4e2024e58vsyg5qs",
+        "name": "id_efeito",
+        "dataType": "int",
+        "options": 10
+      },
+      "03h6q94ckc5uya33ubvka8tkf": {
+        "id": "03h6q94ckc5uya33ubvka8tkf",
+        "tableId": "03h6q8y0b4e2024e58vsyg5qs",
+        "name": "nome",
+        "dataType": "varchar",
+        "options": 8
+      },
+      "03h6qal7af0gzarxttcr7lwxb": {
+        "id": "03h6qal7af0gzarxttcr7lwxb",
+        "tableId": "03h6qaaefk4f5rfx8dviv5dih",
+        "name": "id_tipo",
+        "dataType": "int",
+        "options": 10
+      },
+      "03h6qapjr1osg0n7tlpnnr5a4": {
+        "id": "03h6qapjr1osg0n7tlpnnr5a4",
+        "tableId": "03h6qaaefk4f5rfx8dviv5dih",
+        "name": "id_tipo_imune",
+        "comment": "o tipo que id_tipo é imune",
+        "dataType": "int",
+        "options": 10
+      },
+      "03h6qehjyadhvumr7dl2g20ej": {
+        "id": "03h6qehjyadhvumr7dl2g20ej",
+        "tableId": "7u6Lba8BssSgz3LrIT_aY",
+        "name": "id_usuario",
+        "dataType": "int",
+        "options": 10
+      },
+      "03h6qejbrs9osk6zft6004z41": {
+        "id": "03h6qejbrs9osk6zft6004z41",
+        "tableId": "7u6Lba8BssSgz3LrIT_aY",
+        "name": "is_ativo",
+        "dataType": "boolean",
+        "options": 8
+      },
+      "03h6qemn3j6g1xzolm4u3xuz7": {
+        "id": "03h6qemn3j6g1xzolm4u3xuz7",
+        "tableId": "7u6Lba8BssSgz3LrIT_aY",
+        "name": "vida_atual",
+        "dataType": "int",
+        "options": 8
+      },
+      "03h6qf1kb2f0kotz3mhib0ak1": {
+        "id": "03h6qf1kb2f0kotz3mhib0ak1",
+        "tableId": "7u6Lba8BssSgz3LrIT_aY",
+        "name": "id_efeito_atual",
+        "dataType": "int",
+        "options": 8
+      },
+      "03h6qf2m4uyervxiqtw1is2a3": {
+        "id": "03h6qf2m4uyervxiqtw1is2a3",
+        "tableId": "7u6Lba8BssSgz3LrIT_aY",
+        "name": "turnos_restantes_efeito",
+        "dataType": "int",
+        "options": 0
+      },
+      "03h6qg0cih50l7lp0csomkgkt": {
+        "id": "03h6qg0cih50l7lp0csomkgkt",
+        "tableId": "7u6Lba8BssSgz3LrIT_aY",
+        "name": "id_ataque_1",
+        "dataType": "int",
+        "options": 8
+      },
+      "03h6qg4sqqx0l6ufxikilyplq": {
+        "id": "03h6qg4sqqx0l6ufxikilyplq",
+        "tableId": "7u6Lba8BssSgz3LrIT_aY",
+        "name": "id_ataque_2",
+        "dataType": "int",
+        "options": 0
+      },
+      "03h6qg9c3fht4eusa7xeuaiev": {
+        "id": "03h6qg9c3fht4eusa7xeuaiev",
+        "tableId": "7u6Lba8BssSgz3LrIT_aY",
+        "name": "id_ataque_3",
+        "dataType": "int",
+        "options": 0
+      },
+      "03h6qgab2dteewncl1yebvul6": {
+        "id": "03h6qgab2dteewncl1yebvul6",
+        "tableId": "7u6Lba8BssSgz3LrIT_aY",
+        "name": "id_ataque_4",
+        "dataType": "int",
+        "options": 0
       },
       "9-cwkNLXdPZLRX97MjWkW": {
         "id": "9-cwkNLXdPZLRX97MjWkW",
@@ -305,6 +464,22 @@
         "dataType": "varchar",
         "options": 8
       },
+      "03h6qd59y3rtle1bjli9av4sm": {
+        "id": "03h6qd59y3rtle1bjli9av4sm",
+        "tableId": "NWLC9VWd2IlJ8me5Oflpc",
+        "name": "is_bot",
+        "dataType": "boolean",
+        "default": "false",
+        "options": 8
+      },
+      "03h6qd98fhemheulqt696ymsf": {
+        "id": "03h6qd98fhemheulqt696ymsf",
+        "tableId": "NWLC9VWd2IlJ8me5Oflpc",
+        "name": "dinheiro",
+        "dataType": "int",
+        "default": "0",
+        "options": 8
+      },
       "NnNc4Xac08DKOglqLpyqW": {
         "id": "NnNc4Xac08DKOglqLpyqW",
         "tableId": "NWLC9VWd2IlJ8me5Oflpc",
@@ -337,6 +512,7 @@
         "id": "wt1gQnREMG7MhPFrL9oBI",
         "tableId": "PHShaIkdYJd-eSXGCEjKZ",
         "name": "id_tipo_eficaz",
+        "comment": "o tipo que id_tipo é eficaz",
         "dataType": "int",
         "options": 10
       },
@@ -354,12 +530,61 @@
         "dataType": "int",
         "options": 8
       },
+      "03h6q835qv80rm7t6l6sja1cx": {
+        "id": "03h6q835qv80rm7t6l6sja1cx",
+        "tableId": "WRRj36aQY7RRyJt-SW1fD",
+        "name": "nome",
+        "dataType": "varchar",
+        "options": 8
+      },
       "o1A0Unn5Xx1DzC6vdviTQ": {
         "id": "o1A0Unn5Xx1DzC6vdviTQ",
         "tableId": "WRRj36aQY7RRyJt-SW1fD",
         "name": "id_tipo",
         "dataType": "int",
         "options": 10
+      },
+      "03h6q998oirbkckpxjh3nhfcw": {
+        "id": "03h6q998oirbkckpxjh3nhfcw",
+        "tableId": "Zga1g2MB8ivms8uELPBgM",
+        "name": "id_efeito",
+        "dataType": "int",
+        "options": 8
+      },
+      "03h6q9bcnhlmpobhope6y7sje": {
+        "id": "03h6q9bcnhlmpobhope6y7sje",
+        "tableId": "Zga1g2MB8ivms8uELPBgM",
+        "name": "nome",
+        "dataType": "varchar",
+        "options": 8
+      },
+      "03h6q9lx0f6e8zhd5mws0p384": {
+        "id": "03h6q9lx0f6e8zhd5mws0p384",
+        "tableId": "Zga1g2MB8ivms8uELPBgM",
+        "name": "poder",
+        "dataType": "int",
+        "options": 0
+      },
+      "03h6q9ofs41e7fjtto2l8xmda": {
+        "id": "03h6q9ofs41e7fjtto2l8xmda",
+        "tableId": "Zga1g2MB8ivms8uELPBgM",
+        "name": "categoria_dano",
+        "dataType": "varchar",
+        "options": 8
+      },
+      "03h6q9skib0x48w951ipodrcr": {
+        "id": "03h6q9skib0x48w951ipodrcr",
+        "tableId": "Zga1g2MB8ivms8uELPBgM",
+        "name": "chance_efeito",
+        "dataType": "float",
+        "options": 0
+      },
+      "03h6qc1x1v3w3kdyhuop73lwh": {
+        "id": "03h6qc1x1v3w3kdyhuop73lwh",
+        "tableId": "Zga1g2MB8ivms8uELPBgM",
+        "name": "precisao",
+        "dataType": "float",
+        "options": 0
       },
       "J6NiBaMYG3iYEVT4xzE1q": {
         "id": "J6NiBaMYG3iYEVT4xzE1q",
@@ -373,6 +598,37 @@
         "tableId": "Zga1g2MB8ivms8uELPBgM",
         "name": "id_tipo",
         "dataType": "int",
+        "options": 8
+      },
+      "03h6qdrj990t8h1q44k4x4fxc": {
+        "id": "03h6qdrj990t8h1q44k4x4fxc",
+        "tableId": "ZhRpSzx-fOS1MmWujXjEa",
+        "name": "id_usuario_2",
+        "dataType": "int",
+        "options": 8
+      },
+      "03h6qdtvxlftrsg6ld6n7zt53": {
+        "id": "03h6qdtvxlftrsg6ld6n7zt53",
+        "tableId": "ZhRpSzx-fOS1MmWujXjEa",
+        "name": "turno_atual",
+        "dataType": "int",
+        "default": "1",
+        "options": 8
+      },
+      "03h6qdvawjxsp0zmm40nn82le": {
+        "id": "03h6qdvawjxsp0zmm40nn82le",
+        "tableId": "ZhRpSzx-fOS1MmWujXjEa",
+        "name": "cooldown_troca_1",
+        "dataType": "int",
+        "default": "0",
+        "options": 8
+      },
+      "03h6qdyss7e5l3errjmpbz4yr": {
+        "id": "03h6qdyss7e5l3errjmpbz4yr",
+        "tableId": "ZhRpSzx-fOS1MmWujXjEa",
+        "name": "cooldown_troca_2",
+        "dataType": "int",
+        "default": "0",
         "options": 8
       },
       "7M1kKawrYNyXuorCSTwvV": {
@@ -403,6 +659,55 @@
         "dataType": "int",
         "options": 8
       },
+      "03h6q85rbezxddlmxejhfa4y9": {
+        "id": "03h6q85rbezxddlmxejhfa4y9",
+        "tableId": "pKbfL43y4jWKgMF0lTnhs",
+        "name": "nome",
+        "dataType": "varchar",
+        "options": 8
+      },
+      "03h6q89o1lyi5k3ipfxs7gxo1": {
+        "id": "03h6q89o1lyi5k3ipfxs7gxo1",
+        "tableId": "pKbfL43y4jWKgMF0lTnhs",
+        "name": "vida_base",
+        "dataType": "int",
+        "options": 8
+      },
+      "03h6q8denuhxm6197oevn4b44": {
+        "id": "03h6q8denuhxm6197oevn4b44",
+        "tableId": "pKbfL43y4jWKgMF0lTnhs",
+        "name": "ataque_base",
+        "dataType": "int",
+        "options": 8
+      },
+      "03h6q8fm6ve93uchewwsscfqj": {
+        "id": "03h6q8fm6ve93uchewwsscfqj",
+        "tableId": "pKbfL43y4jWKgMF0lTnhs",
+        "name": "defesa_base",
+        "dataType": "int",
+        "options": 8
+      },
+      "03h6q8ghnfw67hjlxtmhpbbck": {
+        "id": "03h6q8ghnfw67hjlxtmhpbbck",
+        "tableId": "pKbfL43y4jWKgMF0lTnhs",
+        "name": "ataque_esp_base",
+        "dataType": "int",
+        "options": 8
+      },
+      "03h6q8ho0iun4reehfxzad7l0": {
+        "id": "03h6q8ho0iun4reehfxzad7l0",
+        "tableId": "pKbfL43y4jWKgMF0lTnhs",
+        "name": "defesa_esp_base",
+        "dataType": "int",
+        "options": 8
+      },
+      "03h6q8ipr4h9catmj49inq7vu": {
+        "id": "03h6q8ipr4h9catmj49inq7vu",
+        "tableId": "pKbfL43y4jWKgMF0lTnhs",
+        "name": "velocidade_base",
+        "dataType": "int",
+        "options": 8
+      },
       "W6PaqySKapII2e5njMkqI": {
         "id": "W6PaqySKapII2e5njMkqI",
         "tableId": "pKbfL43y4jWKgMF0lTnhs",
@@ -415,14 +720,14 @@
         "tableId": "xVHm1JIqC5kzlqCKr28Df",
         "name": "id_ataque",
         "dataType": "int",
-        "options": 8
+        "options": 10
       },
       "wohDnsQkO1amqm6XSa8ou": {
         "id": "wohDnsQkO1amqm6XSa8ou",
         "tableId": "xVHm1JIqC5kzlqCKr28Df",
         "name": "id_monstro",
         "dataType": "int",
-        "options": 8
+        "options": 10
       }
     },
     "relationshipEntities": {
@@ -459,6 +764,186 @@
           "tableId": "03h6ibh4o37pef7pnadsfx11k",
           "columnIds": [
             "03h6ibptirkaagmamslnjctup"
+          ]
+        }
+      },
+      "03h6q998oo68ckg8f7ljhl6ie": {
+        "id": "03h6q998oo68ckg8f7ljhl6ie",
+        "relationshipType": 4,
+        "onDelete": 1,
+        "onUpdate": 1,
+        "start": {
+          "tableId": "03h6q8y0b4e2024e58vsyg5qs",
+          "columnIds": [
+            "03h6q92pcv7hc3ojdwnmtx4p8"
+          ]
+        },
+        "end": {
+          "tableId": "Zga1g2MB8ivms8uELPBgM",
+          "columnIds": [
+            "03h6q998oirbkckpxjh3nhfcw"
+          ]
+        }
+      },
+      "03h6qal7af0gzarxttepov2lc": {
+        "id": "03h6qal7af0gzarxttepov2lc",
+        "relationshipType": 4,
+        "onDelete": 1,
+        "onUpdate": 1,
+        "start": {
+          "tableId": "WRRj36aQY7RRyJt-SW1fD",
+          "columnIds": [
+            "o1A0Unn5Xx1DzC6vdviTQ"
+          ]
+        },
+        "end": {
+          "tableId": "03h6qaaefk4f5rfx8dviv5dih",
+          "columnIds": [
+            "03h6qal7af0gzarxttcr7lwxb"
+          ]
+        }
+      },
+      "03h6qapjr72kw3uv3nl1v82ey": {
+        "id": "03h6qapjr72kw3uv3nl1v82ey",
+        "relationshipType": 8,
+        "onDelete": 1,
+        "onUpdate": 1,
+        "start": {
+          "tableId": "WRRj36aQY7RRyJt-SW1fD",
+          "columnIds": [
+            "o1A0Unn5Xx1DzC6vdviTQ"
+          ]
+        },
+        "end": {
+          "tableId": "03h6qaaefk4f5rfx8dviv5dih",
+          "columnIds": [
+            "03h6qapjr1osg0n7tlpnnr5a4"
+          ]
+        }
+      },
+      "03h6qdrj990t8h1q44l17udqs": {
+        "id": "03h6qdrj990t8h1q44l17udqs",
+        "relationshipType": 4,
+        "onDelete": 1,
+        "onUpdate": 1,
+        "start": {
+          "tableId": "NWLC9VWd2IlJ8me5Oflpc",
+          "columnIds": [
+            "eZvHsX3CHHrP-X9-7qu1V"
+          ]
+        },
+        "end": {
+          "tableId": "ZhRpSzx-fOS1MmWujXjEa",
+          "columnIds": [
+            "03h6qdrj990t8h1q44k4x4fxc"
+          ]
+        }
+      },
+      "03h6qehjyadhvumr7dnz7p1g1": {
+        "id": "03h6qehjyadhvumr7dnz7p1g1",
+        "relationshipType": 16,
+        "onDelete": 1,
+        "onUpdate": 1,
+        "start": {
+          "tableId": "NWLC9VWd2IlJ8me5Oflpc",
+          "columnIds": [
+            "eZvHsX3CHHrP-X9-7qu1V"
+          ]
+        },
+        "end": {
+          "tableId": "7u6Lba8BssSgz3LrIT_aY",
+          "columnIds": [
+            "03h6qehjyadhvumr7dl2g20ej"
+          ]
+        }
+      },
+      "03h6qf1kb2f0kotz3mjmhcbvd": {
+        "id": "03h6qf1kb2f0kotz3mjmhcbvd",
+        "relationshipType": 4,
+        "onDelete": 1,
+        "onUpdate": 1,
+        "start": {
+          "tableId": "03h6q8y0b4e2024e58vsyg5qs",
+          "columnIds": [
+            "03h6q92pcv7hc3ojdwnmtx4p8"
+          ]
+        },
+        "end": {
+          "tableId": "7u6Lba8BssSgz3LrIT_aY",
+          "columnIds": [
+            "03h6qf1kb2f0kotz3mhib0ak1"
+          ]
+        }
+      },
+      "03h6qg0cih50l7lp0ctlthp39": {
+        "id": "03h6qg0cih50l7lp0ctlthp39",
+        "relationshipType": 16,
+        "onDelete": 1,
+        "onUpdate": 1,
+        "start": {
+          "tableId": "Zga1g2MB8ivms8uELPBgM",
+          "columnIds": [
+            "J6NiBaMYG3iYEVT4xzE1q"
+          ]
+        },
+        "end": {
+          "tableId": "7u6Lba8BssSgz3LrIT_aY",
+          "columnIds": [
+            "03h6qg0cih50l7lp0csomkgkt"
+          ]
+        }
+      },
+      "03h6qg4sqqx0l6ufxim7s1u3x": {
+        "id": "03h6qg4sqqx0l6ufxim7s1u3x",
+        "relationshipType": 4,
+        "onDelete": 1,
+        "onUpdate": 1,
+        "start": {
+          "tableId": "Zga1g2MB8ivms8uELPBgM",
+          "columnIds": [
+            "J6NiBaMYG3iYEVT4xzE1q"
+          ]
+        },
+        "end": {
+          "tableId": "7u6Lba8BssSgz3LrIT_aY",
+          "columnIds": [
+            "03h6qg4sqqx0l6ufxikilyplq"
+          ]
+        }
+      },
+      "03h6qg9c3fht4eusa7yyqrll5": {
+        "id": "03h6qg9c3fht4eusa7yyqrll5",
+        "relationshipType": 4,
+        "onDelete": 1,
+        "onUpdate": 1,
+        "start": {
+          "tableId": "Zga1g2MB8ivms8uELPBgM",
+          "columnIds": [
+            "J6NiBaMYG3iYEVT4xzE1q"
+          ]
+        },
+        "end": {
+          "tableId": "7u6Lba8BssSgz3LrIT_aY",
+          "columnIds": [
+            "03h6qg9c3fht4eusa7xeuaiev"
+          ]
+        }
+      },
+      "03h6qgab2dteewncl20519um5": {
+        "id": "03h6qgab2dteewncl20519um5",
+        "relationshipType": 4,
+        "onDelete": 1,
+        "onUpdate": 1,
+        "start": {
+          "tableId": "Zga1g2MB8ivms8uELPBgM",
+          "columnIds": [
+            "J6NiBaMYG3iYEVT4xzE1q"
+          ]
+        },
+        "end": {
+          "tableId": "7u6Lba8BssSgz3LrIT_aY",
+          "columnIds": [
+            "03h6qgab2dteewncl1yebvul6"
           ]
         }
       },
