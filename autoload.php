@@ -3,8 +3,8 @@
 function autoload(string $classe) {
     $classe .= ".php";
 
-    $diretoios = new RecursiveDirectoryIterator(__DIR__);
-    $arquivos = new RecursiveIteratorIterator($diretoios);
+    $diretorios = new RecursiveDirectoryIterator(__DIR__);
+    $arquivos = new RecursiveIteratorIterator($diretorios);
 
     foreach ($arquivos as $arquivo) {
         if ($arquivo->getFilename() === $classe) {
