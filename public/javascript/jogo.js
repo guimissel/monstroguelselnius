@@ -6,6 +6,7 @@ const TEMPO_ESCOLHA = 20;      // segundos para escolher a jogada
 const COOLDOWN_TROCA = 3;      // 3 porque o round da troca tambem conta (sobram 2 rounds bloqueados)
 const MAX_POKEMON_ID = 151;    // sorteia pokemons da 1a geracao
 const URL_HOME = "/monstroguelselnius/home";
+const URL_LOGIN = "/monstroguelselnius/login";
 
 // para escolher o seu time: jogo?time=4,7,25 (3 ids da pokeapi)
 // sem o parametro o time e sorteado
@@ -32,25 +33,9 @@ const IMUNE_STATUS = {
     freeze: ["ice"], sleep: []
 };
 
-// itens do inventario (a quantidade inicial fica em ITENS_INICIAIS)
-const ITENS = {
-    "potion":         { nome: "Poção",            img: "potion.png",              cura: 20 },
-    "super-potion":   { nome: "Super Poção",      img: "super potion.png",        cura: 60 },
-    "hyper-potion":   { nome: "Hiper Poção",      img: "hiper potion.png",        cura: 120 },
-    "max-potion":     { nome: "Poção Máxima",     img: "max potion.png",          cura: "max" },
-    "full-restore":   { nome: "Restaurar Tudo",   img: "full restore potion.png", cura: "max", cura_status: "todos" },
-    "revive":         { nome: "Reviver",          img: "reviver.webp",            reviver: true },
-    "antidote":       { nome: "Antídoto",         img: "antidote.png",            cura_status: ["poison"] },
-    "paralyze-heal":  { nome: "Anti-Paralisia",   img: "paralyse heal.png",       cura_status: ["paralysis"] },
-    "awakening":      { nome: "Despertar",        img: "awakening.png",           cura_status: ["sleep"] },
-    "ice-heal":       { nome: "Anti-Gelo",        img: "ice heal.png",            cura_status: ["freeze"] },
-    "full-heal":      { nome: "Cura Total",       img: "full heal.webp",          cura_status: "todos" }
-};
-
-const ITENS_INICIAIS = {
-    "potion": 5, "super-potion": 3, "hyper-potion": 2, "max-potion": 1, "full-restore": 1,
-    "revive": 1, "antidote": 2, "paralyze-heal": 2, "awakening": 2, "ice-heal": 2, "full-heal": 1
-};
+// itens do jogador: vem do banco (api/inventario) quando o jogo carrega
+// chave -> { nome, img, cura ("max" ou numero), cura_status ("todos" ou lista), reviver }
+let ITENS = {};
 
 // golpes que nao funcionam num sistema simples (2 turnos, recarga, auto-ko...)
 const GOLPES_PROIBIDOS = new Set([
@@ -95,7 +80,7 @@ function novoEstado() {
         robo: { time: [], ativo: 0 },
         rodada: 1,
         cooldownTroca: 0,
-        itens: { ...ITENS_INICIAIS },
+        itens: {},                 // chave -> quantidade (preenchido por carregarInventario)
         fim: false,
         timer: null
     };
@@ -126,6 +111,44 @@ function nomeLog(lado, mon) {
 }
 
 const caminhoImg = (arquivo) => "public/img/" + encodeURI(arquivo);
+
+// ===================== inventario (banco de dados) =====================
+
+async function carregarInventario() {
+    const resposta = await fetch("/monstroguelselnius/api/inventario");
+
+    // sessao expirou: volta para o login
+    if (resposta.status === 401) {
+        location.href = URL_LOGIN;
+        throw new Error("sessao expirada");
+    }
+    if (!resposta.ok) throw new Error("Erro ao carregar o inventario");
+
+    const dados = await resposta.json();
+    ITENS = {};
+    estado.itens = {};
+
+    for (const item of dados.itens) {
+        ITENS[item.chave] = {
+            nome: item.nome,
+            img: item.imagem,
+            cura: item.efeito.curaHp === -1 ? "max" : item.efeito.curaHp,   // 0 = nao cura
+            cura_status: item.efeito.curaStatus,
+            reviver: item.efeito.reviver
+        };
+        estado.itens[item.chave] = item.quantidade;
+    }
+}
+
+// gasta 1 unidade no banco. false = nao tem mais o item
+async function gastarItemNoBanco(chave) {
+    try {
+        const resposta = await fetch(`/monstroguelselnius/api/inventario/${encodeURIComponent(chave)}/usar`, { method: "POST" });
+        return resposta.ok;
+    } catch (erro) {
+        return false;
+    }
+}
 
 // ===================== pokeapi =====================
 
@@ -481,7 +504,11 @@ function itemServe(chave, mon) {
 
 function abrirPainelItens(resolverAcao) {
     abrirPainel("Inventário", "", true);
-    for (const [chave, item] of Object.entries(ITENS)) {
+
+    const disponiveis = Object.entries(ITENS).filter(([chave]) => estado.itens[chave] > 0);
+    if (disponiveis.length === 0) painelAviso.textContent = "Você não tem nenhum item. Compre mais na loja!";
+
+    for (const [chave, item] of disponiveis) {
         const qtd = estado.itens[chave];
         const b = document.createElement("button");
         b.className = "slotItem";
@@ -773,6 +800,13 @@ async function trocarJogador(indice) {
 async function usarItem({ item: chave, alvo }) {
     const item = ITENS[chave];
     const mon = estado.jogador.time[alvo];
+
+    // so aplica o efeito se o banco confirmar que o jogador ainda tem o item
+    if (!(await gastarItemNoBanco(chave))) {
+        await dizer("Você não tem mais esse item!");
+        estado.itens[chave] = 0;
+        return;
+    }
     estado.itens[chave]--;
 
     await dizer(`Você usou ${item.nome} em ${mon.nome}!`);
@@ -890,13 +924,21 @@ async function iniciar() {
     bloquearMenu(true);
     montarBotoes(["Ataque", "Inventário", "pokemon", "Fugir"].map((texto) => ({ texto, onclick: () => {} })));
 
-    dizer("Carregando pokémons da PokeAPI...", { rapido: true });
+    dizer("Carregando pokémons e inventário...", { rapido: true });
+
+    let inventarioOk = true;
 
     try {
         const idsJogador = idsDoJogador();
         const idsRobo = sortearIds(3, idsJogador);
 
-        const [, ...pokemons] = await Promise.all([
+        // se so o inventario falhar (ex: banco sem as tabelas novas) o jogo continua, sem itens
+        const [, , ...pokemons] = await Promise.all([
+            carregarInventario().catch((erro) => {
+                if (erro.message === "sessao expirada") throw erro;
+                console.error(erro);
+                inventarioOk = false;
+            }),
             carregarTipos(),
             ...[...idsJogador, ...idsRobo].map(criarPokemon)
         ]);
@@ -908,14 +950,15 @@ async function iniciar() {
     } catch (erro) {
         console.error(erro);
         logTexto.innerHTML = "";
-        dizer("Não consegui falar com a PokeAPI. Verifique a internet.", { rapido: true });
+        dizer("Não consegui carregar os pokémons da PokeAPI. Verifique a internet.", { rapido: true });
         bloquearMenu(false);
-        montarBotoes([{ texto: "Tentar de novo", onclick: () => location.reload() }]);
+        montarBotoes([{ texto: "Recarregar", onclick: () => location.reload() }]);
         return;
     }
 
     logTexto.innerHTML = "";
     mostrarPokemon("robo");
+    if (!inventarioOk) await dizer("Não consegui carregar o seu inventário, então você vai sem itens nesta batalha.");
     await dizer("Um treinador robô quer batalhar!");
     await dizer(`Ele enviou ${ativo("robo").nome}!`);
     mostrarPokemon("jogador");

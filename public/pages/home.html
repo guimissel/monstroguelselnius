@@ -1,17 +1,17 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="pt-BR">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>home do site</title>
+    <title>Início</title>
     <base href="/monstroguelselnius/">
+    <link href="https://fonts.googleapis.com/css2?family=Pixelify+Sans&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="public/style/home.css">
 </head>
 <body>
     <header class="headerHome">
-        <img src="public/img/logo.png" alt="" class="logo">
+        <img src="public/img/logo.png" alt="Monstroguelselnius" class="logo">
         <div class="divConta">
-            
             <a class="botaoJogar" id="Jogar" href="/monstroguelselnius/jogo">
                 <span>Jogar</span>
                 <img src="public/img/icons/play.svg" alt="">
@@ -24,14 +24,23 @@
     </header>
 
     <main>
-        <div>
-            <h1>
-                <span>Olá</span>
-                <span id="nomeUsuario"></span> !
-            </h1>
-             
-        </div>
-        
+        <section class="boasVindas">
+            <p class="saudacao" id="saudacao">Olá,</p>
+            <h1><span id="nomeUsuario"></span>!</h1>
+            <p class="texto">Que bom te ver por aqui, treinador! A arena está pronta e o seu time está ansioso para batalhar.</p>
+
+            <div class="companheiro" id="companheiro" hidden>
+                <img id="spriteCompanheiro" alt="">
+                <p id="falaCompanheiro"></p>
+            </div>
+
+            <div class="acoes">
+                <a class="botaoPrincipal" href="/monstroguelselnius/jogo">Começar batalha</a>
+                <a class="botaoSecundario" href="/monstroguelselnius/inventario">Inventário</a>
+            </div>
+
+            <p class="dica"><strong>Dica:</strong> <span id="dica"></span></p>
+        </section>
     </main>
     <script src="public/javascript/home.js"></script>
 </body>

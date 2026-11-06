@@ -1,6 +1,7 @@
 <?php
 
 require_once __DIR__ . "/../model/Usuario.php";
+require_once __DIR__ . "/InventarioDAO.php";
 
 enum TipoBusca: int{
     case ID = 0;
@@ -34,6 +35,14 @@ class UsuarioDAO
             ]);
 
             $id = (int) $this->pdo->lastInsertId();
+
+            // toda conta nova ganha o kit inicial de itens
+            // se falhar (ex: o inventario.sql ainda nao foi executado) a conta e criada do mesmo jeito
+            try {
+                (new InventarioDAO($this->pdo))->darKitInicial($id);
+            } catch (PDOException $erroKit) {
+                error_log("kit inicial nao entregue: " . $erroKit->getMessage());
+            }
 
             // finaliza a transaction
             $this->pdo->commit();
