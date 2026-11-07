@@ -12,11 +12,59 @@ class BatalhaDAO
         $this->pdo = $pdo;
     }
 
-    // abre uma batalha para o jogador e devolve o id e o time do robo.
+    // a tabela batalha numera sozinha (AUTO_INCREMENT)? o loja.sql/equipe.sql configuram isso
+    private function numeraSozinha(): bool
+    {
+        $prepare = $this->pdo->query(
+            "SELECT EXTRA FROM information_schema.COLUMNS
+             WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'batalha' AND COLUMN_NAME = 'id_batalha'"
+        );
+        return stripos((string) $prepare->fetchColumn(), "auto_increment") !== false;
+    }
+
+    // cria a linha da batalha e devolve o numero dela.
+    // normalmente o banco numera sozinho. se a tabela estiver sem AUTO_INCREMENT (sql nao rodou direito),
+    // o numero e calculado aqui (maior + 1) para o jogo nao travar com "Duplicate entry '0'"
+    private function inserirBatalha(int $idUsuario): int
+    {
+        if ($this->numeraSozinha()) {
+            $prepare = $this->pdo->prepare("INSERT INTO batalha (id_usuario) VALUES (:id)");
+            $prepare->execute(["id" => $idUsuario]);
+
+            return (int) $this->pdo->lastInsertId();
+        }
+
+        for ($tentativa = 0; $tentativa < 10; $tentativa++) {
+            $proximo = (int) $this->pdo->query("SELECT COALESCE(MAX(id_batalha), 0) + 1 FROM batalha")->fetchColumn();
+
+            try {
+                $prepare = $this->pdo->prepare("INSERT INTO batalha (id_batalha, id_usuario) VALUES (:batalha, :usuario)");
+                $prepare->execute(["batalha" => $proximo, "usuario" => $idUsuario]);
+
+                return $proximo;
+            } catch (PDOException $erro) {
+                // 1062 = numero repetido (outro jogador abriu uma batalha ao mesmo tempo): espera um pouco e tenta o proximo
+                if (($erro->errorInfo[1] ?? 0) !== 1062) {
+                    throw $erro;
+                }
+                usleep(random_int(5000, 40000));
+            }
+        }
+
+        throw new RuntimeException("nao consegui gerar o numero da batalha");
+    }
+
+    // abre uma batalha para o jogador e devolve o id e o time do robo (so quem tem equipe de 3 pode batalhar).
     // quem sorteia o robo e o servidor: assim ele sabe quais pokemons o jogador ganha se vencer
     // (3 basicos que nao estao na equipe do jogador)
     public function iniciar(int $idUsuario): array
     {
+        $prepare = $this->pdo->prepare("SELECT COUNT(*) FROM equipe_usuario WHERE id_usuario = :id");
+        $prepare->execute(["id" => $idUsuario]);
+        if ((int) $prepare->fetchColumn() !== 3) {
+            throw new DomainException("Escolha sua equipe antes de batalhar", 409);
+        }
+
         $this->pdo->beginTransaction();
 
         try {
@@ -33,9 +81,7 @@ class BatalhaDAO
                 throw new RuntimeException("pokemons basicos insuficientes para montar o time do robo");
             }
 
-            $prepare = $this->pdo->prepare("INSERT INTO batalha (id_usuario) VALUES (:id)");
-            $prepare->execute(["id" => $idUsuario]);
-            $idBatalha = (int) $this->pdo->lastInsertId();
+            $idBatalha = $this->inserirBatalha($idUsuario);
 
             $prepare = $this->pdo->prepare(
                 "INSERT INTO batalha_robo (id_batalha, posicao, id_pokemon) VALUES (:batalha, :posicao, :pokemon)"

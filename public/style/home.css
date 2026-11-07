@@ -43,7 +43,7 @@ body {
     gap: 16px;
 }
 
-.botaoSair, .botaoJogar {
+.botaoSair {
     display: flex;
     align-items: center;
     justify-content: center;
@@ -61,11 +61,10 @@ body {
     cursor: pointer;
 }
 
-.botaoSair  { background: var(--vermelho); border: 1px solid var(--vermelho-escuro); border-bottom-width: 4px; }
-.botaoJogar { background: var(--azul);     border: 1px solid var(--azul-escuro);     border-bottom-width: 4px; }
+.botaoSair { background: var(--vermelho); border: 1px solid var(--vermelho-escuro); border-bottom-width: 4px; }
 
-.botaoSair:hover, .botaoJogar:hover { transform: scale(1.03); }
-.botaoSair:active, .botaoJogar:active { transform: scale(0.97); }
+.botaoSair:hover { transform: scale(1.03); }
+.botaoSair:active { transform: scale(0.97); }
 
 /* ---------- boas-vindas ---------- */
 

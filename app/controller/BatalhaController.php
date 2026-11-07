@@ -35,6 +35,17 @@ class BatalhaController
             return;
         }
 
+        catch (DomainException $e)
+        {
+            // erro esperado (jogador sem equipe)
+            http_response_code($e->getCode());
+            echo json_encode([
+                "status" => $e->getCode(),
+                "mensagem" => $e->getMessage()
+            ]);
+            return;
+        }
+
         catch (Exception $e)
         {
             // o motivo real fica no log do apache (xampp/apache/logs/error.log)
@@ -43,7 +54,9 @@ class BatalhaController
             http_response_code(500);
             echo json_encode([
                 "status" => 500,
-                "mensagem" => "Nao foi possivel iniciar a batalha"
+                "mensagem" => "Nao foi possivel iniciar a batalha",
+                // o jogo mostra isso no console do navegador (F12) para descobrir o que faltou no banco
+                "detalhe" => $e->getMessage()
             ]);
             return;
         }
@@ -112,7 +125,8 @@ class BatalhaController
             http_response_code(500);
             echo json_encode([
                 "status" => 500,
-                "mensagem" => "Nao foi possivel finalizar a batalha"
+                "mensagem" => "Nao foi possivel finalizar a batalha",
+                "detalhe" => $e->getMessage()
             ]);
             return;
         }

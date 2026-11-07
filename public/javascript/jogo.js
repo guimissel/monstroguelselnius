@@ -175,17 +175,61 @@ async function carregarEquipe() {
 
 // ===================== batalha (recompensa no servidor) =====================
 
+// mostra o erro tecnico numa faixa vermelha no topo (da para copiar o texto ou tirar print)
+function mostrarErroTecnico(texto) {
+    console.error(texto);
+
+    const caixa = document.createElement("pre");
+    caixa.textContent = "Detalhe do erro (mande este texto para quem esta ajudando):\n" + texto;
+    caixa.style.cssText = "position:fixed;left:0;right:0;top:0;z-index:9999;margin:0;padding:10px 44px 10px 12px;" +
+        "max-height:45vh;overflow:auto;white-space:pre-wrap;word-break:break-word;font:13px/1.4 monospace;" +
+        "color:#fff;background:#a02010;user-select:text";
+
+    const fechar = document.createElement("button");
+    fechar.textContent = "X";
+    fechar.style.cssText = "position:fixed;top:6px;right:8px;z-index:10000;cursor:pointer";
+    fechar.addEventListener("click", () => { caixa.remove(); fechar.remove(); });
+
+    document.body.append(caixa, fechar);
+}
+
 // abre a batalha no servidor: devolve o id e o time do robo ({ id, robo: [ids] }).
 // sem isso o jogo funciona, mas nao paga pokedolares nem entrega pokemons
 async function abrirBatalhaNoServidor() {
     try {
         const resposta = await fetch("/monstroguelselnius/api/batalha/iniciar", { method: "POST" });
-        if (!resposta.ok) return null;
 
-        const corpo = await resposta.json();
+        // sessao expirou: volta para o login
+        if (resposta.status === 401) {
+            location.href = URL_LOGIN;
+            return { sair: true };
+        }
+
+        // le como texto primeiro: se o php soltar algum aviso antes do json, da para mostrar
+        const texto = await resposta.text();
+        let corpo;
+        try {
+            corpo = JSON.parse(texto);
+        } catch (erro) {
+            mostrarErroTecnico(`Abrir a batalha (HTTP ${resposta.status}). O servidor nao respondeu JSON:\n${texto.slice(0, 600)}`);
+            return null;
+        }
+
+        // 409: o jogador ainda nao escolheu a equipe
+        if (resposta.status === 409) return { semEquipe: true };
+
+        if (!resposta.ok) {
+            mostrarErroTecnico(`Abrir a batalha (HTTP ${resposta.status}): ${corpo.mensagem}\nMotivo: ${corpo.detalhe || "sem detalhe"}`);
+            return null;
+        }
+
+        if (!corpo.id || !Array.isArray(corpo.robo) || corpo.robo.length !== 3) {
+            mostrarErroTecnico("Abrir a batalha: resposta inesperada do servidor:\n" + texto.slice(0, 600));
+            return null;
+        }
         return { id: corpo.id, robo: corpo.robo };
     } catch (erro) {
-        console.error(erro);
+        mostrarErroTecnico("Abrir a batalha: " + erro);
         return null;
     }
 }
@@ -205,7 +249,10 @@ async function fecharBatalhaNoServidor(resultado, vivos) {
         });
         const corpo = await resposta.json();
 
-        if (!resposta.ok) return { erro: corpo.mensagem || "Não consegui registrar a recompensa." };
+        if (!resposta.ok) {
+            if (corpo.detalhe) mostrarErroTecnico(`Finalizar a batalha (HTTP ${resposta.status}): ${corpo.mensagem}\nMotivo: ${corpo.detalhe}`);
+            return { erro: corpo.mensagem || "Não consegui registrar a recompensa." };
+        }
         return corpo;
     } catch (erro) {
         console.error(erro);
@@ -1017,6 +1064,13 @@ async function iniciar() {
     // o servidor abre a batalha e sorteia o time do robo (assim ele sabe quais pokemons voce ganha se vencer).
     // se o servidor falhar a batalha acontece igual, so que sem recompensas
     const batalha = await abrirBatalhaNoServidor();
+
+    // sem login volta para o login; sem equipe vai escolher a equipe
+    if (batalha && batalha.sair) return;
+    if (batalha && batalha.semEquipe) {
+        location.href = URL_EQUIPE;
+        return;
+    }
     estado.idBatalha = batalha ? batalha.id : null;
 
     try {
@@ -1049,7 +1103,7 @@ async function iniciar() {
     logTexto.innerHTML = "";
     mostrarPokemon("robo");
     if (!inventarioOk) await dizer("Não consegui carregar o seu inventário, então você vai sem itens nesta batalha.");
-    if (!estado.idBatalha) await dizer("Não consegui registrar a batalha, então você não vai ganhar pokédollars nem pokémons.");
+    if (!estado.idBatalha) await dizer("Não consegui registrar a batalha. Rode o docs/equipe.sql no banco.");
     await dizer("Um treinador robô quer batalhar!");
     await dizer(`Ele enviou ${ativo("robo").nome}!`);
     mostrarPokemon("jogador");

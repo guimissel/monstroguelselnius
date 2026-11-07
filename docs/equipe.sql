@@ -4,6 +4,7 @@
 --  equipe_usuario : os 3 pokemons que o jogador leva para a batalha
 --  pokemon_usuario: a colecao (os pokemons que o jogador tem; cresce ao vencer batalhas)
 --  batalha_robo   : o time do robo de cada batalha (o servidor sorteia; quem vence leva os 3)
+--  e no final: kit inicial (so 3 pocoes) e conserto da tabela batalha
 --
 -- Como rodar: phpMyAdmin > banco "monstroguelselnius" > aba SQL > colar tudo > Executar.
 -- Pode rodar mais de uma vez sem perder dados (so cria o que falta).
@@ -87,3 +88,30 @@ CREATE TABLE IF NOT EXISTS batalha_robo (
     PRIMARY KEY (id_batalha, posicao),
     FOREIGN KEY (id_batalha) REFERENCES batalha(id_batalha) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+-- KIT INICIAL: jogador novo comeca so com 3 pocoes basicas (Pocao) e mais nada.
+-- (repete o que o loja.sql faz: se ele nao rodou inteiro, o banco ainda tem o kit antigo com varios itens)
+UPDATE item_loja SET kit_inicial = CASE WHEN chave = 'potion' THEN 3 ELSE 0 END;
+
+-- OPCIONAL: deixar TAMBEM as contas que ja existem com so 3 pocoes. Para usar, tire o "-- " do comeco das 3 linhas.
+-- CUIDADO: apaga todos os itens que essas contas tem hoje, inclusive os comprados na loja.
+-- DELETE FROM item_usuario;
+-- INSERT INTO item_usuario (id_usuario, id_item_loja, quantidade)
+-- SELECT u.id_usuario, i.id_item_loja, 3 FROM usuario u JOIN item_loja i ON i.chave = 'potion';
+
+-- TABELA BATALHA PRONTA (repete o que o loja.sql faz, por seguranca)
+-- Se o loja.sql nao chegou a rodar por inteiro, a batalha nao abre ("Duplicate entry '0' for key 'PRIMARY'")
+-- ou nao paga a recompensa. Esta parte conserta nos dois casos e pode rodar quantas vezes quiser.
+ALTER TABLE batalha
+    ADD COLUMN IF NOT EXISTS status        VARCHAR(15) NOT NULL DEFAULT 'em_andamento',
+    ADD COLUMN IF NOT EXISTS recompensa    INT         NOT NULL DEFAULT 0,
+    ADD COLUMN IF NOT EXISTS iniciada_em   DATETIME    NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    ADD COLUMN IF NOT EXISTS finalizada_em DATETIME    NULL;
+
+-- o id da batalha passa a se numerar sozinho (a tabela e referenciada por outras, por isso as chaves ficam desligadas so durante a troca)
+SET FOREIGN_KEY_CHECKS = 0;
+ALTER TABLE batalha MODIFY id_batalha INT NOT NULL AUTO_INCREMENT;
+SET FOREIGN_KEY_CHECKS = 1;
+
+-- limpa times de robo de batalhas que nao existem mais
+DELETE FROM batalha_robo WHERE id_batalha NOT IN (SELECT id_batalha FROM batalha);

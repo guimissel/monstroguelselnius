@@ -36,7 +36,20 @@ $roteador->get(
 
 $roteador->get(
     "$caminhoBase/jogo",
-    function () {
+    function () use ($caminhoBase) {
+        // sem equipe nao tem batalha: manda escolher a equipe primeiro
+        try {
+            $equipe = (new EquipeDAO(Conexao::getConexao()))->listar((int) ($_SESSION["id"] ?? 0));
+
+            if (count($equipe) !== 3) {
+                header("Location: $caminhoBase/equipe");
+                exit;
+            }
+        } catch (Exception $e) {
+            // sem as tabelas da equipe (docs/equipe.sql) o proprio jogo mostra o aviso
+            error_log("rota jogo: " . $e->getMessage());
+        }
+
         view("jogo");
     },
     [Acesso::USUARIO, Acesso::ADMIN],
