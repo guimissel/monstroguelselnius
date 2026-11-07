@@ -53,6 +53,15 @@ $roteador->get(
 );
 
 $roteador->get(
+    "$caminhoBase/equipe",
+    function () {
+        view("equipe");
+    },
+    [Acesso::USUARIO, Acesso::ADMIN],
+    "$caminhoBase/login"
+);
+
+$roteador->get(
     "$caminhoBase/loja",
     function () {
         view("loja");

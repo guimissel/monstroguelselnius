@@ -8,9 +8,10 @@ const MAX_POKEMON_ID = 151;    // sorteia pokemons da 1a geracao
 const URL_HOME = "/monstroguelselnius/home";
 const URL_LOGIN = "/monstroguelselnius/login";
 const URL_LOJA = "/monstroguelselnius/loja";
+const URL_EQUIPE = "/monstroguelselnius/equipe";
 
-// para escolher o seu time: jogo?time=4,7,25 (3 ids da pokeapi)
-// sem o parametro o time e sorteado
+// o seu time vem do banco (tela /equipe). o time do robo e sorteado pelo servidor entre os pokemons basicos
+// (se voce vencer, os pokemons dele vao para a sua colecao)
 
 const NOMES_TIPOS = {
     normal: "Normal", fire: "Fogo", water: "Água", electric: "Elétrico",
@@ -152,14 +153,37 @@ async function gastarItemNoBanco(chave) {
     }
 }
 
+// ===================== equipe (banco de dados) =====================
+
+// ids da equipe salva do jogador + ids dos pokemons basicos (so usados se o servidor nao sortear o robo)
+async function carregarEquipe() {
+    const resposta = await fetch("/monstroguelselnius/api/equipe");
+
+    // sessao expirou: volta para o login
+    if (resposta.status === 401) {
+        location.href = URL_LOGIN;
+        throw new Error("sessao expirada");
+    }
+    if (!resposta.ok) throw new Error("Erro ao carregar a equipe");
+
+    const dados = await resposta.json();
+    return {
+        idsJogador: dados.equipe.map((p) => p.id),
+        idsBasicos: dados.basicos.map((p) => p.id)
+    };
+}
+
 // ===================== batalha (recompensa no servidor) =====================
 
-// abre a batalha no servidor. sem isso o jogo funciona, mas nao paga pokedolares
+// abre a batalha no servidor: devolve o id e o time do robo ({ id, robo: [ids] }).
+// sem isso o jogo funciona, mas nao paga pokedolares nem entrega pokemons
 async function abrirBatalhaNoServidor() {
     try {
         const resposta = await fetch("/monstroguelselnius/api/batalha/iniciar", { method: "POST" });
         if (!resposta.ok) return null;
-        return (await resposta.json()).id;
+
+        const corpo = await resposta.json();
+        return { id: corpo.id, robo: corpo.robo };
     } catch (erro) {
         console.error(erro);
         return null;
@@ -316,21 +340,10 @@ async function criarPokemon(id) {
     };
 }
 
-function sortearIds(qtd, proibidos = []) {
-    const ids = [];
-    while (ids.length < qtd) {
-        const id = 1 + Math.floor(Math.random() * MAX_POKEMON_ID);
-        if (!ids.includes(id) && !proibidos.includes(id)) ids.push(id);
-    }
-    return ids;
-}
-
-// le ?time=1,2,3 da url (so aceita 3 ids validos e diferentes)
-function idsDoJogador() {
-    const param = new URLSearchParams(location.search).get("time");
-    const ids = (param || "").split(",").map(Number)
-        .filter((n) => Number.isInteger(n) && n >= 1 && n <= 1025);
-    return new Set(ids).size === 3 ? ids : sortearIds(3);
+// sorteia ids sem repetir. "lista" e de onde sortear (sem ela, vale a 1a geracao inteira)
+function sortearIds(qtd, proibidos = [], lista = null) {
+    const candidatos = lista || Array.from({ length: MAX_POKEMON_ID }, (_, i) => i + 1);
+    return embaralhar(candidatos.filter((id) => !proibidos.includes(id))).slice(0, qtd);
 }
 
 function precarregarImagem(url) {
@@ -930,6 +943,16 @@ async function fimDoRound() {
 
 // ===================== fim de jogo =====================
 
+// conta quais pokemons do robo entraram na colecao
+async function anunciarConquistas(pokemons) {
+    const nomes = (lista) => lista.map((p) => p.nome).join(", ").replace(/, ([^,]*)$/, " e $1");
+    const novos = pokemons.filter((p) => p.novo);
+    const repetidos = pokemons.filter((p) => !p.novo);
+
+    if (novos.length) await dizer(`Você conquistou ${nomes(novos)}! Eles já estão na sua coleção.`);
+    if (repetidos.length) await dizer(`Você já tinha ${nomes(repetidos)}.`);
+}
+
 async function terminar(vitoria, fugiu = false) {
     estado.fim = true;
     pararTempo();
@@ -947,10 +970,13 @@ async function terminar(vitoria, fugiu = false) {
     else if (resposta.recompensa > 0) await dizer(`Você ganhou ${resposta.recompensa} pokédollars! Agora você tem ${resposta.pokedolares}.`);
     else await dizer("Você não ganhou pokédollars.");
 
+    if (vitoria && !resposta.erro) await anunciarConquistas(resposta.pokemons || []);
+
     bloquearMenu(false);
     mostrarVoltar(null);
     montarBotoes([
         { texto: "Revanche", onclick: () => location.reload() },
+        { texto: "Equipe", onclick: () => (location.href = URL_EQUIPE) },
         { texto: "Loja", onclick: () => (location.href = URL_LOJA) },
         { texto: "Início", onclick: () => (location.href = URL_HOME) }
     ]);
@@ -968,9 +994,33 @@ async function iniciar() {
 
     let inventarioOk = true;
 
+    // equipe do jogador (salva no banco)
+    let idsJogador, idsBasicos;
     try {
-        const idsJogador = idsDoJogador();
-        const idsRobo = sortearIds(3, idsJogador);
+        ({ idsJogador, idsBasicos } = await carregarEquipe());
+    } catch (erro) {
+        if (erro.message === "sessao expirada") return;
+        console.error(erro);
+        logTexto.innerHTML = "";
+        dizer("Não consegui carregar a sua equipe. Confira se o docs/equipe.sql foi executado no banco.", { rapido: true });
+        bloquearMenu(false);
+        montarBotoes([{ texto: "Recarregar", onclick: () => location.reload() }]);
+        return;
+    }
+
+    // ainda nao escolheu a equipe: vai para a tela de escolha
+    if (idsJogador.length !== 3) {
+        location.href = URL_EQUIPE;
+        return;
+    }
+
+    // o servidor abre a batalha e sorteia o time do robo (assim ele sabe quais pokemons voce ganha se vencer).
+    // se o servidor falhar a batalha acontece igual, so que sem recompensas
+    const batalha = await abrirBatalhaNoServidor();
+    estado.idBatalha = batalha ? batalha.id : null;
+
+    try {
+        const idsRobo = batalha ? batalha.robo : sortearIds(3, idsJogador, idsBasicos.length >= 6 ? idsBasicos : null);
 
         // se so o inventario falhar (ex: banco sem as tabelas novas) o jogo continua, sem itens
         const [, , ...pokemons] = await Promise.all([
@@ -996,12 +1046,10 @@ async function iniciar() {
         return;
     }
 
-    estado.idBatalha = await abrirBatalhaNoServidor();
-
     logTexto.innerHTML = "";
     mostrarPokemon("robo");
     if (!inventarioOk) await dizer("Não consegui carregar o seu inventário, então você vai sem itens nesta batalha.");
-    if (!estado.idBatalha) await dizer("Não consegui registrar a batalha, então você não vai ganhar pokédollars.");
+    if (!estado.idBatalha) await dizer("Não consegui registrar a batalha, então você não vai ganhar pokédollars nem pokémons.");
     await dizer("Um treinador robô quer batalhar!");
     await dizer(`Ele enviou ${ativo("robo").nome}!`);
     mostrarPokemon("jogador");

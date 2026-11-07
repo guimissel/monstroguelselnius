@@ -4,6 +4,7 @@ require_once __DIR__ . "/../app/controller/UsuarioController.php";
 require_once __DIR__ . "/../app/controller/InventarioController.php";
 require_once __DIR__ . "/../app/controller/LojaController.php";
 require_once __DIR__ . "/../app/controller/BatalhaController.php";
+require_once __DIR__ . "/../app/controller/EquipeController.php";
 
 // crie as todas rotas da api
 define("ROTAS_API", [
@@ -20,6 +21,11 @@ define("ROTAS_API", [
 
         "api/loja" => function () {
             $controlador = new LojaController();
+            $controlador->listar();
+        },
+
+        "api/equipe" => function () {
+            $controlador = new EquipeController();
             $controlador->listar();
         },
     ],
@@ -50,6 +56,11 @@ define("ROTAS_API", [
         "api/loja/{chave}/comprar" => function ($chave) {
             $controlador = new LojaController();
             $controlador->comprar($chave);
+        },
+
+        "api/equipe" => function () {
+            $controlador = new EquipeController();
+            $controlador->salvar();
         },
 
         "api/batalha/iniciar" => function () {

@@ -6,7 +6,7 @@ require_once __DIR__ . "/../dao/BatalhaDAO.php";
 
 class BatalhaController
 {
-    // POST api/batalha/iniciar: abre uma batalha e devolve o id
+    // POST api/batalha/iniciar: abre uma batalha e devolve o id e o time do robo (ids da PokeAPI)
     public function iniciar(): void
     {
         // define que a resposta será JSON
@@ -25,11 +25,12 @@ class BatalhaController
 
         try
         {
-            $id = (new BatalhaDAO(Conexao::getConexao()))->iniciar((int) $meuId);
+            $batalha = (new BatalhaDAO(Conexao::getConexao()))->iniciar((int) $meuId);
 
             echo json_encode([
                 "status" => 200,
-                "id" => $id
+                "id" => $batalha["id"],
+                "robo" => $batalha["robo"]
             ]);
             return;
         }
@@ -49,7 +50,7 @@ class BatalhaController
     }
 
     // POST api/batalha/{id}/finalizar (campos "resultado" e "vivos" no form)
-    // o servidor calcula o dinheiro, o navegador so informa como terminou
+    // o servidor calcula o dinheiro e entrega os pokemons do robo, o navegador so informa como terminou
     public function finalizar(string $id): void
     {
         // define que a resposta será JSON
@@ -87,7 +88,8 @@ class BatalhaController
             echo json_encode([
                 "status" => 200,
                 "recompensa" => $dados["recompensa"],
-                "pokedolares" => $dados["pokedolares"]
+                "pokedolares" => $dados["pokedolares"],
+                "pokemons" => $dados["pokemons"]
             ]);
             return;
         }

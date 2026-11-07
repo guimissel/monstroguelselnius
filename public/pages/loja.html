@@ -12,10 +12,22 @@
   body {
     margin: 0;
     padding: 40px 50px;
-    background: #dac5af;
+    min-height: 100vh;
+    background: #dac5af url("public/img/fundo-loja.jpg") center / cover fixed no-repeat;
     font-family: "Pixelify Sans", monospace;
     color: #3a1d08;
   }
+
+  .painel {
+    max-width: 1180px;
+    margin-bottom: 22px;
+    padding: 14px 18px;
+    background: rgba(248, 225, 176, .92);
+    border: 4px solid #2a1204;
+    border-radius: 6px;
+  }
+  .painel .topo, .painel .botoes { margin-bottom: 0; }
+  .painel .botoes { margin-top: 14px; }
 
   .topo {
     max-width: 1180px;
@@ -63,12 +75,19 @@
   .botao.claro.ativo { background: #3a1d08; color: #f8e1b0; }
 
   .abas { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 20px; }
+  .abas:empty { display: none; }
 
   .mensagem {
     max-width: 1180px;
     min-height: 26px;
     margin: 0 0 16px;
     font-size: 18px;
+  }
+  .mensagem:not(:empty) {
+    padding: 8px 14px;
+    background: rgba(248, 225, 176, .92);
+    border: 3px solid #2a1204;
+    border-radius: 6px;
   }
   .mensagem.erro { color: #a02010; }
   .mensagem.ok   { color: #1d6b2a; }
@@ -137,18 +156,20 @@
 </head>
 <body>
 
-<div class="topo">
-  <h1>Loja</h1>
-  <div class="dinheiro" title="Pokédollars">
-    <img src="public/img/pokedolar.gif" alt="">
-    <span id="pokedolares">0</span>
+<div class="painel">
+  <div class="topo">
+    <h1>Loja</h1>
+    <div class="dinheiro" title="Pokédollars">
+      <img src="public/img/pokedolar.gif" alt="">
+      <span id="pokedolares">0</span>
+    </div>
   </div>
-</div>
 
-<div class="botoes">
-  <a class="botao" href="jogo">Jogar</a>
-  <a class="botao" href="inventario">Inventário</a>
-  <a class="botao" href="home">Início</a>
+  <div class="botoes">
+    <a class="botao" href="jogo">Jogar</a>
+    <a class="botao" href="inventario">Inventário</a>
+    <a class="botao" href="home">Início</a>
+  </div>
 </div>
 
 <div class="abas" id="abas"></div>
