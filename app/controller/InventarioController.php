@@ -1,7 +1,7 @@
 <?php
 
 require_once __DIR__ . "/AutenticacaoController.php";
-require_once __DIR__ . "/../database/Conexao.php";
+require_once __DIR__ . "/../config/Conexao.php";
 require_once __DIR__ . "/../dao/InventarioDAO.php";
 
 class InventarioController

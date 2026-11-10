@@ -68,8 +68,8 @@ const painelAviso = document.getElementById("painelAviso");
 const painelLista = document.getElementById("painelLista");
 
 const LADOS = {
-    jogador: { sprite: document.getElementById("spriteJogador"), info: document.getElementById("infoJogador") },
-    robo:    { sprite: document.getElementById("spriteRobo"),    info: document.getElementById("infoRobo") }
+    jogador: { sprite: document.getElementById("spriteJogador"), sombra: document.getElementById("sombraJogador"), info: document.getElementById("infoJogador") },
+    robo:    { sprite: document.getElementById("spriteRobo"),    sombra: document.getElementById("sombraRobo"),    info: document.getElementById("infoRobo") }
 };
 
 // ===================== estado =====================
@@ -364,6 +364,8 @@ async function criarPokemon(id) {
     const base = {};
     dados.stats.forEach((s) => (base[s.stat.name] = s.base_stat));
 
+    const animado = dados.sprites.versions?.["generation-v"]?.["black-white"]?.animated;
+
     const stat = (b) => Math.floor((2 * b * NIVEL) / 100) + 5;
     const tipos = dados.types.map((t) => t.type.name);
     const maxHp = Math.floor((2 * base.hp * NIVEL) / 100) + NIVEL + 10;
@@ -383,7 +385,10 @@ async function criarPokemon(id) {
         status: null,
         sono: 0,
         frente: dados.sprites.front_default,
-        costas: dados.sprites.back_default || dados.sprites.front_default
+        costas: dados.sprites.back_default || dados.sprites.front_default,
+        // sprites animados (GIF). Nem todo pokemon tem; sem eles vale a imagem parada
+        frenteAnim: animado?.front_default || null,
+        costasAnim: animado?.back_default || null
     };
 }
 
@@ -461,12 +466,71 @@ function atualizarInfo(lado) {
     status.textContent = mon.status ? STATUS[mon.status].sigla : "";
 }
 
+// posicao e largura de cada sprite parado (as mesmas do jogo.css): left/top em %, largura em cqw
+const SPRITE_BASE = {
+    jogador: { left: 15, top: 37, largura: 25 },
+    robo:    { left: 56, top: 26, largura: 17 }
+};
+
+// O GIF animado vem cortado rente ao desenho (a imagem parada tem 96x96 com sobra em volta).
+// A escala dos dois e a mesma, entao a largura segue o tamanho do GIF, centralizado e com o pe no mesmo lugar.
+function ajustarSpriteAnimado(sprite, lado) {
+    const base = SPRITE_BASE[lado];
+    const porPixel = base.largura / 96;
+    const largura = sprite.naturalWidth * porPixel;
+    const altura = sprite.naturalHeight * porPixel;
+
+    sprite.style.width = `${largura}cqw`;
+    sprite.style.left = `calc(${base.left}% + ${(base.largura - largura) / 2}cqw)`;
+    sprite.style.top = `calc(${base.top}% + ${base.largura * 0.7 - altura}cqw)`;
+}
+
+function limparAjusteSprite(sprite) {
+    sprite.style.width = "";
+    sprite.style.left = "";
+    sprite.style.top = "";
+}
+
+// usa o GIF animado; se ele nao existir ou nao carregar, cai na imagem parada
+function definirSprite(sprite, lado, mon) {
+    const animado = lado === "jogador" ? mon.costasAnim : mon.frenteAnim;
+    const parado = lado === "jogador" ? mon.costas : mon.frente;
+
+    limparAjusteSprite(sprite);
+    sprite.onload = null;
+    sprite.onerror = null;
+
+    if (!animado) {
+        sprite.src = parado;
+        return;
+    }
+
+    sprite.onload = () => {
+        sprite.onload = null;
+        ajustarSpriteAnimado(sprite, lado);
+    };
+    sprite.onerror = () => {
+        sprite.onload = null;
+        sprite.onerror = null;
+        limparAjusteSprite(sprite);
+        sprite.src = parado;
+    };
+    sprite.src = animado;
+
+    // imagem ja carregada antes (mesmo GIF de novo): o onload pode nao disparar
+    if (sprite.complete && sprite.naturalWidth > 0) {
+        sprite.onload = null;
+        ajustarSpriteAnimado(sprite, lado);
+    }
+}
+
 function mostrarPokemon(lado) {
     const mon = ativo(lado);
     const sprite = LADOS[lado].sprite;
 
     sprite.className = "sprite entrando";
-    sprite.src = lado === "jogador" ? mon.costas : mon.frente;
+    LADOS[lado].sombra.classList.remove("sumiu");
+    definirSprite(sprite, lado, mon);
     sprite.alt = mon.nome;
     atualizarInfo(lado);
 
@@ -867,6 +931,7 @@ async function atacar(lado, golpe) {
 async function processarDesmaio(lado) {
     const mon = ativo(lado);
     LADOS[lado].sprite.classList.add("desmaiou");
+    LADOS[lado].sombra.classList.add("sumiu");
     await dizer(`${nomeLog(lado, mon)} desmaiou!`);
 
     const proximo = estado[lado].time.findIndex((p) => p.hp > 0);
@@ -889,6 +954,7 @@ async function processarDesmaio(lado) {
 async function trocarJogador(indice) {
     await dizer(`Volte, ${ativo("jogador").nome}!`);
     LADOS.jogador.sprite.classList.add("desmaiou");
+    LADOS.jogador.sombra.classList.add("sumiu");
     await esperar(400);
     estado.jogador.ativo = indice;
     await dizer(`Vai, ${ativo("jogador").nome}!`);
@@ -1022,11 +1088,83 @@ async function terminar(vitoria, fugiu = false) {
     bloquearMenu(false);
     mostrarVoltar(null);
     montarBotoes([
-        { texto: "Revanche", onclick: () => location.reload() },
+        // revanche sem recarregar a pagina (recarregar acumularia entradas no historico do botao voltar)
+        { texto: "Revanche", onclick: () => { fugaEnviada = false; saidaLiberada = false; iniciar(); } },
         { texto: "Equipe", onclick: () => (location.href = URL_EQUIPE) },
         { texto: "Loja", onclick: () => (location.href = URL_LOJA) },
         { texto: "Início", onclick: () => (location.href = URL_HOME) }
     ]);
+}
+
+// ===================== sair da batalha =====================
+
+// Sair no meio da batalha (voltar, fechar a aba, recarregar, digitar outro endereco) faz perder:
+// conta como fuga e nao paga pokedollars. O navegador pergunta antes, e se a pessoa sair mesmo
+// a batalha e fechada no servidor como fuga.
+const AVISO_SAIR = "Se você sair da batalha, você perde ela (conta como fuga e não ganha pokédollars). Quer sair mesmo?";
+let saidaLiberada = false;   // true quando a saida ja foi confirmada ou o proprio jogo vai recarregar a pagina
+let fugaEnviada = false;
+let pilhaCriada = false;
+let voltarProtegido = false;
+
+function batalhaEmAndamento() {
+    return !!estado && !estado.fim && (!!estado.idBatalha || estado.robo.time.length === 3);
+}
+
+// fechar a aba, recarregar ou digitar outro endereco: aviso padrao do navegador (o texto nao e personalizavel)
+window.addEventListener("beforeunload", (evento) => {
+    if (saidaLiberada || !batalhaEmAndamento()) return;
+    evento.preventDefault();
+    evento.returnValue = "";
+});
+
+// a pagina esta mesmo saindo: fecha a batalha no servidor como fuga (sendBeacon continua depois que a pagina fecha)
+window.addEventListener("pagehide", () => {
+    if (fugaEnviada || !estado || estado.fim || !estado.idBatalha) return;
+    fugaEnviada = true;
+
+    const dados = new FormData();
+    dados.append("resultado", "fuga");
+    dados.append("vivos", 0);
+    navigator.sendBeacon(`/monstroguelselnius/api/batalha/${estado.idBatalha}/finalizar`, dados);
+});
+
+// voltou pelo historico e a pagina veio pronta do cache: a batalha antiga ja foi perdida, comeca outra
+window.addEventListener("pageshow", (evento) => {
+    if (evento.persisted) location.reload();
+});
+
+// botao voltar do navegador: coloca uma entrada extra no historico para poder perguntar antes de sair.
+// (o navegador so aceita isso depois de um clique ou tecla da pessoa, por isso espera a primeira interacao)
+function protegerBotaoVoltar() {
+    if (voltarProtegido) return;   // a revanche chama iniciar() de novo: so registra uma vez
+    voltarProtegido = true;
+
+    const criar = () => {
+        if (pilhaCriada) return;
+        pilhaCriada = true;
+        history.pushState({ batalha: true }, "");
+    };
+    document.addEventListener("pointerdown", criar, { once: true });
+    document.addEventListener("keydown", criar, { once: true });
+
+    window.addEventListener("popstate", () => {
+        if (!pilhaCriada) return;
+
+        // batalha ja acabou: so continua voltando
+        if (!batalhaEmAndamento() || saidaLiberada) {
+            saidaLiberada = true;
+            history.back();
+            return;
+        }
+
+        if (confirm(AVISO_SAIR)) {
+            saidaLiberada = true;
+            location.href = URL_HOME;
+        } else {
+            history.pushState({ batalha: true }, "");
+        }
+    });
 }
 
 // ===================== inicio =====================
@@ -1051,7 +1189,7 @@ async function iniciar() {
         logTexto.innerHTML = "";
         dizer("Não consegui carregar a sua equipe. Confira se o docs/equipe.sql foi executado no banco.", { rapido: true });
         bloquearMenu(false);
-        montarBotoes([{ texto: "Recarregar", onclick: () => location.reload() }]);
+        montarBotoes([{ texto: "Recarregar", onclick: () => { saidaLiberada = true; location.reload(); } }]);
         return;
     }
 
@@ -1090,17 +1228,22 @@ async function iniciar() {
         estado.jogador.time = pokemons.slice(0, 3);
         estado.robo.time = pokemons.slice(3);
 
-        await Promise.all(pokemons.flatMap((p) => [precarregarImagem(p.frente), precarregarImagem(p.costas)]));
+        await Promise.all(pokemons.flatMap((p) => [
+            precarregarImagem(p.frente), precarregarImagem(p.costas),
+            p.frenteAnim && precarregarImagem(p.frenteAnim),
+            p.costasAnim && precarregarImagem(p.costasAnim)
+        ]));
     } catch (erro) {
         console.error(erro);
         logTexto.innerHTML = "";
         dizer("Não consegui carregar os pokémons da PokeAPI. Verifique a internet.", { rapido: true });
         bloquearMenu(false);
-        montarBotoes([{ texto: "Recarregar", onclick: () => location.reload() }]);
+        montarBotoes([{ texto: "Recarregar", onclick: () => { saidaLiberada = true; location.reload(); } }]);
         return;
     }
 
     logTexto.innerHTML = "";
+    protegerBotaoVoltar();
     mostrarPokemon("robo");
     if (!inventarioOk) await dizer("Não consegui carregar o seu inventário, então você vai sem itens nesta batalha.");
     if (!estado.idBatalha) await dizer("Não consegui registrar a batalha. Rode o docs/equipe.sql no banco.");
@@ -1108,6 +1251,7 @@ async function iniciar() {
     await dizer(`Ele enviou ${ativo("robo").nome}!`);
     mostrarPokemon("jogador");
     await dizer(`Vai, ${ativo("jogador").nome}!`);
+    await dizer("Atenção: se você sair da tela de batalha, você perde a batalha!");
 
     while (!estado.fim) {
         const acao = await escolherAcao();
