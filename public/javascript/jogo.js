@@ -413,6 +413,68 @@ let pularTexto = null;
 logTexto.addEventListener("click", () => pularTexto && pularTexto());
 
 // escreve no log letra por letra. rapido = aparece na hora e nao espera
+// musica de fundo da batalha: fica em loop enquanto a tela estiver aberta
+// (o navegador so deixa tocar som depois que a pessoa clicou em algo no site; se bloquear, tenta de novo no primeiro clique)
+const musicaFundo = new Audio("public/audio/fundo.mp3");
+musicaFundo.loop = true;
+musicaFundo.preload = "auto";
+musicaFundo.volume = 0.2;
+let musicaLigada = false;       // a batalha pediu musica
+let esperandoInteracao = false;
+
+function tocarMusica() {
+    const tocando = musicaFundo.play();
+    if (!tocando) return;
+    tocando.catch(() => {
+        if (esperandoInteracao) return;
+        esperandoInteracao = true;
+        const tentar = () => {
+            esperandoInteracao = false;
+            document.removeEventListener("pointerdown", tentar);
+            document.removeEventListener("keydown", tentar);
+            if (musicaLigada && !document.hidden) musicaFundo.play().catch(() => {});
+        };
+        document.addEventListener("pointerdown", tentar);
+        document.addEventListener("keydown", tentar);
+    });
+}
+
+function iniciarMusica() {
+    musicaLigada = true;
+    if (musicaFundo.paused) tocarMusica();   // na revanche ela ja esta tocando e continua de onde estava
+}
+
+// aba escondida: pausa a musica; ao voltar, continua
+document.addEventListener("visibilitychange", () => {
+    if (document.hidden) musicaFundo.pause();
+    else if (musicaLigada) tocarMusica();
+});
+
+// som de texto sendo escrito: toca toda vez que algo aparece na caixa de log
+// (o navegador so deixa tocar som depois que a pessoa clicou em algo no site; se bloquear, o jogo segue sem som)
+const somLog = new Audio("public/audio/log.mp3");
+somLog.preload = "auto";
+somLog.volume = 0.4;
+let timerSomLog = null;
+
+function pararSomLog() {
+    clearTimeout(timerSomLog);
+    somLog.pause();
+}
+
+// duracaoMax (ms): para mensagens que aparecem de uma vez, o som toca so um pouquinho
+function tocarSomLog(duracaoMax = 0) {
+    try {
+        pararSomLog();
+        somLog.currentTime = 0;
+        const tocando = somLog.play();
+        if (tocando) tocando.catch(() => {});
+        if (duracaoMax > 0) timerSomLog = setTimeout(pararSomLog, duracaoMax);
+    } catch (erro) {
+        // sem som: segue o jogo
+    }
+}
+
 function dizer(texto, { rapido = false, pausa = 650 } = {}) {
     const p = document.createElement("p");
     logTexto.appendChild(p);
@@ -421,13 +483,16 @@ function dizer(texto, { rapido = false, pausa = 650 } = {}) {
     if (rapido) {
         p.textContent = texto;
         logTexto.scrollTop = logTexto.scrollHeight;
+        tocarSomLog(350);
         return Promise.resolve();
     }
 
     return new Promise((resolve) => {
         let i = 0;
+        tocarSomLog();
         const terminar = () => {
             clearInterval(intervalo);
+            pararSomLog();
             p.textContent = texto;
             logTexto.scrollTop = logTexto.scrollHeight;
             pularTexto = null;
@@ -439,7 +504,7 @@ function dizer(texto, { rapido = false, pausa = 650 } = {}) {
             logTexto.scrollTop = logTexto.scrollHeight;
             if (i >= texto.length) terminar();
         }, 22);
-        pularTexto = () => { pularTexto = null; clearInterval(intervalo); p.textContent = texto; setTimeout(resolve, 250); };
+        pularTexto = () => { pularTexto = null; clearInterval(intervalo); pararSomLog(); p.textContent = texto; setTimeout(resolve, 250); };
     });
 }
 
@@ -1244,6 +1309,7 @@ async function iniciar() {
 
     logTexto.innerHTML = "";
     protegerBotaoVoltar();
+    iniciarMusica();
     mostrarPokemon("robo");
     if (!inventarioOk) await dizer("Não consegui carregar o seu inventário, então você vai sem itens nesta batalha.");
     if (!estado.idBatalha) await dizer("Não consegui registrar a batalha. Rode o docs/banco.sql no banco.");
