@@ -64,7 +64,7 @@ async function carregar() {
         carregarTipos();
     } catch (erro) {
         console.error(erro);
-        mostrarMensagem("Não consegui carregar a equipe. Confira se o docs/equipe.sql foi executado no banco e recarregue a página.", "erro");
+        mostrarMensagem("Não consegui carregar a equipe. Confira se o docs/banco.sql foi executado no banco e recarregue a página.", "erro");
     }
 }
 

@@ -12,7 +12,7 @@ class BatalhaDAO
         $this->pdo = $pdo;
     }
 
-    // a tabela batalha numera sozinha (AUTO_INCREMENT)? o loja.sql/equipe.sql configuram isso
+    // a tabela batalha numera sozinha (AUTO_INCREMENT)? o docs/banco.sql configura isso
     private function numeraSozinha(): bool
     {
         $prepare = $this->pdo->query(

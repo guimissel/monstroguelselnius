@@ -37,7 +37,7 @@ class UsuarioDAO
             $id = (int) $this->pdo->lastInsertId();
 
             // toda conta nova ganha o kit inicial de itens
-            // se falhar (ex: o inventario.sql ainda nao foi executado) a conta e criada do mesmo jeito
+            // se falhar (ex: o docs/banco.sql ainda nao foi executado) a conta e criada do mesmo jeito
             try {
                 (new InventarioDAO($this->pdo))->darKitInicial($id);
             } catch (PDOException $erroKit) {

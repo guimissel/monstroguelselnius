@@ -46,7 +46,7 @@ $roteador->get(
                 exit;
             }
         } catch (Exception $e) {
-            // sem as tabelas da equipe (docs/equipe.sql) o proprio jogo mostra o aviso
+            // sem as tabelas da equipe (docs/banco.sql) o proprio jogo mostra o aviso
             error_log("rota jogo: " . $e->getMessage());
         }
 

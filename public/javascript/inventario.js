@@ -43,7 +43,7 @@ async function carregar() {
         desenhar();
     } catch (erro) {
         console.error(erro);
-        mostrarMensagem("Não consegui carregar o inventário. Confira se o docs/inventario.sql foi executado no banco e recarregue a página.", true);
+        mostrarMensagem("Não consegui carregar o inventário. Confira se o docs/banco.sql foi executado no banco e recarregue a página.", true);
     }
 }
 

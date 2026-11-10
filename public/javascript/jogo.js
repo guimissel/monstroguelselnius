@@ -1187,7 +1187,7 @@ async function iniciar() {
         if (erro.message === "sessao expirada") return;
         console.error(erro);
         logTexto.innerHTML = "";
-        dizer("Não consegui carregar a sua equipe. Confira se o docs/equipe.sql foi executado no banco.", { rapido: true });
+        dizer("Não consegui carregar a sua equipe. Confira se o docs/banco.sql foi executado no banco.", { rapido: true });
         bloquearMenu(false);
         montarBotoes([{ texto: "Recarregar", onclick: () => { saidaLiberada = true; location.reload(); } }]);
         return;
@@ -1246,7 +1246,7 @@ async function iniciar() {
     protegerBotaoVoltar();
     mostrarPokemon("robo");
     if (!inventarioOk) await dizer("Não consegui carregar o seu inventário, então você vai sem itens nesta batalha.");
-    if (!estado.idBatalha) await dizer("Não consegui registrar a batalha. Rode o docs/equipe.sql no banco.");
+    if (!estado.idBatalha) await dizer("Não consegui registrar a batalha. Rode o docs/banco.sql no banco.");
     await dizer("Um treinador robô quer batalhar!");
     await dizer(`Ele enviou ${ativo("robo").nome}!`);
     mostrarPokemon("jogador");

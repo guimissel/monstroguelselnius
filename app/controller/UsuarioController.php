@@ -2,10 +2,6 @@
 
 
 require_once __DIR__ . "/AutenticacaoController.php";
-<<<<<<< HEAD
-=======
-require_once __DIR__ . "/../config/Conexao.php";
->>>>>>> e93ff98364b97c91199b78a163153c7321b646f6
 require_once __DIR__ . "/../model/Usuario.php";
 require_once __DIR__ . "/../dao/UsuarioDAO.php";
 
