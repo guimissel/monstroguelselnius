@@ -1,3 +1,21 @@
+DROP TABLE IF EXISTS monstro_batalha_usuario;
+DROP TABLE IF EXISTS log;
+DROP TABLE IF EXISTS batalha;
+DROP TABLE IF EXISTS ataque_possivel_monstro;
+DROP TABLE IF EXISTS ataque;
+DROP TABLE IF EXISTS imagem_monstro;
+DROP TABLE IF EXISTS tipo_monstro;
+DROP TABLE IF EXISTS imune_tipo;
+DROP TABLE IF EXISTS fraqueza_tipo;
+DROP TABLE IF EXISTS eficaz_tipo;
+DROP TABLE IF EXISTS categoria_dano;
+DROP TABLE IF EXISTS tipo;
+DROP TABLE IF EXISTS monstro;
+DROP TABLE IF EXISTS item_usuario;
+DROP TABLE IF EXISTS item_loja;
+DROP TABLE IF EXISTS efeito;
+DROP TABLE IF EXISTS usuario;
+
 CREATE TABLE usuario (
     id_usuario INT AUTO_INCREMENT PRIMARY KEY,
     nome VARCHAR(255) NOT NULL,
@@ -63,7 +81,7 @@ CREATE TABLE eficaz_tipo (
         ON DELETE CASCADE
         ON UPDATE CASCADE,
     FOREIGN KEY (id_tipo_eficaz) REFERENCES tipo(id_tipo)
-        ON DELETE CASCADE,
+        ON DELETE CASCADE
         ON UPDATE CASCADE
 );
 
@@ -77,7 +95,7 @@ CREATE TABLE fraqueza_tipo (
         ON DELETE CASCADE
         ON UPDATE CASCADE,
     FOREIGN KEY (id_tipo_fraqueza) REFERENCES tipo(id_tipo)
-        ON DELETE CASCADE,
+        ON DELETE CASCADE
         ON UPDATE CASCADE
 );
 
@@ -91,7 +109,7 @@ CREATE TABLE imune_tipo (
         ON DELETE CASCADE
         ON UPDATE CASCADE,
     FOREIGN KEY (id_tipo_imune) REFERENCES tipo(id_tipo)
-        ON DELETE CASCADE,
+        ON DELETE CASCADE
         ON UPDATE CASCADE
 );
 
@@ -112,7 +130,11 @@ CREATE TABLE tipo_monstro (
 CREATE TABLE imagem_monstro (
     id_imagem_monstro INT AUTO_INCREMENT PRIMARY KEY,
     id_monstro INT NOT NULL,
-    caminho VARCHAR(255) NOT NULL
+    caminho VARCHAR(255) NOT NULL,
+    
+    FOREIGN KEY (id_monstro) REFERENCES monstro(id_monstro)
+    	  ON DELETE RESTRICT
+    	  ON UPDATE CASCADE
 );
 
 CREATE TABLE ataque (
@@ -122,7 +144,7 @@ CREATE TABLE ataque (
     precisao FLOAT,
     chance_efeito FLOAT,
     is_ativo BOOLEAN DEFAULT TRUE NOT NULL,
-    id_categoria_dano VARCHAR(255) NOT NULL,
+    id_categoria_dano INT NOT NULL,
     id_tipo INT NOT NULL,
     id_efeito INT,
 
@@ -212,5 +234,5 @@ CREATE TABLE monstro_batalha_usuario (
         ON UPDATE CASCADE,
     FOREIGN KEY (id_ataque_4) REFERENCES ataque(id_ataque)
         ON DELETE RESTRICT
-        ON UPDATE CASCADE,
+        ON UPDATE CASCADE
 );
