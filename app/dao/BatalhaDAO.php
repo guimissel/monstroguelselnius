@@ -62,7 +62,7 @@ class BatalhaDAO
         $prepare = $this->pdo->prepare("SELECT COUNT(*) FROM equipe_usuario WHERE id_usuario = :id");
         $prepare->execute(["id" => $idUsuario]);
         if ((int) $prepare->fetchColumn() !== 3) {
-            throw new DomainException("Escolha sua equipe antes de batalhar", 409);
+            throw new RegraDeJogoException("Escolha sua equipe antes de batalhar", 409);
         }
 
         $this->pdo->beginTransaction();
@@ -150,7 +150,7 @@ class BatalhaDAO
     }
 
     // fecha a batalha e paga a recompensa. so funciona uma vez por batalha.
-    // erros esperados saem como DomainException (o codigo e o status http)
+    // erros esperados saem como RegraDeJogoException (o codigo e o status http)
     public function finalizar(int $idBatalha, int $idUsuario, string $resultado, int $vivos): array
     {
         $this->pdo->beginTransaction();
@@ -167,16 +167,16 @@ class BatalhaDAO
             $batalha = $prepare->fetch();
 
             if (!$batalha) {
-                throw new DomainException("Batalha nao encontrada", 404);
+                throw new RegraDeJogoException("Batalha nao encontrada", 404);
             }
 
             if ($batalha["status"] !== "em_andamento") {
-                throw new DomainException("Essa batalha ja foi finalizada", 409);
+                throw new RegraDeJogoException("Essa batalha ja foi finalizada", 409);
             }
 
             // fugir nao paga nada, entao pode ser a qualquer momento
             if ($resultado !== "fuga" && (int) $batalha["segundos"] < self::SEGUNDOS_MINIMOS) {
-                throw new DomainException("Batalha rapida demais", 409);
+                throw new RegraDeJogoException("Batalha rapida demais", 409);
             }
 
             $recompensa = self::calcularRecompensa($resultado, $vivos);

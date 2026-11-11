@@ -74,13 +74,13 @@ class EquipeDAO
 
     // troca a equipe inteira. $ids precisa ter 3 pokemons diferentes, todos da colecao do jogador
     // (na primeira vez, 3 basicos da lista, que viram a colecao).
-    // erros esperados saem como DomainException (o codigo e o status http)
+    // erros esperados saem como RegraDeJogoException (o codigo e o status http)
     public function salvar(int $idUsuario, array $ids): void
     {
         $ids = array_values(array_unique(array_map("intval", $ids)));
 
         if (count($ids) !== self::TAMANHO_EQUIPE) {
-            throw new DomainException("Escolha " . self::TAMANHO_EQUIPE . " pokemons diferentes", 400);
+            throw new RegraDeJogoException("Escolha " . self::TAMANHO_EQUIPE . " pokemons diferentes", 400);
         }
 
         $opcoes = $this->disponiveis($idUsuario);
@@ -88,7 +88,7 @@ class EquipeDAO
 
         foreach ($ids as $id) {
             if (!in_array($id, $permitidos, true)) {
-                throw new DomainException(
+                throw new RegraDeJogoException(
                     $opcoes["inicial"] ? "Escolha apenas pokemons basicos da lista" : "Escolha apenas pokemons que voce tem",
                     400
                 );

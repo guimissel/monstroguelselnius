@@ -44,7 +44,7 @@ class LojaDAO
 
     // compra "quantidade" unidades do item: desconta o dinheiro e coloca no inventario.
     // tudo na mesma transaction, entao nunca cobra sem entregar (nem entrega sem cobrar).
-    // erros esperados saem como DomainException (o codigo e o status http)
+    // erros esperados saem como RegraDeJogoException (o codigo e o status http)
     public function comprar(int $idUsuario, string $chave, int $quantidade): array
     {
         $this->pdo->beginTransaction();
@@ -56,7 +56,7 @@ class LojaDAO
             $item = $prepare->fetch();
 
             if (!$item) {
-                throw new DomainException("Esse item nao existe", 404);
+                throw new RegraDeJogoException("Esse item nao existe", 404);
             }
 
             $total = (int) $item["preco"] * $quantidade;
@@ -67,7 +67,7 @@ class LojaDAO
             $saldo = (int) $prepare->fetchColumn();
 
             if ($saldo < $total) {
-                throw new DomainException("Pokedolares insuficientes", 409);
+                throw new SaldoInsuficienteException($saldo, $total);
             }
 
             $prepare = $this->pdo->prepare("UPDATE usuario SET pokedolares = pokedolares - :total WHERE id_usuario = :id");
@@ -84,6 +84,19 @@ class LojaDAO
                 "item" => $item["id_item_loja"],
                 "qtd1" => $quantidade,
                 "qtd2" => $quantidade
+            ]);
+
+            // historico da loja (quem comprou o que e por quanto)
+            $prepare = $this->pdo->prepare(
+                "INSERT INTO log_loja (id_usuario, id_item_loja, quantidade, preco_unitario, total)
+                 VALUES (:id, :item, :qtd, :preco, :total)"
+            );
+            $prepare->execute([
+                "id" => $idUsuario,
+                "item" => $item["id_item_loja"],
+                "qtd" => $quantidade,
+                "preco" => $item["preco"],
+                "total" => $total
             ]);
 
             $prepare = $this->pdo->prepare(

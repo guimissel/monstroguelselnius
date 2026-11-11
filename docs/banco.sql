@@ -240,6 +240,41 @@ CREATE TABLE IF NOT EXISTS `log` (
     FOREIGN KEY (id_batalha) REFERENCES batalha(id_batalha) ON DELETE CASCADE ON UPDATE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
+-- historico de todas as batalhas. Quem escreve aqui sao os triggers da secao 7 (ninguem insere na mao):
+-- um registro quando a batalha comeca e outro quando ela termina (vitoria, derrota ou fuga)
+ALTER TABLE `log`
+    ADD COLUMN IF NOT EXISTS id_usuario INT          NULL,
+    ADD COLUMN IF NOT EXISTS evento     VARCHAR(15)  NOT NULL DEFAULT 'iniciada',
+    ADD COLUMN IF NOT EXISTS status     VARCHAR(15)  NULL,
+    ADD COLUMN IF NOT EXISTS recompensa INT          NOT NULL DEFAULT 0,
+    ADD COLUMN IF NOT EXISTS descricao  VARCHAR(255) NULL,
+    ADD COLUMN IF NOT EXISTS criado_em  DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP;
+
+-- historico dos jogadores (cadastro, troca de nome/senha, exclusao).
+-- Sem chave estrangeira de proposito: o registro tem que sobreviver quando a conta for apagada.
+CREATE TABLE IF NOT EXISTS log_usuario (
+    id_log_usuario INT          NOT NULL AUTO_INCREMENT,
+    id_usuario     INT          NOT NULL,
+    nome           VARCHAR(255) NOT NULL,
+    evento         VARCHAR(20)  NOT NULL,   -- cadastro, troca_nome, troca_senha, exclusao
+    criado_em      DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    PRIMARY KEY (id_log_usuario)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+-- historico da loja: toda compra (quem, o que, quanto, por quanto). O LojaDAO grava junto com a compra.
+-- Tambem sem chave estrangeira, pelo mesmo motivo.
+CREATE TABLE IF NOT EXISTS log_loja (
+    id_log_loja    INT        NOT NULL AUTO_INCREMENT,
+    id_usuario     INT        NOT NULL,
+    id_item_loja   INT        NOT NULL,
+    quantidade     INT        NOT NULL,
+    preco_unitario INT        NOT NULL,
+    total          INT        NOT NULL,
+    estornada      TINYINT(1) NOT NULL DEFAULT 0,
+    criado_em      DATETIME   NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    PRIMARY KEY (id_log_loja)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
 CREATE TABLE IF NOT EXISTS monstro_batalha_usuario (
     id_monstro              INT     NOT NULL,
     id_batalha              INT     NOT NULL,
@@ -352,19 +387,239 @@ CREATE TABLE IF NOT EXISTS batalha_robo (
 DELETE FROM batalha_robo WHERE id_batalha NOT IN (SELECT id_batalha FROM batalha);
 
 -- ======================================================================
--- 7. DADOS: itens da loja, pokemons basicos e kit inicial
+-- 7. TRIGGERS, VIEWS E PROCEDURE
+--    (os triggers e a procedure usam DELIMITER; no phpMyAdmin pode colar do jeito que esta)
+-- ======================================================================
+
+-- registros das batalhas que ja existiam antes dos triggers (so entra o que ainda nao tem registro)
+INSERT INTO `log` (id_batalha, id_usuario, evento, status, recompensa, descricao, criado_em)
+SELECT b.id_batalha, b.id_usuario, 'iniciada', 'em_andamento', 0, 'Batalha iniciada', b.iniciada_em
+FROM batalha b
+WHERE NOT EXISTS (SELECT 1 FROM `log` l WHERE l.id_batalha = b.id_batalha AND l.evento = 'iniciada');
+
+INSERT INTO `log` (id_batalha, id_usuario, evento, status, recompensa, descricao, criado_em)
+SELECT b.id_batalha, b.id_usuario, 'finalizada', b.status, b.recompensa,
+       CONCAT('Batalha terminou em ', b.status, ' e rendeu ', b.recompensa, ' pokedolares'),
+       COALESCE(b.finalizada_em, b.iniciada_em)
+FROM batalha b
+WHERE b.status <> 'em_andamento'
+  AND NOT EXISTS (SELECT 1 FROM `log` l WHERE l.id_batalha = b.id_batalha AND l.evento = 'finalizada');
+
+INSERT INTO log_usuario (id_usuario, nome, evento)
+SELECT u.id_usuario, u.nome, 'cadastro'
+FROM usuario u
+WHERE NOT EXISTS (SELECT 1 FROM log_usuario l WHERE l.id_usuario = u.id_usuario AND l.evento = 'cadastro');
+
+-- ---------- TRIGGERS ----------
+DROP TRIGGER IF EXISTS trg_batalha_iniciada;
+DROP TRIGGER IF EXISTS trg_batalha_finalizada;
+DROP TRIGGER IF EXISTS trg_usuario_cadastro;
+DROP TRIGGER IF EXISTS trg_usuario_antes_de_alterar;
+DROP TRIGGER IF EXISTS trg_usuario_depois_de_alterar;
+DROP TRIGGER IF EXISTS trg_usuario_exclusao;
+
+DELIMITER $$
+
+-- toda batalha nova entra no log
+CREATE TRIGGER trg_batalha_iniciada AFTER INSERT ON batalha
+FOR EACH ROW
+BEGIN
+    INSERT INTO `log` (id_batalha, id_usuario, evento, status, recompensa, descricao)
+    VALUES (NEW.id_batalha, NEW.id_usuario, 'iniciada', 'em_andamento', 0, 'Batalha iniciada');
+END$$
+
+-- quando a batalha sai de "em_andamento" (vitoria, derrota ou fuga), o resultado e a recompensa entram no log
+CREATE TRIGGER trg_batalha_finalizada AFTER UPDATE ON batalha
+FOR EACH ROW
+BEGIN
+    IF OLD.status = 'em_andamento' AND NEW.status <> 'em_andamento' THEN
+        INSERT INTO `log` (id_batalha, id_usuario, evento, status, recompensa, descricao)
+        VALUES (NEW.id_batalha, NEW.id_usuario, 'finalizada', NEW.status, NEW.recompensa,
+                CONCAT('Batalha terminou em ', NEW.status, ' e rendeu ', NEW.recompensa, ' pokedolares'));
+    END IF;
+END$$
+
+-- conta nova
+CREATE TRIGGER trg_usuario_cadastro AFTER INSERT ON usuario
+FOR EACH ROW
+BEGIN
+    INSERT INTO log_usuario (id_usuario, nome, evento) VALUES (NEW.id_usuario, NEW.nome, 'cadastro');
+END$$
+
+-- trava de seguranca: o saldo de pokedolares nunca pode ficar negativo
+CREATE TRIGGER trg_usuario_antes_de_alterar BEFORE UPDATE ON usuario
+FOR EACH ROW
+BEGIN
+    IF NEW.pokedolares < 0 THEN
+        SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'Saldo de pokedolares nao pode ficar negativo';
+    END IF;
+END$$
+
+-- troca de nome e de senha ficam registradas (a senha em si nao vai para o log)
+CREATE TRIGGER trg_usuario_depois_de_alterar AFTER UPDATE ON usuario
+FOR EACH ROW
+BEGIN
+    IF OLD.nome <> NEW.nome THEN
+        INSERT INTO log_usuario (id_usuario, nome, evento) VALUES (NEW.id_usuario, NEW.nome, 'troca_nome');
+    END IF;
+    IF OLD.senha <> NEW.senha THEN
+        INSERT INTO log_usuario (id_usuario, nome, evento) VALUES (NEW.id_usuario, NEW.nome, 'troca_senha');
+    END IF;
+END$$
+
+-- conta apagada
+CREATE TRIGGER trg_usuario_exclusao BEFORE DELETE ON usuario
+FOR EACH ROW
+BEGIN
+    INSERT INTO log_usuario (id_usuario, nome, evento) VALUES (OLD.id_usuario, OLD.nome, 'exclusao');
+END$$
+
+DELIMITER ;
+
+-- ---------- VIEWS (consultas prontas; o jogo usa na tela de perfil) ----------
+
+-- todas as batalhas, com o nome do jogador e do adversario ("Robo" quando nao tem segundo jogador)
+CREATE OR REPLACE VIEW vw_historico_batalhas AS
+SELECT b.id_batalha,
+       b.id_usuario,
+       u.nome                                   AS jogador,
+       COALESCE(u2.nome, 'Robô')                AS adversario,
+       b.status,
+       b.recompensa,
+       b.iniciada_em,
+       b.finalizada_em,
+       TIMESTAMPDIFF(SECOND, b.iniciada_em, b.finalizada_em) AS duracao_segundos
+FROM batalha b
+JOIN usuario u        ON u.id_usuario  = b.id_usuario
+LEFT JOIN usuario u2  ON u2.id_usuario = b.id_usuario_2;
+
+-- placar de cada jogador (so batalhas terminadas): agrupa e conta por resultado
+CREATE OR REPLACE VIEW vw_ranking_jogadores AS
+SELECT u.id_usuario,
+       u.nome,
+       u.pokedolares,
+       COUNT(b.id_batalha)                     AS batalhas,
+       COALESCE(SUM(b.status = 'vitoria'), 0)  AS vitorias,
+       COALESCE(SUM(b.status = 'derrota'), 0)  AS derrotas,
+       COALESCE(SUM(b.status = 'fuga'), 0)     AS fugas,
+       COALESCE(SUM(b.recompensa), 0)          AS total_ganho
+FROM usuario u
+LEFT JOIN batalha b ON b.id_usuario = u.id_usuario AND b.status <> 'em_andamento'
+WHERE u.is_bot = 0
+GROUP BY u.id_usuario, u.nome, u.pokedolares;
+
+-- o que cada jogador tem no inventario (so o que tem pelo menos 1)
+CREATE OR REPLACE VIEW vw_inventario_usuario AS
+SELECT iu.id_usuario,
+       u.nome AS jogador,
+       i.chave,
+       i.nome AS item,
+       i.categoria,
+       iu.quantidade,
+       iu.quantidade * i.preco AS valor_total
+FROM item_usuario iu
+JOIN usuario   u ON u.id_usuario   = iu.id_usuario
+JOIN item_loja i ON i.id_item_loja = iu.id_item_loja
+WHERE iu.quantidade > 0;
+
+-- colecao de pokemons de cada jogador, dizendo quais estao na equipe
+CREATE OR REPLACE VIEW vw_colecao_usuario AS
+SELECT pu.id_usuario,
+       u.nome AS jogador,
+       pu.id_pokemon,
+       COALESCE(pb.nome, CONCAT('#', pu.id_pokemon)) AS pokemon,
+       pu.conquistado_em,
+       EXISTS (SELECT 1 FROM equipe_usuario e
+               WHERE e.id_usuario = pu.id_usuario AND e.id_pokemon = pu.id_pokemon) AS na_equipe
+FROM pokemon_usuario pu
+JOIN usuario u ON u.id_usuario = pu.id_usuario
+LEFT JOIN pokemon_basico pb ON pb.id_pokemon = pu.id_pokemon;
+
+-- quanto cada item vendeu na loja (compras estornadas nao contam)
+CREATE OR REPLACE VIEW vw_vendas_loja AS
+SELECT i.chave,
+       i.nome AS item,
+       COUNT(l.id_log_loja)             AS compras,
+       COALESCE(SUM(l.quantidade), 0)   AS unidades,
+       COALESCE(SUM(l.total), 0)        AS arrecadado
+FROM item_loja i
+LEFT JOIN log_loja l ON l.id_item_loja = i.id_item_loja AND l.estornada = 0
+GROUP BY i.id_item_loja, i.chave, i.nome;
+
+-- ---------- PROCEDURE (controle de transacao: DTL) ----------
+-- Desfaz uma compra da loja: devolve os pokedolares e tira os itens do inventario.
+-- Mostra START TRANSACTION, SAVEPOINT, ROLLBACK TO SAVEPOINT, COMMIT e ROLLBACK.
+-- Uso: CALL sp_estornar_compra(<id_log_loja>);
+DROP PROCEDURE IF EXISTS sp_estornar_compra;
+
+DELIMITER $$
+
+CREATE PROCEDURE sp_estornar_compra(IN p_id_log_loja INT)
+BEGIN
+    DECLARE v_usuario INT DEFAULT NULL;
+    DECLARE v_item    INT DEFAULT NULL;
+    DECLARE v_qtd     INT DEFAULT 0;
+    DECLARE v_total   INT DEFAULT 0;
+    DECLARE v_tem     INT DEFAULT NULL;
+
+    -- qualquer erro desfaz tudo e repassa o erro
+    DECLARE EXIT HANDLER FOR SQLEXCEPTION
+    BEGIN
+        ROLLBACK;
+        RESIGNAL;
+    END;
+
+    START TRANSACTION;
+
+    SELECT id_usuario, id_item_loja, quantidade, total
+      INTO v_usuario, v_item, v_qtd, v_total
+      FROM log_loja
+     WHERE id_log_loja = p_id_log_loja AND estornada = 0
+       FOR UPDATE;
+
+    IF v_usuario IS NULL THEN
+        SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'Compra nao encontrada ou ja estornada';
+    END IF;
+
+    SAVEPOINT antes_do_estorno;
+
+    SELECT quantidade INTO v_tem
+      FROM item_usuario
+     WHERE id_usuario = v_usuario AND id_item_loja = v_item
+       FOR UPDATE;
+
+    -- se o jogador ja gastou os itens, nao da para devolver o dinheiro
+    IF v_tem IS NULL OR v_tem < v_qtd THEN
+        ROLLBACK TO SAVEPOINT antes_do_estorno;
+        SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'O jogador ja usou os itens dessa compra';
+    END IF;
+
+    UPDATE item_usuario SET quantidade = quantidade - v_qtd
+     WHERE id_usuario = v_usuario AND id_item_loja = v_item;
+    UPDATE usuario SET pokedolares = pokedolares + v_total WHERE id_usuario = v_usuario;
+    UPDATE log_loja SET estornada = 1 WHERE id_log_loja = p_id_log_loja;
+
+    COMMIT;
+END$$
+
+DELIMITER ;
+
+
+-- ======================================================================
+-- 8. DADOS: itens da loja, pokemons basicos e kit inicial
 -- ======================================================================
 
 -- itens do jogo (precos sao ponto de partida, podem ser ajustados aqui e o arquivo rodado de novo).
 -- KIT INICIAL (ultima coluna): jogador novo comeca so com 3 pocoes basicas (Pocao) e mais nada.
 INSERT INTO item_loja (chave, nome, descricao, categoria, preco, imagem, cura_hp, cura_status, reviver, kit_inicial) VALUES
 ('potion',        'Poção',          'Recupera 20 de HP de um pokémon.',                       'pocao_hp',      50,  'potion.png',              20,   NULL,       0, 3),
-('super-potion',  'Super Poção',    'Recupera 60 de HP de um pokémon.',                       'pocao_hp',      120, 'super potion.png',        60,   NULL,       0, 0),
-('hyper-potion',  'Hiper Poção',    'Recupera 120 de HP de um pokémon.',                      'pocao_hp',      250, 'hiper potion.png',        120,  NULL,       0, 0),
+('super-potion',  'Super Poção',    'Recupera 50 de HP de um pokémon.',                       'pocao_hp',      120, 'super potion.png',        50,   NULL,       0, 0),
+('hyper-potion',  'Hiper Poção',    'Recupera 200 de HP de um pokémon.',                      'pocao_hp',      250, 'hiper potion.png',        200,  NULL,       0, 0),
 ('max-potion',    'Poção Máxima',   'Recupera todo o HP de um pokémon.',                      'pocao_hp',      400, 'max potion.png',          -1,   NULL,       0, 0),
 ('full-restore',  'Restaurar Tudo', 'Recupera todo o HP e cura qualquer condição.',           'pocao_hp',      600, 'full restore potion.png', -1,   'todos',    0, 0),
 ('revive',        'Reviver',        'Traz um pokémon desmaiado de volta com metade do HP.',   'pocao_hp',      350, 'reviver.webp',            0,    NULL,       1, 0),
 ('antidote',      'Antídoto',       'Cura um pokémon envenenado.',                            'pocao_condicao', 60, 'antidote.png',            0,    'poison',   0, 0),
+('burn-heal',     'Anti-Queimadura','Cura um pokémon queimado.',                              'pocao_condicao', 60, 'burn heal.png',           0,    'burn',     0, 0),
 ('paralyze-heal', 'Anti-Paralisia', 'Cura um pokémon paralisado.',                            'pocao_condicao', 60, 'paralyse heal.png',       0,    'paralysis',0, 0),
 ('awakening',     'Despertar',      'Acorda um pokémon que está dormindo.',                   'pocao_condicao', 60, 'awakening.png',           0,    'sleep',    0, 0),
 ('ice-heal',      'Anti-Gelo',      'Descongela um pokémon congelado.',                       'pocao_condicao', 60, 'ice heal.png',            0,    'freeze',   0, 0),
