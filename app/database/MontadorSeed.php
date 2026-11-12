@@ -101,7 +101,7 @@ class MontadorSeed {
   private function seedEfeito(): void {
     $dados = $this->fazerRequisicao($this->urlBase . "move-ailment");
 
-    echo "<h1>Seed de Efeitos</h1>";
+    echo "<h1>Efeito</h1>";
     foreach ($dados["results"] as $efeito) {
       $sql = "INSERT INTO efeito(nome) VALUES ('{$efeito['name']}')";
 
@@ -161,7 +161,7 @@ class MontadorSeed {
   }
 
   private function seedEvolucao(): void {
-    echo "<h1>Evoluções</h1>";
+    echo "<h1>Evolução</h1>";
 
     for ($i = 1; $i <= 78; $i++) {
       $url = "{$this->urlBase}evolution-chain/{$i}";
