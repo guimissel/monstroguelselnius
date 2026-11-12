@@ -10,9 +10,11 @@ DROP TABLE IF EXISTS fraqueza_tipo;
 DROP TABLE IF EXISTS eficaz_tipo;
 DROP TABLE IF EXISTS categoria_dano;
 DROP TABLE IF EXISTS tipo;
+DROP TABLE IF EXISTS evolucao;
 DROP TABLE IF EXISTS monstro;
 DROP TABLE IF EXISTS item_usuario;
 DROP TABLE IF EXISTS item_loja;
+DROP TABLE IF EXISTS tipo_imagem;
 DROP TABLE IF EXISTS efeito;
 DROP TABLE IF EXISTS usuario;
 
@@ -29,6 +31,11 @@ CREATE TABLE efeito (
     id_efeito INT AUTO_INCREMENT PRIMARY KEY,
     nome VARCHAR(255) NOT NULL,
     is_ativo BOOLEAN DEFAULT TRUE NOT NULL
+);
+
+CREATE TABLE tipo_imagem (
+    id_tipo_imagem INT AUTO_INCREMENT PRIMARY KEY,
+    nome VARCHAR(255) NOT NULL
 );
 
 CREATE TABLE item_loja (
@@ -61,10 +68,20 @@ CREATE TABLE monstro (
     ataque_esp_base INT NOT NULL,
     defesa_esp_base INT NOT NULL,
     velocidade_base INT NOT NULL,
-    is_ativo BOOLEAN DEFAULT TRUE NOT NULL,
-    id_monstro_evolucao INT,
+    is_ativo BOOLEAN DEFAULT TRUE NOT NULL
+);
 
-    FOREIGN KEY (id_monstro_evolucao) REFERENCES monstro(id_monstro)
+CREATE TABLE evolucao (
+    id_monstro_base INT NOT NULL,
+    id_monstro_evoluido INT NOT NULL,
+    pokedolares_necessarios INT NOT NULL,
+
+    PRIMARY KEY (id_monstro_base, id_monstro_evoluido),
+
+    FOREIGN KEY (id_monstro_base) REFERENCES monstro(id_monstro)
+        ON DELETE RESTRICT
+        ON UPDATE CASCADE,
+    FOREIGN KEY (id_monstro_evoluido) REFERENCES monstro(id_monstro)
         ON DELETE RESTRICT
         ON UPDATE CASCADE
 );
@@ -139,10 +156,14 @@ CREATE TABLE imagem_monstro (
     id_imagem_monstro INT AUTO_INCREMENT PRIMARY KEY,
     id_monstro INT NOT NULL,
     caminho VARCHAR(255) NOT NULL,
+    id_tipo_imagem INT NOT NULL,
     
     FOREIGN KEY (id_monstro) REFERENCES monstro(id_monstro)
-    	  ON DELETE RESTRICT
-    	  ON UPDATE CASCADE
+    	  ON DELETE CASCADE
+    	  ON UPDATE CASCADE,
+    FOREIGN KEY (id_tipo_imagem) REFERENCES tipo_imagem(id_tipo_imagem)
+        ON DELETE RESTRICT
+        ON UPDATE CASCADE
 );
 
 CREATE TABLE ataque (

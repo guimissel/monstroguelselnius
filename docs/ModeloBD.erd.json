@@ -44,7 +44,9 @@
       "03h6ibh4o37pef7pnadsfx11k",
       "03h6q8y0b4e2024e58vsyg5qs",
       "03h6qaaefk4f5rfx8dviv5dih",
-      "03h7ebzz3e85dotdfp8auksip"
+      "03h7ebzz3e85dotdfp8auksip",
+      "03h82urxvtmx5lj6p2edrpug4",
+      "03h832ymba6x65o04xynz5sex"
     ],
     "relationshipIds": [
       "VpLL9-aT-5OL4eQTkzQ-X",
@@ -73,7 +75,10 @@
       "03h6qg4sqqx0l6ufxim7s1u3x",
       "03h6qg9c3fht4eusa7yyqrll5",
       "03h6qgab2dteewncl20519um5",
-      "03h7ec98pkmifu2jm61b9t2ap"
+      "03h7ec98pkmifu2jm61b9t2ap",
+      "03h82uzhjn7tw95a8lllom4qk",
+      "03h8333hvpt6hnvbu5x2od2gf",
+      "03h8336r4feavbsd6502goli0"
     ]
   },
   "collections": {
@@ -129,6 +134,31 @@
           "y": 97.6952
         }
       },
+      "03h82urxvtmx5lj6p2edrpug4": {
+        "id": "03h82urxvtmx5lj6p2edrpug4",
+        "name": "tipo_imagem",
+        "columnIds": [
+          "03h82utr85noo3f6kqosos1ey",
+          "03h82uwy43tvho0d0d2jriu04"
+        ],
+        "ui": {
+          "x": -1171,
+          "y": -1478
+        }
+      },
+      "03h832ymba6x65o04xynz5sex": {
+        "id": "03h832ymba6x65o04xynz5sex",
+        "name": "evolucao",
+        "columnIds": [
+          "03h8333hvkcuzm62pf25fvxgd",
+          "03h8336r4feavbsd64xg48wtt",
+          "03h833da3xf8zsdu1t15uuvmo"
+        ],
+        "ui": {
+          "x": -575,
+          "y": -1232
+        }
+      },
       "7u6Lba8BssSgz3LrIT_aY": {
         "id": "7u6Lba8BssSgz3LrIT_aY",
         "name": "monstro_batalha_usuario",
@@ -181,7 +211,8 @@
         "columnIds": [
           "AZT9E5bznA6ovwNoK_PGS",
           "bZ3PxbDB4T4PLxXUbRoJA",
-          "wLY-TmEe500DBUZH1fljO"
+          "wLY-TmEe500DBUZH1fljO",
+          "03h82uzhjc954lywqf6dcgktm"
         ],
         "ui": {
           "x": -1092.8064,
@@ -284,8 +315,8 @@
           "hYw_2gVLvLTLkOyQ4B6ig"
         ],
         "ui": {
-          "x": -284.5034,
-          "y": -1156.7955
+          "x": -107.5034,
+          "y": -1104.7955
         }
       },
       "pKbfL43y4jWKgMF0lTnhs": {
@@ -386,6 +417,41 @@
         "tableId": "03h7ebzz3e85dotdfp8auksip",
         "name": "nome",
         "dataType": "varchar",
+        "options": 8
+      },
+      "03h82utr85noo3f6kqosos1ey": {
+        "id": "03h82utr85noo3f6kqosos1ey",
+        "tableId": "03h82urxvtmx5lj6p2edrpug4",
+        "name": "id_tipo_imagem",
+        "dataType": "int",
+        "options": 10
+      },
+      "03h82uwy43tvho0d0d2jriu04": {
+        "id": "03h82uwy43tvho0d0d2jriu04",
+        "tableId": "03h82urxvtmx5lj6p2edrpug4",
+        "name": "nome",
+        "dataType": "varchar",
+        "options": 8
+      },
+      "03h8333hvkcuzm62pf25fvxgd": {
+        "id": "03h8333hvkcuzm62pf25fvxgd",
+        "tableId": "03h832ymba6x65o04xynz5sex",
+        "name": "id_monstro_base",
+        "dataType": "int",
+        "options": 10
+      },
+      "03h8336r4feavbsd64xg48wtt": {
+        "id": "03h8336r4feavbsd64xg48wtt",
+        "tableId": "03h832ymba6x65o04xynz5sex",
+        "name": "id_monstro_evoluido",
+        "dataType": "int",
+        "options": 10
+      },
+      "03h833da3xf8zsdu1t15uuvmo": {
+        "id": "03h833da3xf8zsdu1t15uuvmo",
+        "tableId": "03h832ymba6x65o04xynz5sex",
+        "name": "pokedolares_necessarios",
+        "dataType": "int",
         "options": 8
       },
       "03h6qehjyadhvumr7dl2g20ej": {
@@ -502,6 +568,13 @@
         "dataType": "int",
         "options": 8
       },
+      "03h82uzhjc954lywqf6dcgktm": {
+        "id": "03h82uzhjc954lywqf6dcgktm",
+        "tableId": "Lan-mSxUXaGvNPeUlZ-Ij",
+        "name": "id_tipo_imagem",
+        "dataType": "int",
+        "options": 8
+      },
       "AZT9E5bznA6ovwNoK_PGS": {
         "id": "AZT9E5bznA6ovwNoK_PGS",
         "tableId": "Lan-mSxUXaGvNPeUlZ-Ij",
@@ -534,7 +607,7 @@
       "03h6qd98fhemheulqt696ymsf": {
         "id": "03h6qd98fhemheulqt696ymsf",
         "tableId": "NWLC9VWd2IlJ8me5Oflpc",
-        "name": "dinheiro",
+        "name": "pokedolares",
         "dataType": "int",
         "default": "0",
         "options": 8
@@ -1052,6 +1125,60 @@
           "tableId": "Zga1g2MB8ivms8uELPBgM",
           "columnIds": [
             "03h7ec98pf5xu74p7l1cmkjjr"
+          ]
+        }
+      },
+      "03h82uzhjn7tw95a8lllom4qk": {
+        "id": "03h82uzhjn7tw95a8lllom4qk",
+        "relationshipType": 4,
+        "onDelete": 1,
+        "onUpdate": 1,
+        "start": {
+          "tableId": "03h82urxvtmx5lj6p2edrpug4",
+          "columnIds": [
+            "03h82utr85noo3f6kqosos1ey"
+          ]
+        },
+        "end": {
+          "tableId": "Lan-mSxUXaGvNPeUlZ-Ij",
+          "columnIds": [
+            "03h82uzhjc954lywqf6dcgktm"
+          ]
+        }
+      },
+      "03h8333hvpt6hnvbu5x2od2gf": {
+        "id": "03h8333hvpt6hnvbu5x2od2gf",
+        "relationshipType": 4,
+        "onDelete": 1,
+        "onUpdate": 1,
+        "start": {
+          "tableId": "pKbfL43y4jWKgMF0lTnhs",
+          "columnIds": [
+            "W6PaqySKapII2e5njMkqI"
+          ]
+        },
+        "end": {
+          "tableId": "03h832ymba6x65o04xynz5sex",
+          "columnIds": [
+            "03h8333hvkcuzm62pf25fvxgd"
+          ]
+        }
+      },
+      "03h8336r4feavbsd6502goli0": {
+        "id": "03h8336r4feavbsd6502goli0",
+        "relationshipType": 8,
+        "onDelete": 1,
+        "onUpdate": 1,
+        "start": {
+          "tableId": "pKbfL43y4jWKgMF0lTnhs",
+          "columnIds": [
+            "W6PaqySKapII2e5njMkqI"
+          ]
+        },
+        "end": {
+          "tableId": "03h832ymba6x65o04xynz5sex",
+          "columnIds": [
+            "03h8336r4feavbsd64xg48wtt"
           ]
         }
       },
