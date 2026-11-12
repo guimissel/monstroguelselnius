@@ -349,7 +349,7 @@ class UsuarioController
         }
     }
 
-    public function excluir ($id) :void
+    public function excluir (int $id) :void
     {
         // define que a resposta será JSON
         header("Content-Type: application/json");

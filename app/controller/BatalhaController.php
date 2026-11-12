@@ -45,14 +45,13 @@ class BatalhaController
 
         catch (Exception $e)
         {
-            // o motivo real fica no log do apache (xampp/apache/logs/error.log)
+            // (xampp/apache/logs/error.log)
             error_log("BatalhaController::iniciar: " . $e->getMessage());
 
             http_response_code(500);
             echo json_encode([
                 "status" => 500,
                 "mensagem" => "Nao foi possivel iniciar a batalha",
-                // o jogo mostra isso no console do navegador (F12) para descobrir o que faltou no banco
                 "detalhe" => $e->getMessage()
             ]);
             return;
