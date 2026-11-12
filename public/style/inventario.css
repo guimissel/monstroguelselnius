@@ -1,0 +1,161 @@
+* { box-sizing: border-box; }
+
+  body {
+    margin: 0;
+    padding: 40px 50px;
+    background: #dac5af;
+    font-family: "Pixelify Sans", monospace;
+    color: #3a1d08;
+  }
+
+  .topo {
+    max-width: 1180px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 16px;
+    margin-bottom: 24px;
+  }
+
+  h1 {
+    margin: 0;
+    font-size: 24px;
+    font-weight: 400;
+    color: #1f5c8a;
+    text-decoration: underline;
+  }
+
+  .dinheiro {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 22px;
+  }
+  .dinheiro img { height: 34px; image-rendering: pixelated; }
+
+  .botoes { display: flex; gap: 12px; margin-bottom: 20px; }
+
+  .botao {
+    padding: 6px 14px;
+    font-family: inherit;
+    font-size: 16px;
+    color: #fff;
+    text-decoration: none;
+    background: #1a6fb5;
+    border: 1px solid #0f4a80;
+    border-bottom-width: 4px;
+    border-radius: 4px;
+    cursor: pointer;
+  }
+  .botao:hover { filter: brightness(1.1); }
+  .botao.claro { background: #f8e1b0; color: #3a1d08; border-color: #2a1204; }
+  .botao.claro.ativo { background: #3a1d08; color: #f8e1b0; }
+
+  .abas { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 20px; }
+
+  .conteudo {
+    max-width: 1180px;
+    display: flex;
+    align-items: flex-start;
+    gap: 32px;
+  }
+
+  .inventario {
+    flex: 1;
+    max-width: 860px;
+    display: grid;
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+    gap: 26px;
+  }
+
+  /* o pergaminho */
+  .slot {
+    --borda: polygon(
+      0% 3%, 3% 3%, 3% 0%, 30% 0%, 30% 1.5%, 40% 1.5%, 40% 0%, 72% 0%,
+      72% 1.5%, 80% 1.5%, 80% 0%, 97% 0%, 97% 3%, 100% 3%, 100% 30%,
+      98% 30%, 98% 36%, 100% 36%, 100% 70%, 97% 70%, 97% 75%, 100% 75%,
+      100% 97%, 97% 97%, 97% 100%, 70% 100%, 70% 98.5%, 40% 98.5%,
+      40% 100%, 3% 100%, 3% 97%, 0% 97%, 0% 72%, 2% 72%, 2% 66%, 0% 66%,
+      0% 30%, 2% 30%, 2% 25%, 0% 25%
+    );
+    position: relative;
+    aspect-ratio: 133 / 197;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 0;
+    border: 0;
+    font-family: inherit;
+    color: inherit;
+    background: #2a1204;
+    clip-path: var(--borda);
+  }
+
+  button.slot { cursor: pointer; }
+  button.slot:hover::before { background: radial-gradient(ellipse at center, #fff0c8 50%, #f5d9a0 78%, #e0a64d 100%); }
+  .slot.selecionado { background: #b02a1a; }
+
+  .slot::before {
+    content: "";
+    position: absolute;
+    inset: 4px;
+    background: radial-gradient(ellipse at center, #f8e1b0 50%, #efc888 78%, #d9993f 100%);
+    clip-path: var(--borda);
+  }
+
+  /* o item dentro da caixa */
+  .slot img {
+    position: relative;
+    width: 70%;
+    height: 55%;
+    object-fit: contain;
+    image-rendering: pixelated;
+  }
+
+  /* o nome do item, embaixo da imagem */
+  .slot .nome {
+    position: relative;
+    margin-top: 6px;
+    padding: 0 10%;
+    font-size: 14px;
+    text-align: center;
+    color: #3a1d08;
+  }
+
+  /* quantidade no canto */
+  .slot .qtd {
+    position: absolute;
+    right: 14%;
+    top: 7%;
+    font-size: 16px;
+    color: #3a1d08;
+  }
+
+  /* detalhes do item escolhido */
+  .detalhes {
+    width: 300px;
+    flex-shrink: 0;
+    position: sticky;
+    top: 20px;
+    padding: 18px;
+    text-align: center;
+    background: radial-gradient(ellipse at center, #f8e1b0 50%, #efc888 78%, #d9993f 100%);
+    border: 4px solid #2a1204;
+    border-radius: 6px;
+  }
+  .detalhes img { width: 96px; height: 96px; object-fit: contain; image-rendering: pixelated; }
+  .detalhes h2 { margin: 6px 0 8px; font-size: 22px; font-weight: 400; }
+  .detalhes p { margin: 6px 0; font-size: 16px; line-height: 1.3; }
+  .detalhes .vazio { color: #6b4a2a; }
+
+  .mensagem { max-width: 860px; font-size: 18px; margin: 0 0 20px; }
+  .mensagem.erro { color: #a02010; }
+
+  @media (max-width: 900px) {
+    body { padding: 24px 16px; }
+    .conteudo { flex-direction: column; }
+    .detalhes { width: 100%; position: static; order: -1; }
+    .inventario { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px; }
+  }
