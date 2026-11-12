@@ -64,13 +64,13 @@ class MontadorSeed {
 
   private function salvarTextoNaSeed(string $nomeSeed, string $texto): void {
     $arquivo = $this->diretorioSeeds . $nomeSeed;
-    file_put_contents($arquivo, $texto . "\n", FILE_APPEND);
+    file_put_contents($arquivo, $texto . ";\n", FILE_APPEND);
   }
 
   private function fazerRequisicao(string $url): array {
     $resposta = file_get_contents($url);
 
-    usleep(200000);
+    usleep(500000);
 
     return json_decode($resposta, true);
   }
@@ -95,10 +95,10 @@ class MontadorSeed {
   }
 
   private function seedEfeito(): void {
-    $resposta = $this->fazerRequisicao($this->urlBase . "move-ailment");
+    $dados = $this->fazerRequisicao($this->urlBase . "move-ailment");
 
     echo "<h1>Seed de Efeitos</h1>";
-    foreach ($resposta["results"] as $efeito) {
+    foreach ($dados["results"] as $efeito) {
       $sql = "INSERT INTO efeito(nome) VALUES ('{$efeito['name']}')";
       echo $sql . "<br/>";
       $this->salvarTextoNaSeed($this->arquivosSeeds["efeito"]["arquivo"], $sql);
@@ -106,7 +106,26 @@ class MontadorSeed {
   }
 
   private function seedMonstro(): void {
-    // $resposta = $this->fazerRequisicao($this->)
+    echo "<h1>Monstro</h1>";
+    for ($id = 1; $id <= 151; $id++) {
+      $url = "{$this->urlBase}pokemon/{$id}/";
+      $dados = $this->fazerRequisicao($url);
+
+      if (empty($dados)) continue;
+
+      // 1. Extracao dos dados do pokemon
+      $nome = $dados["name"];
+      $vidaBase = $dados["stats"][0]["base_stat"];
+      $ataqueBase = $dados["stats"][1]["base_stat"];
+      $defesaBase = $dados["stats"][2]["base_stat"];
+      $ataqueEspBase = $dados["stats"][3]["base_stat"];
+      $defesaEspBase = $dados["stats"][4]["base_stat"];
+      $velocidadeBase = $dados["stats"][5]["base_stat"];
+
+      $sql = "INSERT INTO monstro(nome, vida_base, ataque_base, defesa_base, ataque_esp_base, defesa_esp_base, velocidade_base) VALUES ('{$nome}', {$vidaBase}, {$ataqueBase}, {$defesaBase}, {$ataqueEspBase}, {$defesaEspBase}, {$velocidadeBase})";
+      echo $sql . "<br/>";
+      $this->salvarTextoNaSeed($this->arquivosSeeds["monstro"]["arquivo"], $sql);
+    }
   }
 
   public function run(): void {
