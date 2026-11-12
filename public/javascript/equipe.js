@@ -21,13 +21,12 @@ const NOMES_TIPOS = {
 let inicial = false;       // true na primeira escolha (ainda sem colecao)
 let disponiveis = [];      // [{id, nome}] de onde escolher: a sua colecao (na 1a vez, os basicos)
 let escolhidos = [];       // ids na ordem em que o jogador escolheu
-let catalogo = {};         // id -> pokemon completo (tipos, fraquezas, evolucao, imagens) vindo de api/pokemon
+let catalogo = {};         // id -> pokemon completo (tipos, fraquezas, evolucao) vindo de api/pokemon
 let pedras = 0;            // Pedras Evolutivas que o jogador tem
 let salvando = false;
 
-// a imagem e um arquivo do projeto (o caminho vem do banco). Se o catalogo nao carregar, usa a da PokeAPI
-const imagem = (id) =>
-    catalogo[id]?.imagens?.frente || `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/${id}.png`;
+// a imagem vem direto do repositorio de sprites da PokeAPI
+const imagem = (id) => `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/${id}.png`;
 
 const tiposDe = (id) => catalogo[id]?.tipos || [];
 
@@ -41,7 +40,7 @@ function nomeDoPokemon(id) {
     return p ? p.nome : `#${id}`;
 }
 
-// pokemons do banco: tipos, fraquezas, evolucao e o caminho das imagens
+// pokemons do banco: tipos, fraquezas e evolucao
 async function carregarCatalogo() {
     try {
         const resposta = await fetch("/monstroguelselnius/api/pokemon");
@@ -91,7 +90,7 @@ async function carregar(manterEscolha = false) {
         desenhar();
     } catch (erro) {
         console.error(erro);
-        mostrarMensagem("Não consegui carregar a equipe. Confira se o docs/banco.sql foi executado no banco e recarregue a página.", "erro");
+        mostrarMensagem("Não consegui carregar a equipe. Confira se o app/database/schema.sql foi executado no banco e recarregue a página.", "erro");
     }
 }
 

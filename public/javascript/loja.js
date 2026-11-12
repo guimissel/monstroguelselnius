@@ -51,7 +51,7 @@ async function carregar() {
         desenhar();
     } catch (erro) {
         console.error(erro);
-        mostrarMensagem("Não consegui carregar a loja. Confira se o docs/banco.sql foi executado no banco e recarregue a página.", "erro");
+        mostrarMensagem("Não consegui carregar a loja. Confira se o app/database/schema.sql foi executado no banco e recarregue a página.", "erro");
     }
 }
 

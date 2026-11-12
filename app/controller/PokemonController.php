@@ -2,7 +2,7 @@
 
 class PokemonController
 {
-    // GET api/pokemon: todos os pokemons (stats, tipos, fraquezas, evolucao e o caminho das imagens)
+    // GET api/pokemon: todos os pokemons (stats, tipos, fraquezas e evolucao)
     public function listar(): void
     {
         header("Content-Type: application/json");

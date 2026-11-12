@@ -5,7 +5,7 @@
 class PokemonFactory
 {
     // $dados: linha da vw_pokedex (o campo "tipos" vem como "water,poison")
-    public static function criar(array $dados, array $imagens = []): Pokemon
+    public static function criar(array $dados): Pokemon
     {
         $tipos = array_filter(explode(",", (string) ($dados["tipos"] ?? "")));
 
@@ -21,6 +21,6 @@ class PokemonFactory
             throw new RuntimeException("Nao existe classe para os tipos do pokemon " . ($dados["nome"] ?? "?"));
         }
 
-        return new $nomeDaClasse($dados, $imagens);
+        return new $nomeDaClasse($dados);
     }
 }

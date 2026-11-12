@@ -492,24 +492,8 @@ async function escolherGolpes(dados, tipos) {
     return escolhidos;
 }
 
-// imagens dos pokemons: arquivos do projeto, com o caminho vindo do banco (api/pokemon)
-let IMAGENS = {};
-
-async function carregarImagens() {
-    try {
-        const resposta = await fetch("/monstroguelselnius/api/pokemon");
-        if (!resposta.ok) return;
-        const dados = await resposta.json();
-        IMAGENS = {};
-        for (const p of dados.pokemons) IMAGENS[p.id] = p.imagens || {};
-    } catch (erro) {
-        console.error(erro);   // sem o catalogo o jogo usa as imagens da PokeAPI
-    }
-}
-
 async function criarPokemon(id) {
     const dados = await buscar(`${API}/pokemon/${id}`);
-    const local = IMAGENS[id] || {};
 
     const base = {};
     dados.stats.forEach((s) => (base[s.stat.name] = s.base_stat));
@@ -534,12 +518,11 @@ async function criarPokemon(id) {
         golpes: await escolherGolpes(dados, tipos),
         status: null,
         sono: 0,
-        // arquivo local (banco) primeiro; PokeAPI so se o pokemon nao tiver imagem guardada
-        frente: local.frente || dados.sprites.front_default,
-        costas: local.costas || dados.sprites.back_default || dados.sprites.front_default,
+        frente: dados.sprites.front_default,
+        costas: dados.sprites.back_default || dados.sprites.front_default,
         // sprites animados (GIF). Nem todo pokemon tem; sem eles vale a imagem parada
-        frenteAnim: local.frente_animada || animado?.front_default || null,
-        costasAnim: local.costas_animada || animado?.back_default || null
+        frenteAnim: animado?.front_default || null,
+        costasAnim: animado?.back_default || null
     });
 }
 
@@ -1364,7 +1347,7 @@ async function iniciar() {
         if (erro.message === "sessao expirada") return;
         console.error(erro);
         logTexto.innerHTML = "";
-        dizer("Não consegui carregar a sua equipe. Confira se o docs/banco.sql foi executado no banco.", { rapido: true });
+        dizer("Não consegui carregar a sua equipe. Confira se o app/database/schema.sql foi executado no banco.", { rapido: true });
         bloquearMenu(false);
         montarBotoes([{ texto: "Recarregar", onclick: () => { saidaLiberada = true; location.reload(); } }]);
         return;
@@ -1390,9 +1373,6 @@ async function iniciar() {
 
     try {
         const idsRobo = batalha ? batalha.robo : sortearIds(3, idsJogador, idsBasicos.length >= 6 ? idsBasicos : null);
-
-        // caminhos das imagens (arquivos do projeto). Precisa estar pronto antes de montar os pokemons
-        await carregarImagens();
 
         // se so o inventario falhar (ex: banco sem as tabelas novas) o jogo continua, sem itens
         const [, , ...pokemons] = await Promise.all([
@@ -1427,7 +1407,7 @@ async function iniciar() {
     iniciarMusica();
     mostrarPokemon("robo");
     if (!inventarioOk) await dizer("Não consegui carregar o seu inventário, então você vai sem itens nesta batalha.");
-    if (!estado.idBatalha) await dizer("Não consegui registrar a batalha. Rode o docs/banco.sql no banco.");
+    if (!estado.idBatalha) await dizer("Não consegui registrar a batalha. Rode o app/database/schema.sql no banco.");
     await dizer("Um treinador robô quer batalhar!");
     await dizer(`Ele enviou ${ativo("robo").nome}!`);
     mostrarPokemon("jogador");
