@@ -160,6 +160,48 @@ class MontadorSeed {
     }
   }
 
+  private function seedEvolucao(): void {
+    echo "<h1>Evoluções</h1>";
+
+    for ($i = 1; $i <= 78; $i++) {
+      $url = "{$this->urlBase}evolution-chain/{$i}";
+      $dados = $this->fazerRequisicao($url);
+
+      $nivel = 1;
+
+      if (empty($dados)) continue;
+      
+      $cadeia = $dados["chain"];
+
+      // processar cadeia evolutiva
+      $this->processarCadeiaEvolutiva($cadeia, $nivel);
+    }
+  }
+
+  private function processarCadeiaEvolutiva(array $cadeia, int $nivel): void {
+    $idBase = $this->extrairIdUrl($cadeia["species"]["url"]);
+
+    // se nao for da primeira geracao, pula
+    if ($idBase > 151) return;
+
+    // percorrer evolucoes diretas
+    foreach ($cadeia["evolves_to"] as $evolucaoDireta) {
+      $idEvolucao = $this->extrairIdUrl($evolucaoDireta["species"]["url"]);
+
+      if ($idEvolucao > 151) continue;
+
+      $pokedolaresNecessarios = $nivel * 2500;
+
+      $sqlEvolucaoDireta = "INSERT INTO evolucao(id_monstro_base, id_monstro_evoluido, pokedolares_necessarios) VALUES ({$idBase}, {$idEvolucao}, {$pokedolaresNecessarios})";
+
+      $this->salvarTextoNaSeed($this->arquivosSeeds["evolucao"]["arquivo"], $sqlEvolucaoDireta);
+
+      echo $sqlEvolucaoDireta . "<br/>";
+
+      $this->processarCadeiaEvolutiva($evolucaoDireta, $nivel + 1);
+    }
+  }
+
   public function run(): void {
     // remove os arquivos para não ficar dando append nos que já existem
     $this->removerSeeds();
