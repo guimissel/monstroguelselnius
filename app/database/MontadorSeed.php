@@ -23,14 +23,38 @@ class MontadorSeed {
     if (!is_dir($this->diretorioSeeds)) mkdir($this->diretorioSeeds, 0755);
 
     $this->arquivosSeeds = [
-      "1-efeitos",
-      "2-monstro",
-      "3-tipo",
-      "4-relacoes_tipos",
-      "5-tipo_monstro",
-      "6-imagem_monstro",
-      "7-ataque",
-      "8-ataque_possivel_monstro"  
+      "efeito" => [
+        "arquivo" => "1-efeito",
+        "metodo" => "seedEfeito"
+      ],
+      "monstro" => [
+        "arquivo" => "2-monstro",
+        "metodo" => "seedMonstro"
+      ],
+      "tipo" => [
+        "arquivo" => "3-tipo",
+        "metodo" => "seedTipo"
+      ],
+      "relacoes_tipos" => [
+        "arquivo" => "4-relacoes_tipos",
+        "metodo" => "seedRelacoesTipos"
+      ],
+      "tipo_monstro" => [
+        "arquivo" => "5-tipo_monstro",
+        "metodo" => "seedTipoMonstro"
+      ],
+      "imagem_monstro" => [
+        "arquivo" => "6-imagem_monstro",
+        "metodo" => "seedImagemMonstro"
+      ],
+      "ataque" => [
+        "arquivo" => "7-ataque",
+        "metodo" => "seedAtaque"
+      ],
+      "ataque_possivel_monstro" => [
+        "arquivo" => "8-ataque_possivel_monstro",
+        "metodo" => "seedAtaquePossivelMonstro"
+      ]
     ];
 
     $this->montaNomeSeed();
@@ -55,39 +79,45 @@ class MontadorSeed {
     $url = rtrim($url, "/");
     $partesUrl = explode("/", $url);
 
-    return end($partesUrl);
+    return (int) end($partesUrl);
   }
 
   private function montaNomeSeed(): void {
-    for ($i = 0; $i < count($this->arquivosSeeds); $i++) {
-      $this->arquivosSeeds[$i] .= ".sql";;
+    foreach ($this->arquivosSeeds as $nome => $arquivo) {
+      $this->arquivosSeeds[$nome]["arquivo"] .= ".sql";
     }
   }
 
   private function removerSeeds(): void {
-    foreach ($this->arquivosSeeds as $arquivo) {
-      if (file_exists($this->diretorioSeeds . $arquivo)) unlink($arquivo);
+    foreach ($this->arquivosSeeds as $seed) {
+      if (file_exists($this->diretorioSeeds . $seed["arquivo"])) unlink($this->diretorioSeeds . $seed["arquivo"]);
     }
   }
 
   private function seedEfeito(): void {
     $resposta = $this->fazerRequisicao($this->urlBase . "move-ailment");
 
+    echo "<h1>Seed de Efeitos</h1>";
     foreach ($resposta["results"] as $efeito) {
       $sql = "INSERT INTO efeito(nome) VALUES ('{$efeito['name']}')";
-      echo $sql . "\n";
-      $this->salvarTextoNaSeed($this->arquivosSeeds[0], $sql);
+      echo $sql . "<br/>";
+      $this->salvarTextoNaSeed($this->arquivosSeeds["efeito"]["arquivo"], $sql);
     }
   }
 
   private function seedMonstro(): void {
-    $resposta = $this->fazerRequisicao($this->)
+    // $resposta = $this->fazerRequisicao($this->)
   }
 
   public function run(): void {
     // remove os arquivos para não ficar dando append nos que já existem
     $this->removerSeeds();
 
-    $this->seedEfeito();
+    foreach ($this->arquivosSeeds as $seed) {
+      $metodo = $seed["metodo"];
+
+      if (method_exists($this, $metodo)) $this->$metodo();
+    }
+
   }
 }
