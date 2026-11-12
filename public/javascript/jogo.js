@@ -76,20 +76,175 @@ const LADOS = {
 
 let estado;
 
-function novoEstado() {
-    return {
-        jogador: { time: [], ativo: 0 },
-        robo: { time: [], ativo: 0 },
-        rodada: 1,
-        cooldownTroca: 0,
-        itens: {},                 // chave -> quantidade (preenchido por carregarInventario)
-        fim: false,
-        idBatalha: null,           // batalha aberta no servidor (para receber a recompensa)
-        timer: null
-    };
+// ===================== classes =====================
+
+// efetividade entre os tipos (a tabela vem da PokeAPI)
+class TabelaTipos {
+    static dados = {};
+
+    static async carregar() {
+        await Promise.all(Object.keys(NOMES_TIPOS).map(async (tipo) => {
+            const resposta = await buscar(`${API}/type/${tipo}`);
+            const rel = resposta.damage_relations;
+            TabelaTipos.dados[tipo] = {
+                forte: rel.double_damage_to.map((t) => t.name),
+                fraco: rel.half_damage_to.map((t) => t.name),
+                imune: rel.no_damage_to.map((t) => t.name)
+            };
+        }));
+    }
+
+    // 2x se for forte, 0.5x se for fraco. com 2 tipos multiplica (4x, 0.25x)
+    static multiplicador(tipoAtaque, tiposDefensor) {
+        const rel = TabelaTipos.dados[tipoAtaque];
+        let mult = 1;
+        for (const t of tiposDefensor) {
+            if (rel.imune.includes(t)) return 0;
+            if (rel.forte.includes(t)) mult *= 2;
+            else if (rel.fraco.includes(t)) mult *= 0.5;
+        }
+        return mult;
+    }
 }
 
-const ativo = (lado) => estado[lado].time[estado[lado].ativo];
+// um pokemon em batalha: guarda os atributos e sabe fazer as contas dele
+class Pokemon {
+    constructor(dados) {
+        Object.assign(this, dados);
+    }
+
+    estaDesmaiado() {
+        return this.hp <= 0;
+    }
+
+    // devolve o dano que realmente foi tirado
+    receberDano(dano) {
+        const antes = this.hp;
+        this.hp = Math.max(0, this.hp - dano);
+        return antes - this.hp;
+    }
+
+    curar(quantidade) {
+        this.hp = Math.min(this.maxHp, this.hp + quantidade);
+    }
+
+    limparStatus() {
+        this.status = null;
+        this.sono = 0;
+    }
+
+    // volta de um desmaio com metade do HP
+    reviver() {
+        this.hp = Math.floor(this.maxHp / 2);
+        this.limparStatus();
+    }
+
+    get velocidadeEfetiva() {
+        return this.status === "paralysis" ? this.spe / 2 : this.spe;
+    }
+
+    multiplicadorContra(tipoGolpe) {
+        return TabelaTipos.multiplicador(tipoGolpe, this.tipos);
+    }
+
+    // dano que este pokemon causa em "alvo" com o golpe
+    calcularDanoContra(alvo, golpe) {
+        const fisico = golpe.classe === "physical";
+        let ataque = fisico ? this.atk : this.spa;
+        const defesa = fisico ? alvo.def : alvo.spd;
+        if (fisico && this.status === "burn") ataque /= 2;
+
+        const stab = this.tipos.includes(golpe.tipo) ? 1.5 : 1;
+        const ef = alvo.multiplicadorContra(golpe.tipo);
+        const critico = Math.random() < 1 / 16;
+        const aleatorio = 0.85 + Math.random() * 0.15;
+
+        const base = Math.floor((Math.floor((2 * NIVEL) / 5) + 2) * golpe.poder * ataque / defesa / 50) + 2;
+        const total = Math.floor(base * stab * ef * (critico ? 1.5 : 1) * aleatorio);
+
+        return { dano: ef === 0 ? 0 : Math.max(1, total), ef, critico };
+    }
+}
+
+// os 3 pokemons de um treinador e qual deles esta em campo
+class Time {
+    #pokemons;
+
+    constructor(pokemons = []) {
+        this.#pokemons = pokemons;
+        this.indiceAtivo = 0;
+    }
+
+    get pokemons() { return this.#pokemons; }
+    get ativo() { return this.#pokemons[this.indiceAtivo]; }
+
+    vivos() { return this.#pokemons.filter((p) => !p.estaDesmaiado()); }
+    proximoVivo() { return this.#pokemons.findIndex((p) => !p.estaDesmaiado()); }
+}
+
+// quem batalha. Classe abstrata: o Jogador pergunta na tela, o Robo decide sozinho (polimorfismo)
+class Treinador {
+    constructor(lado) {
+        if (new.target === Treinador) throw new Error("Treinador e abstrata");
+        this.lado = lado;
+        this.equipe = new Time();   // composicao: o time e deste treinador
+    }
+
+    // devolve { tipo: "golpe", indice } (o jogador ainda pode devolver "trocar", "item" ou "fugir")
+    escolherAcao(batalha) { throw new Error("escolherAcao nao foi implementado"); }
+
+    // indice do pokemon que entra quando o da vez desmaia
+    escolherSubstituto() { throw new Error("escolherSubstituto nao foi implementado"); }
+
+    mensagemEntrada(pokemon) { throw new Error("mensagemEntrada nao foi implementada"); }
+}
+
+class Jogador extends Treinador {
+    constructor() { super("jogador"); }
+
+    escolherAcao() { return perguntarAcao(); }
+    escolherSubstituto() { return perguntarTrocaForcada(); }
+    mensagemEntrada(pokemon) { return `Vai, ${pokemon.nome}!`; }
+}
+
+class Robo extends Treinador {
+    constructor() { super("robo"); }
+
+    // 70% das vezes escolhe o golpe que causa mais dano, senao um aleatorio
+    escolherAcao(batalha) {
+        const atq = this.equipe.ativo;
+        const def = batalha.jogador.equipe.ativo;
+
+        const pontos = (g) => g.poder
+            ? g.poder * def.multiplicadorContra(g.tipo) * (atq.tipos.includes(g.tipo) ? 1.5 : 1) * ((g.precisao || 100) / 100)
+            : (def.status ? 0 : 30);
+
+        const golpe = Math.random() < 0.7
+            ? [...atq.golpes].sort((a, b) => pontos(b) - pontos(a))[0]
+            : atq.golpes[Math.floor(Math.random() * atq.golpes.length)];
+
+        return { tipo: "golpe", indice: atq.golpes.indexOf(golpe) };
+    }
+
+    escolherSubstituto() { return this.equipe.proximoVivo(); }
+    mensagemEntrada(pokemon) { return `O robô enviou ${pokemon.nome}!`; }
+}
+
+// a batalha inteira: os dois treinadores e o andamento
+class Batalha {
+    constructor() {
+        this.jogador = new Jogador();
+        this.robo = new Robo();
+        this.rodada = 1;
+        this.cooldownTroca = 0;
+        this.itens = {};           // chave -> quantidade (preenchido por carregarInventario)
+        this.fim = false;
+        this.idBatalha = null;     // batalha aberta no servidor (para receber a recompensa)
+        this.timer = null;
+    }
+}
+
+const ativo = (lado) => estado[lado].equipe.ativo;
 const outro = (lado) => (lado === "jogador" ? "robo" : "jogador");
 
 // ===================== utilitarios =====================
@@ -132,6 +287,9 @@ async function carregarInventario() {
     estado.itens = {};
 
     for (const item of dados.itens) {
+        // a Pedra Evolutiva e para a tela da equipe, nao para a batalha
+        if (item.categoria === "evolucao") continue;
+
         ITENS[item.chave] = {
             nome: item.nome,
             img: item.imagem,
@@ -278,31 +436,7 @@ function buscar(url) {
 }
 
 // tabela de tipos: quem e forte, fraco e imune contra quem
-const tabelaTipos = {};
 
-async function carregarTipos() {
-    await Promise.all(Object.keys(NOMES_TIPOS).map(async (tipo) => {
-        const dados = await buscar(`${API}/type/${tipo}`);
-        const rel = dados.damage_relations;
-        tabelaTipos[tipo] = {
-            forte: rel.double_damage_to.map((t) => t.name),
-            fraco: rel.half_damage_to.map((t) => t.name),
-            imune: rel.no_damage_to.map((t) => t.name)
-        };
-    }));
-}
-
-// 2x se for forte, 0.5x se for fraco. com 2 tipos multiplica (4x, 0.25x)
-function efetividade(tipoAtaque, tiposDefensor) {
-    const rel = tabelaTipos[tipoAtaque];
-    let mult = 1;
-    for (const t of tiposDefensor) {
-        if (rel.imune.includes(t)) return 0;
-        if (rel.forte.includes(t)) mult *= 2;
-        else if (rel.fraco.includes(t)) mult *= 0.5;
-    }
-    return mult;
-}
 
 function normalizarGolpe(m) {
     const categoria = m.meta?.category?.name;
@@ -358,8 +492,24 @@ async function escolherGolpes(dados, tipos) {
     return escolhidos;
 }
 
+// imagens dos pokemons: arquivos do projeto, com o caminho vindo do banco (api/pokemon)
+let IMAGENS = {};
+
+async function carregarImagens() {
+    try {
+        const resposta = await fetch("/monstroguelselnius/api/pokemon");
+        if (!resposta.ok) return;
+        const dados = await resposta.json();
+        IMAGENS = {};
+        for (const p of dados.pokemons) IMAGENS[p.id] = p.imagens || {};
+    } catch (erro) {
+        console.error(erro);   // sem o catalogo o jogo usa as imagens da PokeAPI
+    }
+}
+
 async function criarPokemon(id) {
     const dados = await buscar(`${API}/pokemon/${id}`);
+    const local = IMAGENS[id] || {};
 
     const base = {};
     dados.stats.forEach((s) => (base[s.stat.name] = s.base_stat));
@@ -370,7 +520,7 @@ async function criarPokemon(id) {
     const tipos = dados.types.map((t) => t.type.name);
     const maxHp = Math.floor((2 * base.hp * NIVEL) / 100) + NIVEL + 10;
 
-    return {
+    return new Pokemon({
         id,
         nome: formatarNome(dados.name),
         tipos,
@@ -384,12 +534,13 @@ async function criarPokemon(id) {
         golpes: await escolherGolpes(dados, tipos),
         status: null,
         sono: 0,
-        frente: dados.sprites.front_default,
-        costas: dados.sprites.back_default || dados.sprites.front_default,
+        // arquivo local (banco) primeiro; PokeAPI so se o pokemon nao tiver imagem guardada
+        frente: local.frente || dados.sprites.front_default,
+        costas: local.costas || dados.sprites.back_default || dados.sprites.front_default,
         // sprites animados (GIF). Nem todo pokemon tem; sem eles vale a imagem parada
-        frenteAnim: animado?.front_default || null,
-        costasAnim: animado?.back_default || null
-    };
+        frenteAnim: local.frente_animada || animado?.front_default || null,
+        costasAnim: local.costas_animada || animado?.back_default || null
+    });
 }
 
 // sorteia ids sem repetir. "lista" e de onde sortear (sem ela, vale a 1a geracao inteira)
@@ -418,7 +569,7 @@ logTexto.addEventListener("click", () => pularTexto && pularTexto());
 const musicaFundo = new Audio("public/audio/fundo.mp3");
 musicaFundo.loop = true;
 musicaFundo.preload = "auto";
-musicaFundo.volume = 0.2;
+musicaFundo.volume = 0.4;
 let musicaLigada = false;       // a batalha pediu musica
 let esperandoInteracao = false;
 
@@ -454,7 +605,7 @@ document.addEventListener("visibilitychange", () => {
 // (o navegador so deixa tocar som depois que a pessoa clicou em algo no site; se bloquear, o jogo segue sem som)
 const somLog = new Audio("public/audio/log.mp3");
 somLog.preload = "auto";
-somLog.volume = 0.4;
+somLog.volume = 0.6;
 let timerSomLog = null;
 
 function pararSomLog() {
@@ -708,7 +859,7 @@ function criarLinhaPokemon(mon, { desabilitado, onclick, extra }) {
 // lista de pokemons do time. usada para trocar e para escolher em quem usar o item
 function abrirPainelTime({ titulo, aviso, validar, aoEscolher, aoVoltar }) {
     abrirPainel(titulo, aviso);
-    estado.jogador.time.forEach((mon, i) => {
+    estado.jogador.equipe.pokemons.forEach((mon, i) => {
         const motivo = validar(mon, i);
         criarLinhaPokemon(mon, {
             desabilitado: !!motivo,
@@ -769,7 +920,7 @@ function abrirPainelTroca(resolverAcao) {
             ? `Troca bloqueada por mais ${estado.cooldownTroca} round${estado.cooldownTroca > 1 ? "s" : ""}.`
             : "Trocar gasta o seu turno e bloqueia novas trocas por 2 rounds.",
         validar: (mon, i) => {
-            if (i === estado.jogador.ativo && mon.hp > 0) return "em batalha";
+            if (i === estado.jogador.equipe.indiceAtivo && !mon.estaDesmaiado()) return "em batalha";
             if (mon.hp <= 0) return "desmaiado";
             if (bloqueado) return "aguarde";
             return false;
@@ -806,7 +957,7 @@ function mostrarGolpes(resolverAcao) {
 }
 
 // espera o jogador escolher (ou o tempo acabar e o jogo escolher um golpe)
-function escolherAcao() {
+function perguntarAcao() {
     return new Promise((resolve) => {
         const resolverAcao = (acao) => {
             pararTempo();
@@ -829,7 +980,7 @@ function escolherAcao() {
 }
 
 // troca obrigatoria quando o pokemon desmaia (nao tem cooldown)
-function escolherTrocaForcada() {
+function perguntarTrocaForcada() {
     return new Promise((resolve) => {
         const escolher = (i) => {
             pararTempo();
@@ -846,40 +997,11 @@ function escolherTrocaForcada() {
             aoVoltar: null
         });
 
-        iniciarTempo(() => escolher(estado.jogador.time.findIndex((p) => p.hp > 0)));
+        iniciarTempo(() => escolher(estado.jogador.equipe.proximoVivo()));
     });
 }
 
 // ===================== combate =====================
-
-function calcularDano(atq, def, golpe) {
-    const fisico = golpe.classe === "physical";
-    let ataque = fisico ? atq.atk : atq.spa;
-    const defesa = fisico ? def.def : def.spd;
-    if (fisico && atq.status === "burn") ataque /= 2;
-
-    const stab = atq.tipos.includes(golpe.tipo) ? 1.5 : 1;
-    const ef = efetividade(golpe.tipo, def.tipos);
-    const critico = Math.random() < 1 / 16;
-    const aleatorio = 0.85 + Math.random() * 0.15;
-
-    const base = Math.floor((Math.floor((2 * NIVEL) / 5) + 2) * golpe.poder * ataque / defesa / 50) + 2;
-    const total = Math.floor(base * stab * ef * (critico ? 1.5 : 1) * aleatorio);
-
-    return { dano: ef === 0 ? 0 : Math.max(1, total), ef, critico };
-}
-
-const velocidade = (mon) => (mon.status === "paralysis" ? mon.spe / 2 : mon.spe);
-
-// robo: 70% das vezes escolhe o golpe que causa mais dano, senao um aleatorio
-function escolherGolpeRobo(atq, def) {
-    const pontos = (g) => g.poder
-        ? g.poder * efetividade(g.tipo, def.tipos) * (atq.tipos.includes(g.tipo) ? 1.5 : 1) * ((g.precisao || 100) / 100)
-        : (def.status ? 0 : 30);
-
-    if (Math.random() < 0.7) return [...atq.golpes].sort((a, b) => pontos(b) - pontos(a))[0];
-    return atq.golpes[Math.floor(Math.random() * atq.golpes.length)];
-}
 
 // retorna false se o status impede de atacar neste turno
 async function podeAgir(lado, mon) {
@@ -930,7 +1052,7 @@ async function aplicarStatus(lado, alvo, status, avisarFalha) {
 }
 
 async function causarDano(lado, mon, dano) {
-    mon.hp = Math.max(0, mon.hp - dano);
+    mon.receberDano(dano);
     atualizarInfo(lado);
     animar(lado, "dano", 600);
     await esperar(850);
@@ -958,7 +1080,7 @@ async function atacar(lado, golpe) {
         return;
     }
 
-    const r = calcularDano(atq, def, golpe);
+    const r = atq.calcularDanoContra(def, golpe);
 
     if (r.ef === 0) {
         await dizer(`Não afeta ${nomeLog(alvoLado, def)}...`);
@@ -975,7 +1097,7 @@ async function atacar(lado, golpe) {
     if (golpe.drenagem && r.dano > 0) {
         const valor = Math.floor(r.dano * Math.abs(golpe.drenagem) / 100);
         if (golpe.drenagem > 0 && valor > 0) {
-            atq.hp = Math.min(atq.maxHp, atq.hp + valor);
+            atq.curar(valor);
             atualizarInfo(lado);
             await dizer(`${nomeLog(lado, atq)} recuperou HP!`);
         } else if (golpe.drenagem < 0 && valor > 0) {
@@ -984,12 +1106,12 @@ async function atacar(lado, golpe) {
         }
     }
 
-    if (def.hp > 0 && golpe.status && Math.random() * 100 < golpe.chanceStatus) {
+    if (!def.estaDesmaiado() && golpe.status && Math.random() * 100 < golpe.chanceStatus) {
         await aplicarStatus(alvoLado, def, golpe.status, false);
     }
 
-    if (def.hp <= 0) await processarDesmaio(alvoLado);
-    if (!estado.fim && atq.hp <= 0) await processarDesmaio(lado);
+    if (def.estaDesmaiado()) await processarDesmaio(alvoLado);
+    if (!estado.fim && atq.estaDesmaiado()) await processarDesmaio(lado);
 }
 
 // pokemon desmaiou: o robo manda o proximo, o jogador escolhe. sem pokemons = fim
@@ -999,20 +1121,16 @@ async function processarDesmaio(lado) {
     LADOS[lado].sombra.classList.add("sumiu");
     await dizer(`${nomeLog(lado, mon)} desmaiou!`);
 
-    const proximo = estado[lado].time.findIndex((p) => p.hp > 0);
+    const treinador = estado[lado];
 
-    if (proximo < 0) {
+    if (treinador.equipe.proximoVivo() < 0) {
         await terminar(lado === "robo");
         return;
     }
 
-    if (lado === "robo") {
-        estado.robo.ativo = proximo;
-        await dizer(`O robô enviou ${ativo("robo").nome}!`);
-    } else {
-        estado.jogador.ativo = await escolherTrocaForcada();
-        await dizer(`Vai, ${ativo("jogador").nome}!`);
-    }
+    // cada treinador escolhe do seu jeito (o jogador na tela, o robo sozinho)
+    treinador.equipe.indiceAtivo = await treinador.escolherSubstituto();
+    await dizer(treinador.mensagemEntrada(treinador.equipe.ativo));
     mostrarPokemon(lado);
 }
 
@@ -1021,15 +1139,15 @@ async function trocarJogador(indice) {
     LADOS.jogador.sprite.classList.add("desmaiou");
     LADOS.jogador.sombra.classList.add("sumiu");
     await esperar(400);
-    estado.jogador.ativo = indice;
-    await dizer(`Vai, ${ativo("jogador").nome}!`);
+    estado.jogador.equipe.indiceAtivo = indice;
+    await dizer(estado.jogador.mensagemEntrada(ativo("jogador")));
     mostrarPokemon("jogador");
     await esperar(300);
 }
 
 async function usarItem({ item: chave, alvo }) {
     const item = ITENS[chave];
-    const mon = estado.jogador.time[alvo];
+    const mon = estado.jogador.equipe.pokemons[alvo];
 
     // so aplica o efeito se o banco confirmar que o jogador ainda tem o item
     if (!(await gastarItemNoBanco(chave))) {
@@ -1042,21 +1160,15 @@ async function usarItem({ item: chave, alvo }) {
     await dizer(`Você usou ${item.nome} em ${mon.nome}!`);
 
     if (item.reviver) {
-        mon.hp = Math.floor(mon.maxHp / 2);
-        mon.status = null;
-        mon.sono = 0;
+        mon.reviver();
     } else {
-        if (item.cura) {
-            const cura = item.cura === "max" ? mon.maxHp : item.cura;
-            mon.hp = Math.min(mon.maxHp, mon.hp + cura);
-        }
+        if (item.cura) mon.curar(item.cura === "max" ? mon.maxHp : item.cura);
         if (item.cura_status === "todos" || (item.cura_status && item.cura_status.includes(mon.status))) {
-            mon.status = null;
-            mon.sono = 0;
+            mon.limparStatus();
         }
     }
 
-    if (alvo === estado.jogador.ativo) atualizarInfo("jogador");
+    if (alvo === estado.jogador.equipe.indiceAtivo) atualizarInfo("jogador");
     await esperar(800);
     await dizer(item.reviver ? `${mon.nome} voltou à batalha!` : `${mon.nome} está melhor!`);
 }
@@ -1070,7 +1182,7 @@ async function executarRodada(acao) {
 
     const jogador = ativo("jogador");
     const robo = ativo("robo");
-    const golpeRobo = escolherGolpeRobo(robo, jogador);
+    const golpeRobo = robo.golpes[estado.robo.escolherAcao(estado).indice];
 
     if (acao.tipo === "trocar") {
         await trocarJogador(acao.indice);
@@ -1089,13 +1201,13 @@ async function executarRodada(acao) {
         // prioridade do golpe, depois velocidade, empate sorteia
         ordem.sort((a, b) =>
             (b.golpe.prioridade - a.golpe.prioridade) ||
-            (velocidade(b.mon) - velocidade(a.mon)) ||
+            (b.mon.velocidadeEfetiva - a.mon.velocidadeEfetiva) ||
             (Math.random() - 0.5));
 
         for (const { lado, mon, golpe } of ordem) {
             if (estado.fim) break;
             // se o pokemon desmaiou ou foi trocado antes de agir, perde o turno
-            if (ativo(lado) !== mon || mon.hp <= 0) continue;
+            if (ativo(lado) !== mon || mon.estaDesmaiado()) continue;
             await atacar(lado, golpe);
         }
     }
@@ -1106,12 +1218,12 @@ async function executarRodada(acao) {
 async function fimDoRound() {
     for (const lado of ["jogador", "robo"]) {
         const mon = ativo(lado);
-        if (estado.fim || mon.hp <= 0) continue;
+        if (estado.fim || mon.estaDesmaiado()) continue;
         if (mon.status !== "poison" && mon.status !== "burn") continue;
 
         await dizer(`${nomeLog(lado, mon)} sofre com ${mon.status === "poison" ? "o veneno" : "a queimadura"}!`);
         await causarDano(lado, mon, Math.max(1, Math.floor(mon.maxHp / 8)));
-        if (mon.hp <= 0) await processarDesmaio(lado);
+        if (mon.estaDesmaiado()) await processarDesmaio(lado);
     }
 
     if (estado.fim) return;
@@ -1137,7 +1249,7 @@ async function terminar(vitoria, fugiu = false) {
     fecharPainel();
 
     const resultado = fugiu ? "fuga" : (vitoria ? "vitoria" : "derrota");
-    const vivos = estado.jogador.time.filter((p) => p.hp > 0).length;
+    const vivos = estado.jogador.equipe.vivos().length;
 
     if (vitoria) await dizer("Você venceu a batalha!");
     else if (!fugiu) await dizer("Todos os seus pokémons desmaiaram...");
@@ -1173,7 +1285,7 @@ let pilhaCriada = false;
 let voltarProtegido = false;
 
 function batalhaEmAndamento() {
-    return !!estado && !estado.fim && (!!estado.idBatalha || estado.robo.time.length === 3);
+    return !!estado && !estado.fim && (!!estado.idBatalha || estado.robo.equipe.pokemons.length === 3);
 }
 
 // fechar a aba, recarregar ou digitar outro endereco: aviso padrao do navegador (o texto nao e personalizavel)
@@ -1235,7 +1347,7 @@ function protegerBotaoVoltar() {
 // ===================== inicio =====================
 
 async function iniciar() {
-    estado = novoEstado();
+    estado = new Batalha();
     logTexto.innerHTML = "";
     bloquearMenu(true);
     montarBotoes(["Ataque", "Inventário", "pokemon", "Fugir"].map((texto) => ({ texto, onclick: () => {} })));
@@ -1279,6 +1391,9 @@ async function iniciar() {
     try {
         const idsRobo = batalha ? batalha.robo : sortearIds(3, idsJogador, idsBasicos.length >= 6 ? idsBasicos : null);
 
+        // caminhos das imagens (arquivos do projeto). Precisa estar pronto antes de montar os pokemons
+        await carregarImagens();
+
         // se so o inventario falhar (ex: banco sem as tabelas novas) o jogo continua, sem itens
         const [, , ...pokemons] = await Promise.all([
             carregarInventario().catch((erro) => {
@@ -1286,12 +1401,12 @@ async function iniciar() {
                 console.error(erro);
                 inventarioOk = false;
             }),
-            carregarTipos(),
+            TabelaTipos.carregar(),
             ...[...idsJogador, ...idsRobo].map(criarPokemon)
         ]);
 
-        estado.jogador.time = pokemons.slice(0, 3);
-        estado.robo.time = pokemons.slice(3);
+        estado.jogador.equipe = new Time(pokemons.slice(0, 3));
+        estado.robo.equipe = new Time(pokemons.slice(3));
 
         await Promise.all(pokemons.flatMap((p) => [
             precarregarImagem(p.frente), precarregarImagem(p.costas),
@@ -1320,7 +1435,7 @@ async function iniciar() {
     await dizer("Atenção: se você sair da tela de batalha, você perde a batalha!");
 
     while (!estado.fim) {
-        const acao = await escolherAcao();
+        const acao = await estado.jogador.escolherAcao(estado);
         await executarRodada(acao);
     }
 }

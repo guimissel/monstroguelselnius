@@ -33,7 +33,8 @@ class EquipeController
                 "equipe" => $dao->listar((int) $meuId),
                 "inicial" => $opcoes["inicial"],
                 "disponiveis" => $opcoes["lista"],
-                "basicos" => $dao->basicos()
+                "basicos" => $dao->basicos(),
+                "pedras" => $dao->pedras((int) $meuId)
             ]);
             return;
         }
@@ -47,6 +48,72 @@ class EquipeController
             echo json_encode([
                 "status" => 500,
                 "mensagem" => "Nao foi possivel carregar a equipe"
+            ]);
+            return;
+        }
+    }
+
+    // POST api/equipe/evoluir (campo "pokemon" no form): gasta 1 Pedra Evolutiva e evolui o pokemon
+    public function evoluir(): void
+    {
+        header("Content-Type: application/json");
+
+        $meuId = $_SESSION["id"] ?? null;
+        if (!isset($meuId))
+        {
+            http_response_code(401);
+            echo json_encode([
+                "status" => 401,
+                "mensagem" => "usuario nao foi identificado"
+            ]);
+            return;
+        }
+
+        $idPokemon = filter_var($_POST["pokemon"] ?? null, FILTER_VALIDATE_INT);
+        if ($idPokemon === false || $idPokemon < 1)
+        {
+            http_response_code(400);
+            echo json_encode([
+                "status" => 400,
+                "mensagem" => "Pokemon invalido"
+            ]);
+            return;
+        }
+
+        try
+        {
+            $dao = new EquipeDAO(Conexao::getConexao());
+            $resultado = $dao->evoluir((int) $meuId, $idPokemon);
+
+            echo json_encode([
+                "status" => 200,
+                "mensagem" => $resultado["antigo"]["nome"] . " evoluiu para " . $resultado["novo"]["nome"] . "!",
+                "antigo" => $resultado["antigo"],
+                "novo" => $resultado["novo"],
+                "pedras" => $dao->pedras((int) $meuId)
+            ]);
+            return;
+        }
+
+        catch (DomainException $e)
+        {
+            // erro esperado (sem pedra, sem evolucao, ja tem a evolucao...)
+            http_response_code($e->getCode());
+            echo json_encode([
+                "status" => $e->getCode(),
+                "mensagem" => $e->getMessage()
+            ]);
+            return;
+        }
+
+        catch (Exception $e)
+        {
+            error_log("EquipeController::evoluir: " . $e->getMessage());
+
+            http_response_code(500);
+            echo json_encode([
+                "status" => 500,
+                "mensagem" => "Nao foi possivel evoluir o pokemon"
             ]);
             return;
         }

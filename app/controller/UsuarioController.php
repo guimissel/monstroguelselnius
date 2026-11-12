@@ -82,6 +82,17 @@ class UsuarioController
             return;
         }
 
+        catch (DomainException $e)
+        {
+            // erro esperado (nome ja em uso)
+            http_response_code($e->getCode());
+            echo json_encode([
+                "status" => $e->getCode(),
+                "mensagem" => $e->getMessage()
+            ]);
+            return;
+        }
+
         catch (PDOException $e)
         {    
             http_response_code(500);
@@ -211,7 +222,7 @@ class UsuarioController
     public function eu () :void
     {
         $conexao = Conexao::getConexao();
-        $meuId = $_SESSION["id"];
+        $meuId = $_SESSION["id"] ?? null;
 
         // define que a resposta será JSON
         header("Content-Type: application/json");
@@ -254,10 +265,112 @@ class UsuarioController
         return;
     }
 
+    // POST api/usuario/atualizar: troca o nome e/ou a senha de quem esta logado.
+    // campos: senha_atual (obrigatorio), nome (opcional), senha_nova (opcional)
+    public function atualizar () :void
+    {
+        header("Content-Type: application/json");
+
+        $meuId = $_SESSION["id"] ?? null;
+        if (!isset($meuId))
+        {
+            http_response_code(401);
+            echo json_encode([
+                "status" => 401,
+                "mensagem" => "usuario nao foi identificado"
+            ]);
+            return;
+        }
+
+        $nome = trim((string) ($_POST["nome"] ?? ""));
+        $senhaNova = (string) ($_POST["senha_nova"] ?? "");
+        $senhaAtual = (string) ($_POST["senha_atual"] ?? "");
+
+        $erro = null;
+        if ($senhaAtual === "") $erro = "Digite a sua senha atual para confirmar";
+        else if ($nome === "" && $senhaNova === "") $erro = "Nada para mudar";
+        else if (strlen($nome) > 50) $erro = "O campo \"nome\" ultrapassa o tamanho maximo";
+        else if (strlen($senhaNova) > 256) $erro = "O campo \"senha\" ultrapassa o tamanho maximo";
+
+        if ($erro !== null)
+        {
+            http_response_code(400);
+            echo json_encode([
+                "status" => 400,
+                "mensagem" => $erro
+            ]);
+            return;
+        }
+
+        try
+        {
+            $usuarioDAO = new UsuarioDAO(Conexao::getConexao());
+            $usuario = $usuarioDAO->buscar(TipoBusca::ID, (int) $meuId);
+
+            if ($usuario === null || !password_verify($senhaAtual, $usuario->getSenhaHash()))
+            {
+                http_response_code(401);
+                echo json_encode([
+                    "status" => 401,
+                    "mensagem" => "senha atual incorreta"
+                ]);
+                return;
+            }
+
+            $usuarioDAO->atualizar(
+                (int) $meuId,
+                $nome !== "" ? $nome : null,
+                $senhaNova !== "" ? password_hash($senhaNova, PASSWORD_DEFAULT) : null
+            );
+
+            echo json_encode([
+                "status" => 200,
+                "mensagem" => "perfil atualizado",
+                "nome" => $nome !== "" ? $nome : $usuario->getUsuario()
+            ]);
+            return;
+        }
+
+        catch (DomainException $e)
+        {
+            http_response_code($e->getCode());
+            echo json_encode([
+                "status" => $e->getCode(),
+                "mensagem" => $e->getMessage()
+            ]);
+            return;
+        }
+
+        catch (Exception $e)
+        {
+            error_log("UsuarioController::atualizar: " . $e->getMessage());
+
+            http_response_code(500);
+            echo json_encode([
+                "status" => 500,
+                "mensagem" => "Nao foi possivel atualizar o perfil"
+            ]);
+            return;
+        }
+    }
+
     public function excluir ($id) :void
     {
         // define que a resposta será JSON
         header("Content-Type: application/json");
+
+        // so da para excluir a propria conta (o admin pode excluir qualquer uma)
+        $meuId = $_SESSION["id"] ?? null;
+        $souAdmin = ($_SESSION["role"] ?? null) === Acesso::ADMIN->value;
+        if (!isset($meuId) || (!$souAdmin && (int) $id !== (int) $meuId))
+        {
+            http_response_code(403);
+            echo json_encode([
+                "status"=>403,
+                "mensagem"=>"Voce so pode excluir a sua propria conta"
+            ]);
+            return;
+        }
 
         $usuarioDAO = new UsuarioDAO(Conexao::getConexao());
         $usuarioExclusao = $usuarioDAO->buscar(TipoBusca::ID, $id);

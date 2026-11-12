@@ -26,6 +26,11 @@ class UsuarioDAO
             $nome = $usuario->getUsuario();
             $senha = $usuario->getSenhaHash();
 
+            // o login procura pelo nome, entao nome repetido nao pode
+            if ($this->buscar(TipoBusca::NOME, $nome) !== null) {
+                throw new RegraDeJogoException("Esse nome ja esta em uso", 409);
+            }
+
             $sql = "INSERT INTO usuario (nome, senha) VALUES (:nome, :senha)";
             $prepare = $this->pdo->prepare($sql);
 
@@ -92,25 +97,47 @@ class UsuarioDAO
         );
     }
 
+    // troca o nome e/ou a senha (null = nao muda). Nome repetido sai como RegraDeJogoException 409
+    public function atualizar (int $id, ?string $nome, ?string $senhaHash): void
+    {
+        if ($nome !== null) {
+            $existente = $this->buscar(TipoBusca::NOME, $nome);
+            if ($existente !== null && $existente->getId() !== $id) {
+                throw new RegraDeJogoException("Esse nome ja esta em uso", 409);
+            }
+        }
+
+        $prepare = $this->pdo->prepare(
+            "UPDATE usuario SET nome = COALESCE(:nome, nome), senha = COALESCE(:senha, senha) WHERE id_usuario = :id"
+        );
+        $prepare->execute(["nome" => $nome, "senha" => $senhaHash, "id" => $id]);
+    }
+
     public function excluir (Usuario $usuario): void
     {
         // inicia a transação
         $this->pdo->beginTransaction();
 
-        $id = $usuario->getId();
+        try {
+            $id = $usuario->getId();
 
-        // as batalhas do jogador precisam sair antes (batalha referencia usuario)
-        $apagarBatalhas = $this->pdo->prepare("DELETE FROM batalha WHERE id_usuario = :id");
-        $apagarBatalhas->execute(["id" => $id]);
+            // as batalhas do jogador precisam sair antes (batalha referencia usuario)
+            $apagarBatalhas = $this->pdo->prepare("DELETE FROM batalha WHERE id_usuario = :id OR id_usuario_2 = :id2");
+            $apagarBatalhas->execute(["id" => $id, "id2" => $id]);
 
-        // prepara a query
-        $prepare = $this->pdo->prepare("DELETE FROM usuario WHERE id_usuario = :id");
-        $prepare->execute([
-            "id"=> $id
-        ]);
+            // prepara a query
+            $prepare = $this->pdo->prepare("DELETE FROM usuario WHERE id_usuario = :id");
+            $prepare->execute([
+                "id"=> $id
+            ]);
 
-        // finaliza a transação
-        $this->pdo->commit();
-        return;
+            // finaliza a transação
+            $this->pdo->commit();
+        } catch (Throwable $e) {
+            if ($this->pdo->inTransaction()) {
+                $this->pdo->rollBack();
+            }
+            throw $e;
+        }
     }
 }
