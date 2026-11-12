@@ -40,6 +40,9 @@ CREATE TABLE item_loja (
 CREATE TABLE item_usuario (
     id_usuario INT NOT NULL,
     id_item_loja INT NOT NULL,
+    quantidade INT DEFAULT 1 NOT NULL,
+
+    PRIMARY KEY (id_usuario, id_item_loja),
 
     FOREIGN KEY (id_usuario) REFERENCES usuario(id_usuario)
         ON DELETE CASCADE
@@ -58,7 +61,12 @@ CREATE TABLE monstro (
     ataque_esp_base INT NOT NULL,
     defesa_esp_base INT NOT NULL,
     velocidade_base INT NOT NULL,
-    is_ativo BOOLEAN DEFAULT TRUE NOT NULL
+    is_ativo BOOLEAN DEFAULT TRUE NOT NULL,
+    id_monstro_evolucao INT,
+
+    FOREIGN KEY (id_monstro_evolucao) REFERENCES monstro(id_monstro)
+        ON DELETE RESTRICT
+        ON UPDATE CASCADE
 );
 
 CREATE TABLE tipo (
