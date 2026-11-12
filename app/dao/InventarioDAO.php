@@ -49,7 +49,8 @@ class InventarioDAO
         $sql = "UPDATE item_usuario iu
                 JOIN item_loja i ON i.id_item_loja = iu.id_item_loja
                 SET iu.quantidade = iu.quantidade - 1
-                WHERE iu.id_usuario = :id AND i.chave = :chave AND iu.quantidade > 0";
+                WHERE iu.id_usuario = :id AND i.chave = :chave AND iu.quantidade > 0
+                  AND i.categoria <> 'evolucao'";
         $prepare = $this->pdo->prepare($sql);
         $prepare->execute(["id" => $idUsuario, "chave" => $chave]);
 

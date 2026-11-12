@@ -6,7 +6,8 @@ const pokedolaresEl = document.getElementById("pokedolares");
 // nomes das categorias que vem do banco (item_loja.categoria)
 const NOMES_CATEGORIAS = {
     pocao_hp: "Poções de HP",
-    pocao_condicao: "Poções de condição"
+    pocao_condicao: "Poções de condição",
+    evolucao: "Evolução"
 };
 
 const MAXIMO_POR_COMPRA = 99;   // o servidor tambem confere
