@@ -40,6 +40,11 @@ define("ROTAS_API", [
             $controlador = new PerfilController();
             $controlador->ver();
         },
+
+        "api/montarScript" => function () {
+            $montadorSeed = new MontadorSeed(__DIR__ . "/../app/database/seeds/");
+            $montadorSeed->run();
+        }
     ],
 
     "POST" => [

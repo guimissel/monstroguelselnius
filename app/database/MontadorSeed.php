@@ -16,7 +16,7 @@ ataque_possivel_monstro
 class MontadorSeed {
   private string $diretorioSeeds;
   private array $arquivosSeeds;
-  private $urlBase;
+  private string $urlBase;
 
   public function __construct(string $diretorioSeeds) {
     $this->diretorioSeeds = $diretorioSeeds;
@@ -54,6 +54,8 @@ class MontadorSeed {
   private function extrairIdUrl(string $url): int {
     $url = rtrim($url, "/");
     $partesUrl = explode("/", $url);
+
+    return end($partesUrl);
   }
 
   private function montaNomeSeed(): void {
