@@ -202,6 +202,77 @@ class MontadorSeed {
     }
   }
 
+  private function seedTipo(): void {
+    echo "<h1>Tipo</h1>";
+
+    $url = "{$this->urlBase}type/";
+
+    $dados = $this->fazerRequisicao($url);
+    $tipos = $dados["results"];
+
+    foreach ($tipos as $tipo) {
+      $id = $this->extrairIdUrl($tipo["url"]);
+      $nome = $tipo["name"];
+
+      $sql = "INSERT INTO tipo(id_tipo, nome) VALUES ({$id}, '{$nome}')";
+
+      echo $sql . "<br/>";
+
+      $this->salvarTextoNaSeed($this->diretorioSeeds . $this->arquivosSeeds["tipo"]["arquivo"], $sql);
+    }
+  }
+
+  private function seedRelacoesTipos(): void {
+    echo "<h1>Relações Tipos</h1>";
+
+    for ($idTipo = 1; $idTipo <= 19; $idTipo++) {
+      $url = "{$this->urlBase}type/{$idTipo}/";
+
+      $dados = $this->fazerRequisicao($url);
+      $relacoes = $dados["damage_relations"];
+
+      // Imunidades
+      echo "<h2>Imunidades</h2>";
+      $this->salvarTextoNaSeed($this->diretorioSeeds . $this->arquivosSeeds["relacoes_tipos"]["arquivo"], "\n-- Imunidades");
+      foreach ($relacoes["no_damage_to"] as $tipoAlvo) {
+        $idAlvo = $this->extrairIdUrl($tipoAlvo["url"]);
+        $sql = "INSERT INTO imunidades_tipo(id_tipo, id_tipo_imunidade) VALUES ({$idTipo}, {$idAlvo})";
+
+        echo $sql . "<br/>";
+
+        $this->salvarTextoNaSeed($this->diretorioSeeds . $this->arquivosSeeds["relacoes_tipos"]["arquivo"], $sql);
+      }
+
+      // Eficacias
+      echo "<h2>Eficacias</h2>";
+      $this->salvarTextoNaSeed($this->diretorioSeeds . $this->arquivosSeeds["relacoes_tipos"]["arquivo"], "\n-- Eficacias");
+      foreach ($relacoes["double_damage_to"] as $tipoAlvo) {
+        $idAlvo = $this->extrairIdUrl($tipoAlvo["url"]);
+        $sql = "INSERT INTO eficacias_tipo(id_tipo, id_tipo_eficacia) VALUES ({$idTipo}, {$idAlvo})";
+
+        echo $sql . "<br/>";
+
+        $this->salvarTextoNaSeed($this->diretorioSeeds . $this->arquivosSeeds["relacoes_tipos"]["arquivo"], $sql);
+      }
+
+      // Fraquezas
+      echo "<h2>Tipos que o tipo e eficaz</h2>";
+      $this->salvarTextoNaSeed($this->diretorioSeeds . $this->arquivosSeeds["relacoes_tipos"]["arquivo"], "\n-- Fraquezas");
+      foreach ($relacoes["half_damage_to"] as $tipoAlvo) {
+        $idAlvo = $this->extrairIdUrl($tipoAlvo["url"]);
+        $sql = "INSERT INTO fraquezas_tipo(id_tipo, id_tipo_eficacia) VALUES ({$idTipo}, {$idAlvo})";
+
+        echo $sql . "<br/>";
+
+        $this->salvarTextoNaSeed($this->diretorioSeeds . $this->arquivosSeeds["relacoes_tipos"]["arquivo"], $sql);
+      }
+    }
+  }
+
+  private function seedTipoMonstro(): void {
+    
+  }
+
   public function run(): void {
     // remove os arquivos para não ficar dando append nos que já existem
     $this->removerSeeds();

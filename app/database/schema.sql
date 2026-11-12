@@ -96,21 +96,21 @@ CREATE TABLE categoria_dano (
     nome VARCHAR(255) NOT NULL
 );
 
-CREATE TABLE eficaz_tipo (
+CREATE TABLE eficacias_tipo (
     id_tipo INT NOT NULL,
-    id_tipo_eficaz INT NOT NULL,
+    id_tipo_eficacia INT NOT NULL,
 
-    PRIMARY KEY (id_tipo, id_tipo_eficaz),
+    PRIMARY KEY (id_tipo, id_tipo_eficacia),
 
     FOREIGN KEY (id_tipo) REFERENCES tipo(id_tipo)
         ON DELETE CASCADE
         ON UPDATE CASCADE,
-    FOREIGN KEY (id_tipo_eficaz) REFERENCES tipo(id_tipo)
+    FOREIGN KEY (id_tipo_eficacia) REFERENCES tipo(id_tipo)
         ON DELETE CASCADE
         ON UPDATE CASCADE
 );
 
-CREATE TABLE fraqueza_tipo (
+CREATE TABLE fraquezas_tipo (
     id_tipo INT NOT NULL,
     id_tipo_fraqueza INT NOT NULL,
 
@@ -124,16 +124,16 @@ CREATE TABLE fraqueza_tipo (
         ON UPDATE CASCADE
 );
 
-CREATE TABLE imune_tipo (
+CREATE TABLE imunidades_tipo (
     id_tipo INT NOT NULL,
-    id_tipo_imune INT NOT NULL,
+    id_tipo_imunidade INT NOT NULL,
 
-    PRIMARY KEY (id_tipo, id_tipo_imune),
+    PRIMARY KEY (id_tipo, id_tipo_imunidade),
 
     FOREIGN KEY (id_tipo) REFERENCES tipo(id_tipo)
         ON DELETE CASCADE
         ON UPDATE CASCADE,
-    FOREIGN KEY (id_tipo_imune) REFERENCES tipo(id_tipo)
+    FOREIGN KEY (id_tipo_imunidade) REFERENCES tipo(id_tipo)
         ON DELETE CASCADE
         ON UPDATE CASCADE
 );

@@ -85,7 +85,7 @@
     "tableEntities": {
       "03h6ibh4o37pef7pnadsfx11k": {
         "id": "03h6ibh4o37pef7pnadsfx11k",
-        "name": "fraqueza_tipo",
+        "name": "fraquezas",
         "comment": "armazena as fraquezas de um tipo",
         "columnIds": [
           "03h6iblpfi8zb4oy76v20cfav",
@@ -111,7 +111,7 @@
       },
       "03h6qaaefk4f5rfx8dviv5dih": {
         "id": "03h6qaaefk4f5rfx8dviv5dih",
-        "name": "imune_tipo",
+        "name": "imunidades",
         "comment": "armazena as imunidades do tipo",
         "columnIds": [
           "03h6qal7af0gzarxttcr7lwxb",
@@ -237,15 +237,15 @@
       },
       "PHShaIkdYJd-eSXGCEjKZ": {
         "id": "PHShaIkdYJd-eSXGCEjKZ",
-        "name": "eficaz_tipo",
+        "name": "eficacias",
         "comment": "armazena as supereficácias do tipo",
         "columnIds": [
           "iMZZc6J31zNE0a7lg6u_E",
           "wt1gQnREMG7MhPFrL9oBI"
         ],
         "ui": {
-          "x": 493.6593,
-          "y": -1126.7865
+          "x": 509.6593,
+          "y": -1113.7865
         }
       },
       "SB-xGiuNtq1avOtb3YnAw": {
@@ -357,6 +357,7 @@
         "id": "03h6iblpfi8zb4oy76v20cfav",
         "tableId": "03h6ibh4o37pef7pnadsfx11k",
         "name": "id_tipo",
+        "comment": "causa a metade de dano em id_tipo_fraqueza",
         "dataType": "int",
         "options": 10
       },
@@ -364,7 +365,6 @@
         "id": "03h6ibptirkaagmamslnjctup",
         "tableId": "03h6ibh4o37pef7pnadsfx11k",
         "name": "id_tipo_fraqueza",
-        "comment": "o tipo que id_tipo é fraco",
         "dataType": "int",
         "options": 10
       },
@@ -394,14 +394,14 @@
         "id": "03h6qal7af0gzarxttcr7lwxb",
         "tableId": "03h6qaaefk4f5rfx8dviv5dih",
         "name": "id_tipo",
+        "comment": "nao da dano em id_tipo_imunidade",
         "dataType": "int",
         "options": 10
       },
       "03h6qapjr1osg0n7tlpnnr5a4": {
         "id": "03h6qapjr1osg0n7tlpnnr5a4",
         "tableId": "03h6qaaefk4f5rfx8dviv5dih",
-        "name": "id_tipo_imune",
-        "comment": "o tipo que id_tipo é imune",
+        "name": "id_tipo_imunidade",
         "dataType": "int",
         "options": 10
       },
@@ -645,14 +645,14 @@
         "id": "iMZZc6J31zNE0a7lg6u_E",
         "tableId": "PHShaIkdYJd-eSXGCEjKZ",
         "name": "id_tipo",
+        "comment": "causa dobro de dano em id_tipo_eficacia",
         "dataType": "int",
         "options": 10
       },
       "wt1gQnREMG7MhPFrL9oBI": {
         "id": "wt1gQnREMG7MhPFrL9oBI",
         "tableId": "PHShaIkdYJd-eSXGCEjKZ",
-        "name": "id_tipo_eficaz",
-        "comment": "o tipo que id_tipo é eficaz",
+        "name": "id_tipo_eficacia",
         "dataType": "int",
         "options": 10
       },
