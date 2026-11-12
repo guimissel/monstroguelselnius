@@ -101,7 +101,7 @@ class BatalhaDAO
         }
     }
 
-    // quem venceu leva os 3 pokemons do robo para a colecao (so os que ainda nao tinha).
+    // quem venceu leva os 3 pokemons do robo para a colecao (so os que ainda nao tinha)
     // roda dentro da transaction do finalizar, que ja garante que so acontece uma vez por batalha
     private function conquistarPokemons(int $idBatalha, int $idUsuario): array
     {
@@ -130,6 +130,7 @@ class BatalhaDAO
             }
             $lista[] = ["id" => $id, "nome" => $linha["nome"] ?? "#" . $id, "novo" => $novo];
         }
+
         return $lista;
     }
 
