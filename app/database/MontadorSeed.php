@@ -81,6 +81,9 @@ class MontadorSeed {
   }
 
   public function run(): void {
+    // remove os arquivos para não ficar dando append nos que já existem
+    $this->removerSeeds();
+
     $this->seedEfeito();
   }
 }
