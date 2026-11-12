@@ -29,7 +29,7 @@ function criar(tag, classe, texto) {
 function carta(pokemon, extra) {
     const c = criar("div", "carta");
     const img = criar("img");
-    img.src = catalogo[pokemon.id]?.imagens?.frente || `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/${pokemon.id}.png`;
+    img.src = `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/${pokemon.id}.png`;
     img.alt = "";
     c.append(img, criar("span", "", pokemon.nome));
 

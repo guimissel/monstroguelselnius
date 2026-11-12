@@ -46,7 +46,7 @@ $roteador->get(
                 exit;
             }
         } catch (Exception $e) {
-            // sem as tabelas da equipe (docs/banco.sql) o proprio jogo mostra o aviso
+            // sem as tabelas da equipe (app/database/schema.sql) o proprio jogo mostra o aviso
             error_log("rota jogo: " . $e->getMessage());
         }
 
@@ -110,16 +110,16 @@ $roteador->get(
     "$caminhoBase/login"
 );
 
-// criar rotas api
+// criar rotas api que são livres
 // numero de tipos de requisição (index)
-$contagemTiposRequisicao = count(ROTAS_API);
+$contagemTiposRequisicao = count(ROTAS_API_NOAUTH);
 
 // percorre todos tipos de requisição
 for ($i = 0; $i < $contagemTiposRequisicao; $i++) 
 {
 
     // resgata a chave da requisição
-    $tipoRequisicao = array_keys(ROTAS_API)[$i];
+    $tipoRequisicao = array_keys(ROTAS_API_NOAUTH)[$i];
 
     // verifica se o metodo existe antes de continuar
     if (!method_exists($roteador, $tipoRequisicao)) 
@@ -129,19 +129,54 @@ for ($i = 0; $i < $contagemTiposRequisicao; $i++)
     }
 
     // numero de rotas da requisição
-    $contagemRotas = count(ROTAS_API[$tipoRequisicao]);
+    $contagemRotas = count(ROTAS_API_NOAUTH[$tipoRequisicao]);
 
     // percorre todas rotas
     for ($j = 0; $j < $contagemRotas; $j++)
     {
         // caminho que sera usado como rota na rquisição
-        $rota = array_keys(ROTAS_API[$tipoRequisicao])[$j];
+        $rota = array_keys(ROTAS_API_NOAUTH[$tipoRequisicao])[$j];
 
         // cria uma nova rota
         $roteador->$tipoRequisicao(
             $caminhoApi . $rota, 
-            ROTAS_API[$tipoRequisicao][$rota], 
+            ROTAS_API_NOAUTH[$tipoRequisicao][$rota], 
             [Acesso::VISITANTE, Acesso::USUARIO, Acesso::ADMIN]
+        );
+    }
+}
+
+// criar rotas api que são privadas [Acesso::USUARIO, Acesso::ADMIN]
+// numero de tipos de requisição (index)
+$contagemTiposRequisicao = count(ROTAS_API_NEEDAUTH);
+
+// percorre todos tipos de requisição
+for ($i = 0; $i < $contagemTiposRequisicao; $i++) 
+{
+    // resgata a chave da requisição
+    $tipoRequisicao = array_keys(ROTAS_API_NEEDAUTH)[$i];
+
+    // verifica se o metodo existe antes de continuar
+    if (!method_exists($roteador, $tipoRequisicao)) 
+    {
+        // pula para o próximo tipo de requisição
+        continue;
+    }
+
+    // numero de rotas da requisição
+    $contagemRotas = count(ROTAS_API_NEEDAUTH[$tipoRequisicao]);
+
+    // percorre todas rotas
+    for ($j = 0; $j < $contagemRotas; $j++)
+    {
+        // caminho que sera usado como rota na rquisição
+        $rota = array_keys(ROTAS_API_NEEDAUTH[$tipoRequisicao])[$j];
+
+        // cria uma nova rota
+        $roteador->$tipoRequisicao(
+            $caminhoApi . $rota, 
+            ROTAS_API_NEEDAUTH[$tipoRequisicao][$rota], 
+            [Acesso::USUARIO, Acesso::ADMIN]
         );
     }
 }

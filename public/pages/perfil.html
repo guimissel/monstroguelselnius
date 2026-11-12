@@ -6,98 +6,7 @@
 <title>Perfil</title>
 <base href="/monstroguelselnius/">
 <link href="https://fonts.googleapis.com/css2?family=Pixelify+Sans&display=swap" rel="stylesheet">
-<style>
-  * { box-sizing: border-box; }
-
-  body {
-    margin: 0;
-    padding: 40px 50px;
-    background: #dac5af;
-    font-family: "Pixelify Sans", monospace;
-    color: #3a1d08;
-  }
-
-  .topo {
-    max-width: 1180px;
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    flex-wrap: wrap;
-    gap: 16px;
-    margin-bottom: 20px;
-  }
-
-  h1 { margin: 0; font-size: 24px; font-weight: 400; color: #1f5c8a; text-decoration: underline; }
-  h2 { margin: 28px 0 10px; font-size: 20px; font-weight: 400; color: #1f5c8a; }
-
-  .links { display: flex; flex-wrap: wrap; gap: 12px; }
-
-  .botao {
-    padding: 6px 14px;
-    font-family: inherit;
-    font-size: 16px;
-    color: #fff;
-    text-decoration: none;
-    background: #1a6fb5;
-    border: 1px solid #0f4a80;
-    border-bottom-width: 4px;
-    border-radius: 4px;
-    cursor: pointer;
-  }
-  .botao:hover:not(:disabled) { filter: brightness(1.1); }
-  .botao.perigo { background: #b03020; border-color: #6e1a10; }
-  .botao.claro { background: #8a6a48; border-color: #5a4028; }
-
-  .secao { max-width: 1180px; }
-
-  .resumo { display: flex; flex-wrap: wrap; gap: 12px 32px; font-size: 20px; }
-  .resumo b { font-weight: 400; color: #6b4a2a; }
-  .acoes { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 14px; }
-
-  .mensagem { min-height: 24px; margin: 10px 0 0; font-size: 17px; }
-  .mensagem.erro { color: #a02010; }
-  .mensagem.ok { color: #1d6b2a; }
-
-  .placar { display: grid; grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); gap: 12px; }
-  .placar div { padding: 10px; text-align: center; background: rgba(248, 225, 176, .6); border: 3px solid #2a1204; border-radius: 6px; }
-  .placar span { display: block; font-size: 26px; }
-  .placar small { font-size: 14px; color: #6b4a2a; }
-
-  .cartas { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 14px; }
-  .carta {
-    display: flex; flex-direction: column; align-items: center; gap: 2px;
-    padding: 8px;
-    text-align: center;
-    background: radial-gradient(ellipse at center, #f8e1b0 50%, #efc888 78%, #d9993f 100%);
-    border: 4px solid #2a1204;
-    border-radius: 6px;
-  }
-  .carta img { width: 80px; height: 80px; image-rendering: pixelated; }
-  .carta .tipos { display: flex; flex-wrap: wrap; justify-content: center; gap: 4px; min-height: 20px; }
-  .carta .tipo { padding: 0 8px; font-size: 13px; color: #f8e1b0; background: #3a1d08; border-radius: 3px; }
-  .carta .na-equipe { font-size: 12px; color: #1d6b2a; }
-  .nota { margin: 8px 0 0; font-size: 16px; color: #6b4a2a; }
-
-  table { width: 100%; max-width: 720px; border-collapse: collapse; font-size: 16px; background: rgba(248, 225, 176, .5); }
-  th, td { padding: 6px 10px; text-align: left; border-bottom: 2px solid #b79b78; }
-  th { font-weight: 400; color: #6b4a2a; }
-  .vitoria { color: #1d6b2a; }
-  .derrota { color: #a02010; }
-
-  form { display: grid; gap: 10px; max-width: 360px; }
-  label { display: grid; gap: 4px; font-size: 16px; }
-  input {
-    padding: 8px 10px;
-    font-family: inherit;
-    font-size: 16px;
-    color: #3a1d08;
-    background: #f8e1b0;
-    border: 3px solid #2a1204;
-    border-radius: 4px;
-  }
-
-  @media (max-width: 700px) { body { padding: 24px 16px; } }
-</style>
+<link rel="stylesheet" href="public/style/perfil.css">
 </head>
 <body>
 
@@ -161,6 +70,6 @@
   <p class="mensagem" id="mensagemForm"></p>
 </div>
 
-<script src="public/javascript/perfil.js?v=1"></script>
+<script src="public/javascript/perfil.js?v=2"></script>
 </body>
 </html>

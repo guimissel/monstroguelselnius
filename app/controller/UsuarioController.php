@@ -1,10 +1,5 @@
 <?php
 
-
-require_once __DIR__ . "/AutenticacaoController.php";
-require_once __DIR__ . "/../model/Usuario.php";
-require_once __DIR__ . "/../dao/UsuarioDAO.php";
-
 class UsuarioController 
 {
     public function criar () :void
@@ -354,7 +349,7 @@ class UsuarioController
         }
     }
 
-    public function excluir ($id) :void
+    public function excluir (int $id) :void
     {
         // define que a resposta será JSON
         header("Content-Type: application/json");

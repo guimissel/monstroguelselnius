@@ -1,8 +1,5 @@
 <?php
 
-require_once __DIR__ . "/AutenticacaoController.php";
-require_once __DIR__ . "/../dao/EquipeDAO.php";
-
 class EquipeController
 {
     // GET api/equipe: a equipe salva, de onde escolher ("disponiveis") e a lista de basicos

@@ -1,8 +1,4 @@
 <?php
-
-require_once __DIR__ . "/AutenticacaoController.php";
-require_once __DIR__ . "/../dao/InventarioDAO.php";
-
 class InventarioController
 {
     // GET api/inventario: itens do jogador logado + dinheiro

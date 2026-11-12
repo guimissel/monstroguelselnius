@@ -55,7 +55,7 @@ class PerfilController
             http_response_code(500);
             echo json_encode([
                 "status" => 500,
-                "mensagem" => "Nao foi possivel carregar o perfil. Confira se o docs/banco.sql foi executado."
+                "mensagem" => "Nao foi possivel carregar o perfil. Confira se o app/database/schema.sql foi executado."
             ]);
             return;
         }

@@ -1,9 +1,5 @@
 <?php
 
-require_once __DIR__ . "/AutenticacaoController.php";
-require_once __DIR__ . "/../dao/LojaDAO.php";
-require_once __DIR__ . "/../dao/InventarioDAO.php";
-
 class LojaController
 {
     // maximo de unidades de um item por compra

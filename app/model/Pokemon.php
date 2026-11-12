@@ -25,10 +25,9 @@ abstract class Pokemon implements Combatente
     private int $velocidade;
     private ?int $idEvolucao;
     private ?string $nomeEvolucao;
-    private array $imagens;   // frente, costas, frente_animada, costas_animada -> caminho do arquivo
 
-    // $dados e uma linha da view vw_pokedex; $imagens vem da tabela imagem_monstro
-    public function __construct(array $dados, array $imagens = [])
+    // $dados e uma linha da view vw_pokedex
+    public function __construct(array $dados)
     {
         $this->id = (int) $dados["id_pokemon"];
         $this->nome = $dados["nome"];
@@ -41,7 +40,6 @@ abstract class Pokemon implements Combatente
         $this->velocidade = (int) $dados["velocidade_base"];
         $this->idEvolucao = isset($dados["id_evolucao"]) ? (int) $dados["id_evolucao"] : null;
         $this->nomeEvolucao = $dados["evolucao_nome"] ?? null;
-        $this->imagens = $imagens;
     }
 
     // cada classe de tipo diz quais sao os tipos dela, ex: ["water", "poison"]
@@ -58,7 +56,6 @@ abstract class Pokemon implements Combatente
     public function getVelocidade(): int { return $this->velocidade; }
     public function getIdEvolucao(): ?int { return $this->idEvolucao; }
     public function getNomeEvolucao(): ?string { return $this->nomeEvolucao; }
-    public function getImagens(): array { return $this->imagens; }
 
     public function podeEvoluir(): bool
     {
@@ -161,8 +158,7 @@ abstract class Pokemon implements Combatente
             "fraquezas" => $this->fraquezas(),
             "resistencias" => $this->resistencias(),
             "imunidades" => $this->imunidades(),
-            "evolucao" => $this->idEvolucao === null ? null : ["id" => $this->idEvolucao, "nome" => $this->nomeEvolucao],
-            "imagens" => $this->imagens
+            "evolucao" => $this->idEvolucao === null ? null : ["id" => $this->idEvolucao, "nome" => $this->nomeEvolucao]
         ];
     }
 }

@@ -1,5 +1,7 @@
 <?php
-require_once __DIR__ . "/../app/controller/AutenticacaoController.php";
+
+// não remova esta linha!
+require_once __DIR__ . "/../app/controller/AutenticacaoController.php";                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                 //manuela reis
 
 class Roteador
 {

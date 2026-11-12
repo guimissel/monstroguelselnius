@@ -17,7 +17,7 @@ class Equipe implements IteratorAggregate, Countable
 
     // SOBRECARGA (o PHP nao tem sobrecarga nativa, entao o __call escolhe a versao pelo tipo do argumento):
     //   adicionar(Pokemon $pokemon)                -> coloca o pokemon na equipe
-    //   adicionar(array $linha, array $imagens)    -> monta o pokemon pela linha do banco e coloca
+    //   adicionar(array $linha)                    -> monta o pokemon pela linha do banco e coloca
     //   buscar(int $id)                            -> acha o pokemon pelo numero
     //   buscar(string $nome)                       -> acha o pokemon pelo nome
     public function __call(string $metodo, array $argumentos): mixed
@@ -29,7 +29,7 @@ class Equipe implements IteratorAggregate, Countable
                 return $this->colocar($primeiro);
             }
             if (is_array($primeiro)) {
-                return $this->colocar(PokemonFactory::criar($primeiro, $argumentos[1] ?? []));
+                return $this->colocar(PokemonFactory::criar($primeiro));
             }
             throw new InvalidArgumentException("adicionar() espera um Pokemon ou uma linha do banco");
         }

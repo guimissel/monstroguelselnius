@@ -1,6 +1,6 @@
 <?php
 
-// Le os pokemons do banco (view vw_pokedex + imagem_monstro) e devolve objetos Pokemon.
+// Le os pokemons do banco (view vw_pokedex) e devolve objetos Pokemon.
 class PokemonDAO
 {
     private PDO $pdo;
@@ -58,27 +58,9 @@ class PokemonDAO
         return $equipe;
     }
 
-    // linhas da view -> objetos (busca as imagens de todos de uma vez so)
+    // linhas da view -> objetos
     private function montar(array $linhas): array
     {
-        if (count($linhas) === 0) {
-            return [];
-        }
-
-        $ids = array_map(fn (array $l) => (int) $l["id_pokemon"], $linhas);
-        $marcas = implode(",", array_fill(0, count($ids), "?"));
-        $prepare = $this->pdo->prepare("SELECT id_monstro, tipo, caminho FROM imagem_monstro WHERE id_monstro IN ($marcas)");
-        $prepare->execute($ids);
-
-        $imagens = [];
-        foreach ($prepare->fetchAll() as $imagem) {
-            $imagens[(int) $imagem["id_monstro"]][$imagem["tipo"]] = $imagem["caminho"];
-        }
-
-        $pokemons = [];
-        foreach ($linhas as $linha) {
-            $pokemons[] = PokemonFactory::criar($linha, $imagens[(int) $linha["id_pokemon"]] ?? []);
-        }
-        return $pokemons;
+        return array_map(fn (array $linha) => PokemonFactory::criar($linha), $linhas);
     }
 }
