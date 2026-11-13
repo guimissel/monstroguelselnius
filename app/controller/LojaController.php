@@ -14,6 +14,7 @@ class LojaController
         $meuId = $_SESSION["id"] ?? null;
         if (!isset($meuId))
         {
+            // retorna 401 Unauthorized (usuario nao identificado)
             http_response_code(401);
             echo json_encode([
                 "status" => 401,
@@ -24,16 +25,26 @@ class LojaController
 
         try
         {
+            // define a conexao com o banco de dados
             $conexao = Conexao::getConexao();
 
+            // pega todos os itens da loja (com a quantidade que o jogador ja tem)
+            $lojaDAO = new LojaDAO($conexao);
             $itens = [];
-            foreach ((new LojaDAO($conexao))->listar((int) $meuId) as $item) {
+
+            // percorre todos os itens da loja e transforma em array para JSON
+            foreach ($lojaDAO->listar((int) $meuId) as $item) {
                 $itens[] = $item->paraArray();
             }
 
+            // pega a quantidade de pokedolares do jogador
+            $inventarioDAO = new InventarioDAO($conexao);
+            $pokedolares = $inventarioDAO->pokedolares((int) $meuId);
+
+            // retorna o resultado em JSON
             echo json_encode([
                 "status" => 200,
-                "pokedolares" => (new InventarioDAO($conexao))->pokedolares((int) $meuId),
+                "pokedolares" => $pokedolares,
                 "itens" => $itens
             ]);
             return;
@@ -72,7 +83,14 @@ class LojaController
 
         // quantidade: inteiro de 1 ate o maximo
         $quantidade = filter_var($_POST["quantidade"] ?? 1, FILTER_VALIDATE_INT);
-        if ($quantidade === false || $quantidade < 1 || $quantidade > self::MAXIMO_POR_COMPRA)
+        
+        // simplificando as condições de validação da quantidade
+        $quantidadeInvalida = $quantidade > self::MAXIMO_POR_COMPRA;
+        $quantidadeNegativa = $quantidade < 1;
+        $quantidadeNula = $quantidade === false;
+
+        // verifica se a quantidade é inválida
+        if ($quantidadeInvalida || $quantidadeNegativa || $quantidadeNula)
         {
             http_response_code(400);
             echo json_encode([
@@ -84,7 +102,8 @@ class LojaController
 
         try
         {
-            $resultado = (new LojaDAO(Conexao::getConexao()))->comprar((int) $meuId, $chave, $quantidade);
+            $lojaDAO = new LojaDAO(Conexao::getConexao());
+            $resultado = $lojaDAO->comprar((int) $meuId, $chave, $quantidade);
 
             echo json_encode([
                 "status" => 200,
