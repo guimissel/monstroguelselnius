@@ -43,7 +43,8 @@ class PerfilController
                 "ranking" => $dao->ranking(),
                 "historico" => $dao->historico((int) $meuId),
                 "colecao" => $dao->colecao((int) $meuId),
-                "itens" => $dao->itens((int) $meuId)
+                "itens" => $dao->itens((int) $meuId),
+                "paraChefe" => (new BatalhaDAO(Conexao::getConexao()))->batalhasParaChefe((int) $meuId)
             ]);
             return;
         }

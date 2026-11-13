@@ -10,6 +10,7 @@ const NOMES_TIPOS = {
 
 const mensagemEl = document.getElementById("mensagem");
 const mensagemFormEl = document.getElementById("mensagemForm");
+const mensagemProgressoEl = document.getElementById("mensagemProgresso");
 
 let catalogo = {};
 let meuId = null;
@@ -65,6 +66,9 @@ function desenhar(d) {
     document.getElementById("dinheiro").textContent = d.treinador.pokedolares;
     document.getElementById("posicao").textContent = d.placar.batalhas > 0 ? `${d.posicao}º lugar` : "ainda sem batalhas";
     document.title = `Perfil - ${d.treinador.nome}`;
+    document.getElementById("chefe").textContent = d.paraChefe === 0
+        ? "O próximo adversário é o chefe!"
+        : `Chefe em ${d.paraChefe} ${d.paraChefe === 1 ? "batalha" : "batalhas"}`;
 
     const placar = document.getElementById("placar");
     placar.innerHTML = "";
@@ -152,6 +156,38 @@ document.getElementById("excluir").addEventListener("click", async () => {
     } else {
         const dados = await resposta.json().catch(() => ({}));
         mostrar(mensagemEl, dados.mensagem || "Não consegui excluir a conta.", "erro");
+    }
+});
+
+// carregar progresso: troca o dinheiro, a equipe, a colecao e os itens da conta pelos do arquivo
+const arquivoEl = document.getElementById("arquivo");
+document.getElementById("escolherArquivo").addEventListener("click", () => arquivoEl.click());
+
+arquivoEl.addEventListener("change", async () => {
+    const arquivo = arquivoEl.files[0];
+    arquivoEl.value = "";
+    if (!arquivo) return;
+
+    if (!confirm("Carregar esse progresso? O dinheiro, a equipe, a coleção e os itens desta conta serão trocados pelos do arquivo.")) return;
+
+    const dados = new FormData();
+    dados.append("arquivo", arquivo);
+
+    try {
+        const resposta = await fetch("/monstroguelselnius/api/progresso/importar", { method: "POST", body: dados });
+        const resultado = await resposta.json();
+
+        if (!resposta.ok) {
+            mostrar(mensagemProgressoEl, resultado.mensagem || "Não foi possível carregar o arquivo.", "erro");
+            return;
+        }
+
+        const r = resultado.resumo;
+        mostrar(mensagemProgressoEl, `Progresso carregado: ${r.pokemons} pokémons, ${r.itens} itens e ${r.pokedolares} pokédollars.`, "ok");
+        carregar();
+    } catch (erro) {
+        console.error(erro);
+        mostrar(mensagemProgressoEl, "Não consegui falar com o servidor.", "erro");
     }
 });
 

@@ -1,5 +1,7 @@
 <?php
 
+require_once __DIR__ . "/AutenticacaoController.php";
+require_once __DIR__ . "/../dao/BatalhaDAO.php";
 
 class BatalhaController
 {
@@ -27,7 +29,9 @@ class BatalhaController
             echo json_encode([
                 "status" => 200,
                 "id" => $batalha["id"],
-                "robo" => $batalha["robo"]
+                "robo" => $batalha["robo"],
+                "chefe" => $batalha["chefe"],
+                "nivel" => $batalha["nivel"]
             ]);
             return;
         }
@@ -45,13 +49,14 @@ class BatalhaController
 
         catch (Exception $e)
         {
-            // (xampp/apache/logs/error.log)
+            // o motivo real fica no log do apache (xampp/apache/logs/error.log)
             error_log("BatalhaController::iniciar: " . $e->getMessage());
 
             http_response_code(500);
             echo json_encode([
                 "status" => 500,
                 "mensagem" => "Nao foi possivel iniciar a batalha",
+                // o jogo mostra isso no console do navegador (F12) para descobrir o que faltou no banco
                 "detalhe" => $e->getMessage()
             ]);
             return;
@@ -98,7 +103,9 @@ class BatalhaController
                 "status" => 200,
                 "recompensa" => $dados["recompensa"],
                 "pokedolares" => $dados["pokedolares"],
-                "pokemons" => $dados["pokemons"]
+                "pokemons" => $dados["pokemons"],
+                "chefe" => $dados["chefe"],
+                "pedra" => $dados["pedra"]
             ]);
             return;
         }

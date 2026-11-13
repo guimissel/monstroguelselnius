@@ -69,7 +69,7 @@ class PerfilDAO
     public function historico(int $idUsuario, int $limite = 10): array
     {
         $prepare = $this->pdo->prepare(
-            "SELECT id_batalha, adversario, status, recompensa, iniciada_em, duracao_segundos
+            "SELECT id_batalha, adversario, status, recompensa, iniciada_em, duracao_segundos, chefe
              FROM vw_historico_batalhas WHERE id_usuario = :id
              ORDER BY id_batalha DESC LIMIT " . (int) $limite
         );
@@ -77,7 +77,7 @@ class PerfilDAO
 
         return array_map(fn (array $l) => [
             "id" => (int) $l["id_batalha"],
-            "adversario" => $l["adversario"],
+            "adversario" => $l["chefe"] ? "Chefe" : $l["adversario"],
             "status" => $l["status"],
             "recompensa" => (int) $l["recompensa"],
             "iniciadaEm" => $l["iniciada_em"],

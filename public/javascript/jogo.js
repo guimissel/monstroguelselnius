@@ -1,7 +1,8 @@
 // ===================== configuracoes =====================
 
 const API = "https://pokeapi.co/api/v2";
-const NIVEL = 50;
+const NIVEL_JOGADOR = 10;      // nivel baixo: os pokemons ficam fracos e a batalha mais equilibrada
+const NIVEL_ROBO = 10;         // (o chefe vem do servidor com nivel maior)
 const TEMPO_ESCOLHA = 20;      // segundos para escolher a jogada
 const COOLDOWN_TROCA = 3;      // 3 porque o round da troca tambem conta (sobram 2 rounds bloqueados)
 const MAX_POKEMON_ID = 151;    // sorteia pokemons da 1a geracao
@@ -159,7 +160,7 @@ class Pokemon {
         const critico = Math.random() < 1 / 16;
         const aleatorio = 0.85 + Math.random() * 0.15;
 
-        const base = Math.floor((Math.floor((2 * NIVEL) / 5) + 2) * golpe.poder * ataque / defesa / 50) + 2;
+        const base = Math.floor((Math.floor((2 * this.nivel) / 5) + 2) * golpe.poder * ataque / defesa / 50) + 2;
         const total = Math.floor(base * stab * ef * (critico ? 1.5 : 1) * aleatorio);
 
         return { dano: ef === 0 ? 0 : Math.max(1, total), ef, critico };
@@ -208,7 +209,10 @@ class Jogador extends Treinador {
 }
 
 class Robo extends Treinador {
-    constructor() { super("robo"); }
+    constructor() {
+        super("robo");
+        this.chefe = false;   // true na batalha contra o chefe
+    }
 
     // 70% das vezes escolhe o golpe que causa mais dano, senao um aleatorio
     escolherAcao(batalha) {
@@ -227,7 +231,7 @@ class Robo extends Treinador {
     }
 
     escolherSubstituto() { return this.equipe.proximoVivo(); }
-    mensagemEntrada(pokemon) { return `O robô enviou ${pokemon.nome}!`; }
+    mensagemEntrada(pokemon) { return `${this.chefe ? "O chefe" : "O robô"} enviou ${pokemon.nome}!`; }
 }
 
 // a batalha inteira: os dois treinadores e o andamento
@@ -385,7 +389,7 @@ async function abrirBatalhaNoServidor() {
             mostrarErroTecnico("Abrir a batalha: resposta inesperada do servidor:\n" + texto.slice(0, 600));
             return null;
         }
-        return { id: corpo.id, robo: corpo.robo };
+        return { id: corpo.id, robo: corpo.robo, chefe: !!corpo.chefe, nivel: corpo.nivel || NIVEL_ROBO };
     } catch (erro) {
         mostrarErroTecnico("Abrir a batalha: " + erro);
         return null;
@@ -463,10 +467,10 @@ function normalizarGolpe(m) {
     };
 }
 
-async function escolherGolpes(dados, tipos) {
+async function escolherGolpes(dados, tipos, nivel) {
     const candidatos = dados.moves
         .filter((m) => !GOLPES_PROIBIDOS.has(m.move.name) && m.version_group_details.some(
-            (v) => v.move_learn_method.name === "level-up" && v.level_learned_at <= NIVEL))
+            (v) => v.move_learn_method.name === "level-up" && v.level_learned_at <= nivel))
         .map((m) => m.move.url);
 
     embaralhar(candidatos);
@@ -492,7 +496,7 @@ async function escolherGolpes(dados, tipos) {
     return escolhidos;
 }
 
-async function criarPokemon(id) {
+async function criarPokemon(id, nivel) {
     const dados = await buscar(`${API}/pokemon/${id}`);
 
     const base = {};
@@ -500,13 +504,14 @@ async function criarPokemon(id) {
 
     const animado = dados.sprites.versions?.["generation-v"]?.["black-white"]?.animated;
 
-    const stat = (b) => Math.floor((2 * b * NIVEL) / 100) + 5;
+    const stat = (b) => Math.floor((2 * b * nivel) / 100) + 5;
     const tipos = dados.types.map((t) => t.type.name);
-    const maxHp = Math.floor((2 * base.hp * NIVEL) / 100) + NIVEL + 10;
+    const maxHp = Math.floor((2 * base.hp * nivel) / 100) + nivel + 10;
 
     return new Pokemon({
         id,
         nome: formatarNome(dados.name),
+        nivel,
         tipos,
         maxHp,
         hp: maxHp,
@@ -515,7 +520,7 @@ async function criarPokemon(id) {
         spa: stat(base["special-attack"]),
         spd: stat(base["special-defense"]),
         spe: stat(base.speed),
-        golpes: await escolherGolpes(dados, tipos),
+        golpes: await escolherGolpes(dados, tipos, nivel),
         status: null,
         sono: 0,
         frente: dados.sprites.front_default,
@@ -649,7 +654,7 @@ function atualizarInfo(lado) {
     const caixa = LADOS[lado].info;
 
     caixa.querySelector(".nome").textContent = mon.nome;
-    caixa.querySelector(".nivel").textContent = "Nv" + NIVEL;
+    caixa.querySelector(".nivel").textContent = "Nv" + mon.nivel;
 
     const barra = caixa.querySelector(".barra");
     const pct = (mon.hp / mon.maxHp) * 100;
@@ -827,7 +832,7 @@ function criarLinhaPokemon(mon, { desabilitado, onclick, extra }) {
         </div>`;
     b.querySelector("img").src = mon.frente;
     b.querySelector(".dados > div").textContent =
-        `${mon.nome}  Nv${NIVEL}` + (mon.status ? `  [${STATUS[mon.status].sigla}]` : "");
+        `${mon.nome}  Nv${mon.nivel}` + (mon.status ? `  [${STATUS[mon.status].sigla}]` : "");
     const barra = b.querySelector(".barra");
     barra.style.width = pct + "%";
     barra.classList.toggle("amarelo", pct <= 50 && pct > 20);
@@ -1234,7 +1239,7 @@ async function terminar(vitoria, fugiu = false) {
     const resultado = fugiu ? "fuga" : (vitoria ? "vitoria" : "derrota");
     const vivos = estado.jogador.equipe.vivos().length;
 
-    if (vitoria) await dizer("Você venceu a batalha!");
+    if (vitoria) await dizer(estado.robo.chefe ? "Você derrotou o chefe!" : "Você venceu a batalha!");
     else if (!fugiu) await dizer("Todos os seus pokémons desmaiaram...");
 
     const resposta = await fecharBatalhaNoServidor(resultado, vivos);
@@ -1244,6 +1249,7 @@ async function terminar(vitoria, fugiu = false) {
     else await dizer("Você não ganhou pokédollars.");
 
     if (vitoria && !resposta.erro) await anunciarConquistas(resposta.pokemons || []);
+    if (resposta.pedra) await dizer("Como prêmio pelo chefe, você ganhou uma Pedra Evolutiva!");
 
     bloquearMenu(false);
     mostrarVoltar(null);
@@ -1373,6 +1379,8 @@ async function iniciar() {
 
     try {
         const idsRobo = batalha ? batalha.robo : sortearIds(3, idsJogador, idsBasicos.length >= 6 ? idsBasicos : null);
+        const nivelRobo = batalha ? batalha.nivel : NIVEL_ROBO;
+        estado.robo.chefe = !!(batalha && batalha.chefe);
 
         // se so o inventario falhar (ex: banco sem as tabelas novas) o jogo continua, sem itens
         const [, , ...pokemons] = await Promise.all([
@@ -1382,7 +1390,8 @@ async function iniciar() {
                 inventarioOk = false;
             }),
             TabelaTipos.carregar(),
-            ...[...idsJogador, ...idsRobo].map(criarPokemon)
+            ...idsJogador.map((id) => criarPokemon(id, NIVEL_JOGADOR)),
+            ...idsRobo.map((id) => criarPokemon(id, nivelRobo))
         ]);
 
         estado.jogador.equipe = new Time(pokemons.slice(0, 3));
@@ -1408,8 +1417,13 @@ async function iniciar() {
     mostrarPokemon("robo");
     if (!inventarioOk) await dizer("Não consegui carregar o seu inventário, então você vai sem itens nesta batalha.");
     if (!estado.idBatalha) await dizer("Não consegui registrar a batalha. Rode o app/database/schema.sql no banco.");
-    await dizer("Um treinador robô quer batalhar!");
-    await dizer(`Ele enviou ${ativo("robo").nome}!`);
+    if (estado.robo.chefe) {
+        await dizer("Atenção! O chefe da Equipe Robô apareceu para te desafiar!");
+        await dizer(`Ele enviou ${ativo("robo").nome}!`);
+    } else {
+        await dizer("Um treinador robô quer batalhar!");
+        await dizer(`Ele enviou ${ativo("robo").nome}!`);
+    }
     mostrarPokemon("jogador");
     await dizer(`Vai, ${ativo("jogador").nome}!`);
     await dizer("Atenção: se você sair da tela de batalha, você perde a batalha!");
