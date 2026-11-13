@@ -5,13 +5,6 @@ class BatalhaDAO
     // uma batalha de verdade dura mais que isso (so contando as mensagens do log)
     private const SEGUNDOS_MINIMOS = 10;
 
-    // depois de tantas batalhas normais, a proxima e contra o chefe
-    private const BATALHAS_PARA_CHEFE = 7;
-
-    // nivel dos pokemons (quanto menor, mais fracos). O chefe e um pouco mais forte
-    public const NIVEL_NORMAL = 10;
-    public const NIVEL_CHEFE = 11;
-
     private PDO $pdo;
 
     public function __construct(PDO $pdo)
@@ -32,11 +25,11 @@ class BatalhaDAO
     // cria a linha da batalha e devolve o numero dela.
     // normalmente o banco numera sozinho. se a tabela estiver sem AUTO_INCREMENT (sql nao rodou direito),
     // o numero e calculado aqui (maior + 1) para o jogo nao travar com "Duplicate entry '0'"
-    private function inserirBatalha(int $idUsuario, bool $chefe): int
+    private function inserirBatalha(int $idUsuario): int
     {
         if ($this->numeraSozinha()) {
-            $prepare = $this->pdo->prepare("INSERT INTO batalha (id_usuario, is_boss) VALUES (:id, :chefe)");
-            $prepare->execute(["id" => $idUsuario, "chefe" => (int) $chefe]);
+            $prepare = $this->pdo->prepare("INSERT INTO batalha (id_usuario) VALUES (:id)");
+            $prepare->execute(["id" => $idUsuario]);
 
             return (int) $this->pdo->lastInsertId();
         }
@@ -45,10 +38,8 @@ class BatalhaDAO
             $proximo = (int) $this->pdo->query("SELECT COALESCE(MAX(id_batalha), 0) + 1 FROM batalha")->fetchColumn();
 
             try {
-                $prepare = $this->pdo->prepare(
-                    "INSERT INTO batalha (id_batalha, id_usuario, is_boss) VALUES (:batalha, :usuario, :chefe)"
-                );
-                $prepare->execute(["batalha" => $proximo, "usuario" => $idUsuario, "chefe" => (int) $chefe]);
+                $prepare = $this->pdo->prepare("INSERT INTO batalha (id_batalha, id_usuario) VALUES (:batalha, :usuario)");
+                $prepare->execute(["batalha" => $proximo, "usuario" => $idUsuario]);
 
                 return $proximo;
             } catch (PDOException $erro) {
@@ -63,24 +54,7 @@ class BatalhaDAO
         throw new RuntimeException("nao consegui gerar o numero da batalha");
     }
 
-    // quantas batalhas normais faltam para o chefe (0 = a proxima batalha e contra o chefe).
-    // conta as batalhas normais terminadas depois da ultima vez que o jogador venceu o chefe
-    // (se perder ou fugir do chefe, ele continua esperando)
-    public function batalhasParaChefe(int $idUsuario): int
-    {
-        $prepare = $this->pdo->prepare(
-            "SELECT COUNT(*) FROM batalha
-             WHERE id_usuario = :id AND is_boss = 0 AND status <> 'em_andamento'
-               AND id_batalha > COALESCE(
-                   (SELECT MAX(id_batalha) FROM batalha WHERE id_usuario = :id2 AND is_boss = 1 AND status = 'vitoria'), 0)"
-        );
-        $prepare->execute(["id" => $idUsuario, "id2" => $idUsuario]);
-
-        return max(0, self::BATALHAS_PARA_CHEFE - (int) $prepare->fetchColumn());
-    }
-
     // abre uma batalha para o jogador e devolve o id e o time do robo (so quem tem equipe de 3 pode batalhar).
-    // a cada 7 batalhas a vez e do chefe: 3 pokemons de forma final e nivel maior.
     // quem sorteia o robo e o servidor: assim ele sabe quais pokemons o jogador ganha se vencer
     // (3 basicos que nao estao na equipe do jogador)
     public function iniciar(int $idUsuario): array
@@ -94,17 +68,8 @@ class BatalhaDAO
         $this->pdo->beginTransaction();
 
         try {
-            $chefe = $this->batalhasParaChefe($idUsuario) === 0;
-
-            // chefe: so pokemons que ja evoluiram ao maximo. robo normal: so basicos
-            $origem = $chefe
-                ? "SELECT id_monstro AS id_pokemon FROM monstro
-                   WHERE id_monstro IN (SELECT id_evolucao FROM evolucao_monstro)
-                     AND id_monstro NOT IN (SELECT id_monstro FROM evolucao_monstro)"
-                : "SELECT id_pokemon FROM pokemon_basico";
-
             $prepare = $this->pdo->prepare(
-                "SELECT id_pokemon FROM ($origem) AS candidatos
+                "SELECT id_pokemon FROM pokemon_basico
                  WHERE id_pokemon NOT IN (SELECT id_pokemon FROM equipe_usuario WHERE id_usuario = :id)
                  ORDER BY RAND()
                  LIMIT 3"
@@ -116,7 +81,7 @@ class BatalhaDAO
                 throw new RuntimeException("pokemons basicos insuficientes para montar o time do robo");
             }
 
-            $idBatalha = $this->inserirBatalha($idUsuario, $chefe);
+            $idBatalha = $this->inserirBatalha($idUsuario);
 
             $prepare = $this->pdo->prepare(
                 "INSERT INTO batalha_robo (id_batalha, posicao, id_pokemon) VALUES (:batalha, :posicao, :pokemon)"
@@ -127,12 +92,7 @@ class BatalhaDAO
 
             $this->pdo->commit();
 
-            return [
-                "id" => $idBatalha,
-                "robo" => $robo,
-                "chefe" => $chefe,
-                "nivel" => $chefe ? self::NIVEL_CHEFE : self::NIVEL_NORMAL
-            ];
+            return ["id" => $idBatalha, "robo" => $robo];
         } catch (Throwable $erro) {
             if ($this->pdo->inTransaction()) {
                 $this->pdo->rollBack();
@@ -141,7 +101,7 @@ class BatalhaDAO
         }
     }
 
-    // quem venceu leva os 3 pokemons do robo para a colecao (so os que ainda nao tinha).
+    // quem venceu leva os 3 pokemons do robo para a colecao (so os que ainda nao tinha)
     // roda dentro da transaction do finalizar, que ja garante que so acontece uma vez por batalha
     private function conquistarPokemons(int $idBatalha, int $idUsuario): array
     {
@@ -150,7 +110,7 @@ class BatalhaDAO
                     EXISTS (SELECT 1 FROM pokemon_usuario pu
                             WHERE pu.id_usuario = :usuario AND pu.id_pokemon = r.id_pokemon) AS tinha
              FROM batalha_robo r
-             LEFT JOIN monstro b ON b.id_monstro = r.id_pokemon
+             LEFT JOIN pokemon_basico b ON b.id_pokemon = r.id_pokemon
              WHERE r.id_batalha = :batalha
              ORDER BY r.posicao"
         );
@@ -170,18 +130,14 @@ class BatalhaDAO
             }
             $lista[] = ["id" => $id, "nome" => $linha["nome"] ?? "#" . $id, "novo" => $novo];
         }
+
         return $lista;
     }
 
     // quem decide quanto vale a batalha e o servidor, nunca o navegador
     // vitoria: 50 com 1 pokemon vivo, 75 com 2, 100 com 3 | derrota: 20 | fuga: 0
-    // chefe: vitoria 300 | derrota 40 | fuga 0
-    public static function calcularRecompensa(string $resultado, int $vivos, bool $chefe = false): int
+    public static function calcularRecompensa(string $resultado, int $vivos): int
     {
-        if ($chefe) {
-            return ["vitoria" => 300, "derrota" => 40][$resultado] ?? 0;
-        }
-
         if ($resultado === "vitoria") {
             $vivos = max(1, min(3, $vivos));
             return (int) (50 * [1 => 1, 2 => 1.5, 3 => 2][$vivos]);
@@ -203,7 +159,7 @@ class BatalhaDAO
         try {
             // trava a batalha (so a do proprio jogador) ate o fim da transaction
             $prepare = $this->pdo->prepare(
-                "SELECT status, is_boss, TIMESTAMPDIFF(SECOND, iniciada_em, NOW()) AS segundos
+                "SELECT status, TIMESTAMPDIFF(SECOND, iniciada_em, NOW()) AS segundos
                  FROM batalha
                  WHERE id_batalha = :batalha AND id_usuario = :usuario
                  FOR UPDATE"
@@ -224,8 +180,7 @@ class BatalhaDAO
                 throw new RegraDeJogoException("Batalha rapida demais", 409);
             }
 
-            $chefe = (bool) $batalha["is_boss"];
-            $recompensa = self::calcularRecompensa($resultado, $vivos, $chefe);
+            $recompensa = self::calcularRecompensa($resultado, $vivos);
 
             $prepare = $this->pdo->prepare(
                 "UPDATE batalha
@@ -246,30 +201,13 @@ class BatalhaDAO
             // vitoria: os pokemons do robo vao para o jogador
             $pokemons = $resultado === "vitoria" ? $this->conquistarPokemons($idBatalha, $idUsuario) : [];
 
-            // vencer o chefe tambem da uma Pedra Evolutiva
-            $pedra = $chefe && $resultado === "vitoria";
-            if ($pedra) {
-                $prepare = $this->pdo->prepare(
-                    "INSERT INTO item_usuario (id_usuario, id_item_loja, quantidade)
-                     SELECT :usuario, id_item_loja, 1 FROM item_loja WHERE chave = 'pedra-evolutiva'
-                     ON DUPLICATE KEY UPDATE quantidade = quantidade + 1"
-                );
-                $prepare->execute(["usuario" => $idUsuario]);
-            }
-
             $prepare = $this->pdo->prepare("SELECT pokedolares FROM usuario WHERE id_usuario = :usuario");
             $prepare->execute(["usuario" => $idUsuario]);
             $saldo = (int) $prepare->fetchColumn();
 
             $this->pdo->commit();
 
-            return [
-                "recompensa" => $recompensa,
-                "pokedolares" => $saldo,
-                "pokemons" => $pokemons,
-                "chefe" => $chefe,
-                "pedra" => $pedra
-            ];
+            return ["recompensa" => $recompensa, "pokedolares" => $saldo, "pokemons" => $pokemons];
         } catch (Throwable $erro) {
             if ($this->pdo->inTransaction()) {
                 $this->pdo->rollBack();
