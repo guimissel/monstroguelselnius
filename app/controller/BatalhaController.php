@@ -1,8 +1,5 @@
 <?php
 
-require_once __DIR__ . "/AutenticacaoController.php";
-require_once __DIR__ . "/../dao/BatalhaDAO.php";
-
 class BatalhaController
 {
     // POST api/batalha/iniciar: abre uma batalha e devolve o id e o time do robo (ids da PokeAPI)

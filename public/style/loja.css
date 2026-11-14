@@ -4,7 +4,7 @@
     margin: 0;
     padding: 40px 50px;
     min-height: 100vh;
-    background: #dac5af url("public/img/fundo-loja.jpg") center / cover fixed no-repeat;
+    background: #dac5af url("../img/fundo-loja.jpg") center / cover fixed no-repeat;
     font-family: "Pixelify Sans", monospace;
     color: #3a1d08;
   }

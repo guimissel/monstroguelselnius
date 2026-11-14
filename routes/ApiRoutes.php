@@ -1,16 +1,9 @@
 <?php
 
-require_once __DIR__ . "/../app/controller/UsuarioController.php";
-require_once __DIR__ . "/../app/controller/InventarioController.php";
-require_once __DIR__ . "/../app/controller/LojaController.php";
-require_once __DIR__ . "/../app/controller/BatalhaController.php";
-require_once __DIR__ . "/../app/controller/EquipeController.php";
-require_once __DIR__ . "/../app/controller/PokemonController.php";
-require_once __DIR__ . "/../app/controller/PerfilController.php";
-require_once __DIR__ . "/../app/controller/ProgressoController.php";
 
 // crie as todas rotas da api
-define("ROTAS_API", [
+// apenas Acesso::USUARIO & Acesso::ADMIN
+define("ROTAS_API_NEEDAUTH", [
     "GET" => [
         "api/usuario/eu" => function () {
             $controlador = new UsuarioController();
@@ -46,21 +39,14 @@ define("ROTAS_API", [
             $controlador = new ProgressoController();
             $controlador->exportar();
         },
+
+        "api/montarSeed" => function () {
+            $montadorSeed = new MontadorSeed(__DIR__ . "/../app/database/seeds/");
+            $montadorSeed->run();
+        }
     ],
 
     "POST" => [
-        "api/usuario/criar" => function () {
-            // pode trocar se souber um jeito melhor 
-            // foi um mais rapido que pensei ;)
-            $controlador = new UsuarioController();
-            $controlador->criar();
-        },
-
-        "api/usuario/entrar" => function () {
-            $controlador = new UsuarioController();
-            $controlador->entrar();
-        },
-
         "api/usuario/sair" => function () {
             $controlador = new UsuarioController();
             $controlador->sair();
@@ -122,4 +108,21 @@ define("ROTAS_API", [
 
     "QUERY" => [
     ]
+]);
+
+// todos tem direito de usar estas rotas
+define("ROTAS_API_NOAUTH", [
+    "POST" => [
+        "api/usuario/criar" => function () {
+            // pode trocar se souber um jeito melhor 
+            // foi um mais rapido que pensei ;)
+            $controlador = new UsuarioController();
+            $controlador->criar();
+        },
+
+        "api/usuario/entrar" => function () {
+            $controlador = new UsuarioController();
+            $controlador->entrar();
+        },
+    ],
 ]);
