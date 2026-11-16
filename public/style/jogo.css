@@ -26,6 +26,27 @@ body {
     user-select: none;
 }
 
+/* batalha contra o chefe: cenario escuro, com clarao quando cai um trovao */
+#palco.chefe { background-image: url("../img/arena do chefe.webp"); }
+
+#palco.relampago::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    z-index: 100;
+    background: #fff;
+    pointer-events: none;
+    animation: relampago 0.6s ease-out forwards;
+}
+
+@keyframes relampago {
+    0%   { opacity: 0; }
+    10%  { opacity: 0.55; }
+    25%  { opacity: 0.1; }
+    40%  { opacity: 0.35; }
+    100% { opacity: 0; }
+}
+
 button { font-family: inherit; cursor: pointer; }
 button:disabled { cursor: not-allowed; }
 

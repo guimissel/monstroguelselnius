@@ -666,7 +666,7 @@ INSERT INTO item_loja (chave, nome, descricao, categoria, preco, imagem, cura_hp
 ('full-restore',  'Restaurar Tudo', 'Recupera todo o HP e cura qualquer condição.',           'pocao_hp',      600, 'full restore potion.png', -1,   'todos',    0, 0),
 ('revive',        'Reviver',        'Traz um pokémon desmaiado de volta com metade do HP.',   'pocao_hp',      350, 'reviver.webp',            0,    NULL,       1, 0),
 ('antidote',      'Antídoto',       'Cura um pokémon envenenado.',                            'pocao_condicao', 60, 'antidote.png',            0,    'poison',   0, 0),
-('pedra-evolutiva','Pedra Evolutiva','Faz um pokémon evoluir. Use na tela da equipe.',          'evolucao',      200, 'pedra evolutiva.png',     0,    NULL,       0, 0),
+('pedra-evolutiva','Pedra Evolutiva','Faz um pokémon evoluir. Use na tela da equipe.',          'evolucao',      400, 'pedra evolutiva.png',     0,    NULL,       0, 0),
 ('burn-heal',     'Anti-Queimadura','Cura um pokémon queimado.',                              'pocao_condicao', 60, 'burn heal.png',           0,    'burn',     0, 0),
 ('paralyze-heal', 'Anti-Paralisia', 'Cura um pokémon paralisado.',                            'pocao_condicao', 60, 'paralyse heal.png',       0,    'paralysis',0, 0),
 ('awakening',     'Despertar',      'Acorda um pokémon que está dormindo.',                   'pocao_condicao', 60, 'awakening.png',           0,    'sleep',    0, 0),
