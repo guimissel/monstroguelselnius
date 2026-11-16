@@ -1,192 +1,64 @@
 :root {
-    /* Cores principais */
-    --cor-texto: #e6e215;
-    --cor-fundo: #0b1a3a;
-    --cor-fundo-cartao: rgba(33, 90, 177, 0.5);
-
-    /* Bordas */
-    --cor-borda: #999999;
-    --cor-borda-suave: rgba(58, 193, 255, 0.15);
-    --cor-borda-foco: rgba(69, 154, 252, 0.4);
-
-    /* Campos de entrada */
-    --cor-fundo-input: rgba(33, 90, 177, 0.5);
-    --cor-fundo-icone: #1a6fb5;
-
-    /* Botão */
-    --cor-fundo-botao: #1a6fb5;
-    --cor-fundo-botao-hover: #2384d1;
-    --cor-texto-botao: #e6e215;
-    --cor-borda-botao: none;
-
-    /* Mensagens */
-    --vermelho: #ff1f1f;
-    --verde: #25ff11;
-    --branco: #fff;
-    --preto: #000;
+    --noite: #101c35;
+    --painel: rgba(16, 37, 69, .94);
+    --borda: rgba(112, 190, 225, .55);
+    --texto: #f5f7fb;
+    --ouro: #ffd44f;
+    --azul: #2775a6;
 }
-
-/* Configuração geral */
-* {
-    box-sizing: border-box;
-}
-
+* { box-sizing: border-box; }
 body {
-    margin: 0;
-    min-height: 100vh;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    color: var(--cor-texto);
-    background: var(--cor-fundo) url("../img/fundo.png") center / cover no-repeat fixed;
-    font-family: Arial, sans-serif;
+    min-height: 100vh; margin: 0; display: grid; place-items: center; padding: 24px;
+    color: var(--texto); background: var(--noite) url("../img/fundo.png") center / cover no-repeat fixed;
+    font-family: "Pixelify Sans", "Segoe UI", sans-serif;
 }
-
-.mensagem
-{
-    width: 40%;
-    height: 48px;
-    display: none;
-    align-items: center;
-    justify-content: center;
-    border-radius: 4px;
-    position: fixed;
-    left:50%;
-    font-weight: 800;
-    translate: -50%;
-    top:12px;
-}
-
-.sucesso {
-    display: flex;
-    background: var(--verde);
-    color: var(--preto) !important;
-}
-
-.erro {
-    display: flex;
-    background: var(--vermelho);
-    color: var(--branco) !important;
-}
-
-
-/* Cápsula principal */
+#formularioLogin { width: min(100%, 430px); position: relative; }
 .formCapsula {
-    width: 100%;
-    max-width: 340px;
-    min-height: 490px;
-    padding: 40px 30px 30px;
-    background: var(--cor-fundo-cartao);
-    border: 2px solid var(--cor-borda-suave);
-    border-radius: 30px;
+    width: 100%; padding: 36px clamp(22px, 7vw, 42px);
+    background: linear-gradient(145deg, rgba(28, 62, 103, .96), var(--painel));
+    border: 2px solid var(--borda); border-bottom: 6px solid #183b5d;
+    border-radius: 18px; box-shadow: 0 18px 48px rgba(0, 0, 0, .45), inset 0 0 0 4px rgba(255, 255, 255, .035);
 }
-
-/* Logo */
-.logo {
-    display: block;
-    width: 100%;
-    margin-bottom: 25px;
-}
-
-/* Labels */
-label {
-    display: block;
-    margin-bottom: 3px;
-    font-size: 14px;
-}
-
-/* Divs dos campos */
-.formDivInput {
-    width: 100%;
-    margin-bottom: 16px;
-}
-
-/* Campo e ícone */
+.logo { display: block; width: min(100%, 290px); max-height: 110px; object-fit: contain; margin: 0 auto 28px; }
+.formDivInput { width: 100%; margin-bottom: 17px; }
+label { display: block; margin-bottom: 7px; color: #e0eaf4; font-size: 15px; }
 .formInput {
-    border: 1px solid var(--cor-borda);
-    display: flex;
-    height: 38px;
-    border-radius: 4px;
-    overflow: hidden;
+    display: flex; min-height: 48px; overflow: hidden; background: rgba(9, 23, 45, .72);
+    border: 1px solid #7694ae; border-radius: 9px; transition: border-color .15s, box-shadow .15s;
 }
-
-/* Ícone do campo */
 .inputIcone {
-    width: 32px;
-    flex-shrink: 0;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    background: var(--cor-fundo-icone);
-    border-right: 1px solid var(--cor-borda);
+    width: 46px; flex: 0 0 46px; display: grid; place-items: center;
+    background: rgba(39, 117, 166, .9); border-right: 1px solid #7694ae;
 }
-
-.inputIcone img {
-    width: 18px;
-    height: 18px;
-}
-
-/* Inputs */
+.inputIcone img { width: 20px; height: 20px; }
 .formInput input {
-    flex: 1;
-    min-width: 0;
-    border: none;
-    outline: none;
-    padding: 0 8px;
-    font-family: inherit;
-    font-size: 14px;
-    color: var(--cor-texto);
-    background: var(--cor-fundo-input);
+    width: 100%; min-width: 0; padding: 10px 12px; color: #fff; background: transparent;
+    border: 0; outline: 0; font: 16px "Segoe UI", sans-serif;
 }
-
-.formInput:focus-within {
-    box-shadow: 0 0 0 2px var(--cor-borda-foco);
-}
-
-/* Botão */
+.formInput input::placeholder { color: #aec0d1; opacity: .75; }
+.formInput:focus-within { border-color: var(--ouro); box-shadow: 0 0 0 3px rgba(255, 212, 79, .2); }
 .formSubmit {
-    width: 100%;
-    height: 32px;
-    margin-top: 10px;
-    font-family: inherit;
-    font-size: 14px;
-    color: var(--cor-texto-botao);
-    background: var(--cor-fundo-botao);
-    border: 1px solid var(--cor-borda);
-    border-radius: 4px;
-    cursor: pointer;
-    font-weight: 800;
+    width: 100%; min-height: 48px; padding: 10px 16px; color: #30250b;
+    background: var(--ouro); border: 1px solid #ffe487; border-bottom: 4px solid #a77a17;
+    border-radius: 9px; font: inherit; font-size: 18px; font-weight: 700; cursor: pointer;
+    transition: filter .15s, transform .15s;
 }
-
-.formSubmit:hover
-{
-    transform: scale(1.03);
-    background: var(--cor-fundo-botao-hover);
-}
-
-.formSubmit:active
-{
-    transform: scale(0.97);
-}
-
-
-/* Mensagem de feedback */
+.formSubmit:hover { filter: brightness(1.08); transform: translateY(-1px); }
+.formSubmit:active { transform: translateY(2px); border-bottom-width: 2px; }
+.formCapsula > p { margin: 22px 0 0; color: #d3dfeb; font-size: 14px; text-align: center; }
+.formCapsula a { color: var(--ouro); text-underline-offset: 3px; }
+.formCapsula a:hover { color: #fff0a8; }
 .mensagem {
-    margin-bottom: 15px;
-    font-size: 13px;
+    position: absolute; z-index: 2; top: -12px; left: 50%; width: min(100%, 390px); min-height: 48px;
+    display: none; align-items: center; justify-content: center; padding: 10px 16px;
+    border: 1px solid transparent; border-radius: 10px; box-shadow: 0 8px 22px #0005;
+    font: 600 14px/1.4 "Segoe UI", sans-serif; text-align: center; transform: translate(-50%, -100%);
 }
-
-#textoMensagem {
-    margin: 0;
-}
-
-/* Texto e links */
-.formCapsula > p {
-    margin-top: 20px;
-    text-align: center;
-    font-size: 14px;
-}
-
-.formCapsula a {
-    color: var(--cor-texto);
+.mensagem p { margin: 0; }
+.mensagem.sucesso { display: flex; color: #143922; background: #bce6c5; border-color: #65af78; }
+.mensagem.erro { display: flex; color: #5c1f1b; background: #ffd0c9; border-color: #d66b60; }
+:focus-visible { outline: 3px solid #fff1a8; outline-offset: 3px; }
+@media (max-width: 480px) { body { padding: 18px 14px; } .formCapsula { padding-top: 30px; padding-bottom: 28px; } }
+@media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after { scroll-behavior: auto !important; animation-duration: .01ms !important; animation-iteration-count: 1 !important; transition-duration: .01ms !important; }
 }
