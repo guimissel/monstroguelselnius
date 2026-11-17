@@ -1,11 +1,15 @@
 :root {
-    color-scheme: dark;
-    --azul-noite: #101c35;
-    --azul-painel: rgba(15, 35, 67, .92);
-    --azul-borda: #4384aa;
-    --ouro: #ffd44f;
-    --texto: #f5f7fb;
-    --sombra: 0 12px 36px rgba(0, 0, 0, .45);
+    --vermelho: #ff1818;
+    --vermelho-escuro: rgb(116, 2, 2);
+    --escuro: #202020;
+    --branco-fumaca: #f1f1f1;
+    --cinza-medio: #3a3a3a;
+    --azul: #00f;
+    --azul-escuro: rgb(1, 1, 134);
+    --amarelo: #e6e215;
+    --amarelo-escuro: #8a7a00;
+    --fundo-cartao: rgba(11, 26, 58, 0.85);
+    --borda-cartao: rgba(58, 193, 255, 0.35);
 }
 
 * { box-sizing: border-box; }
@@ -13,10 +17,12 @@
 body {
     margin: 0;
     min-height: 100vh;
-    color: var(--texto);
-    background: var(--azul-noite) url("../img/fundo home.webp") center / cover no-repeat fixed;
-    font-family: "Pixelify Sans", "Segoe UI", Tahoma, sans-serif;
+    color: var(--branco-fumaca);
+    background: #000 url("../img/fundo home.webp") right center / cover no-repeat fixed;
+    font-family: "Pixelify Sans", "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
 }
+
+/* ---------- video de fundo ---------- */
 
 .videoFundo {
     position: fixed;
@@ -28,130 +34,235 @@ body {
     pointer-events: none;
 }
 
-.headerHome {
-    position: relative;
-    z-index: 1;
-    min-height: 64px;
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    padding: 5px clamp(16px, 4vw, 56px);
-    background: rgba(9, 20, 39, .84);
-    border-bottom: 2px solid rgba(255, 212, 79, .75);
-    box-shadow: 0 6px 20px rgba(0, 0, 0, .25);
-    backdrop-filter: blur(8px);
+/* quem pediu menos movimento no sistema fica so com a imagem parada */
+@media (prefers-reduced-motion: reduce) {
+    .videoFundo { display: none; }
 }
 
-.logo { height: 50px; max-width: min(52vw, 260px); object-fit: contain; }
-.divConta { display: flex; align-items: center; gap: 16px; }
+/* ---------- cabecalho ---------- */
+
+.headerHome {
+    width: 100%;
+    height: 60px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 8px 24px;
+    background-color: var(--escuro);
+    border-bottom: 1px solid var(--cinza-medio);
+}
+
+.logo { height: 60px; }
+
+.divConta {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+}
 
 .botaoSair {
-    min-height: 40px;
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    gap: 8px;
-    padding: 8px 16px;
-    color: #fff;
-    background: #b83a3a;
-    border: 1px solid #e66c61;
-    border-bottom: 4px solid #722c32;
-    border-radius: 8px;
-    font-family: inherit;
-    font-size: 17px;
-    font-weight: 700;
-    cursor: pointer;
-    transition: filter .16s, transform .16s;
-}
-
-.botaoSair img { width: 18px; height: 18px; }
-.botaoSair:hover { filter: brightness(1.12); transform: translateY(-1px); }
-.botaoSair:active { transform: translateY(2px); border-bottom-width: 2px; }
-
-main {
-    min-height: calc(100vh - 64px);
     display: flex;
     align-items: center;
     justify-content: center;
-    padding: clamp(20px, 6vw, 72px);
+    gap: 4px;
+    height: 40px;
+    padding: 0 12px;
+    border-bottom-width: 4px;
+    border-radius: 4px;
+    outline: none;
+    color: #fff;
+    font-family: inherit;
+    font-size: 18px;
+    font-weight: 800;
+    text-decoration: none;
+    cursor: pointer;
+}
+
+.botaoSair { background: var(--vermelho); border: 1px solid var(--vermelho-escuro); border-bottom-width: 4px; }
+
+.botaoSair:hover { transform: scale(1.03); }
+.botaoSair:active { transform: scale(0.97); }
+
+/* ---------- boas-vindas ---------- */
+
+main {
+    display: flex;
+    align-items: center;
+    min-height: calc(100vh - 60px);
+    padding: 24px;
 }
 
 .boasVindas {
-    width: min(100%, 600px);
-    padding: clamp(24px, 4vw, 42px);
-    background: linear-gradient(145deg, rgba(20, 49, 88, .96), var(--azul-painel));
-    border: 2px solid var(--azul-borda);
-    border-radius: 18px;
-    box-shadow: var(--sombra), inset 0 0 0 4px rgba(255, 255, 255, .035);
-    animation: entrar .45s ease-out both;
+    width: min(100%, 520px);
+    padding: 28px 32px 24px;
+    background: var(--fundo-cartao);
+    border: 2px solid var(--borda-cartao);
+    border-radius: 12px;
+    box-shadow: 6px 6px 0 rgba(0, 0, 0, 0.55);
+    animation: entrar .6s ease-out both;
 }
 
-.saudacao { margin: 0; color: #bbd5e8; font-size: 19px; }
+.saudacao {
+    margin: 0;
+    font-size: 22px;
+    color: var(--branco-fumaca);
+}
+
 h1 {
-    margin: 4px 0 16px;
-    color: var(--ouro);
-    font-size: clamp(34px, 6vw, 52px);
-    font-weight: 500;
-    line-height: 1.08;
-    overflow-wrap: anywhere;
-    text-shadow: 3px 3px 0 #173e69;
+    margin: 2px 0 12px;
+    font-size: 44px;
+    font-weight: 400;
+    line-height: 1.1;
+    color: var(--amarelo);
+    word-break: break-word;
+    text-shadow: 3px 3px 0 #1a3f7a;
 }
-.texto { margin: 0 0 22px; font-size: 18px; line-height: 1.55; }
 
+.texto {
+    margin: 0 0 18px;
+    font-size: 18px;
+    line-height: 1.4;
+}
+
+/* pokemon que aparece para dar oi */
 .companheiro {
     display: flex;
     align-items: center;
-    gap: 14px;
-    margin-bottom: 22px;
-    padding: 10px 16px;
-    color: #23334a;
-    background: #fffaf0;
-    border: 3px solid #c5a551;
-    border-radius: 12px;
-    box-shadow: 0 5px 0 rgba(0, 0, 0, .2);
+    gap: 12px;
+    margin-bottom: 20px;
+    padding: 8px 14px 8px 8px;
+    background: #fafafa;
+    border: 3px solid #4b4b5a;
+    border-radius: 10px;
+    color: #222;
+    box-shadow: 0 0 0 2px var(--amarelo);
 }
 .companheiro[hidden] { display: none; }
-.companheiro img { width: 72px; height: 72px; object-fit: contain; image-rendering: pixelated; animation: pular 1.2s steps(2) infinite; }
-.companheiro p { margin: 0; font-size: 16px; line-height: 1.4; }
 
-.acoes { display: flex; flex-wrap: wrap; gap: 10px; }
+.companheiro img {
+    width: 72px;
+    height: 72px;
+    image-rendering: pixelated;
+    animation: pular 1.2s steps(2) infinite;
+}
+
+.companheiro p {
+    margin: 0;
+    font-size: 17px;
+    line-height: 1.3;
+}
+
+.acoes {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+}
+
 .botaoPrincipal, .botaoSecundario {
-    min-height: 48px;
-    display: inline-flex;
-    flex: 1 1 145px;
+    display: flex;
     align-items: center;
     justify-content: center;
-    padding: 10px 16px;
-    border: 1px solid transparent;
+    height: 48px;
+    padding: 0 22px;
+    border-radius: 6px;
     border-bottom-width: 4px;
-    border-radius: 9px;
-    font-size: 17px;
-    line-height: 1.2;
-    text-align: center;
+    font-family: inherit;
+    font-size: 20px;
     text-decoration: none;
-    transition: filter .16s, transform .16s;
+    transition: transform .1s, filter .1s;
 }
-.botaoPrincipal { flex-basis: 210px; color: #30250b; background: var(--ouro); border-color: #ffe487; border-bottom-color: #a77a17; font-weight: 700; }
-.botaoSecundario { color: #fff; background: #24699b; border-color: #55a1c8; border-bottom-color: #153f68; }
-.botaoPrincipal:hover, .botaoSecundario:hover { filter: brightness(1.12); transform: translateY(-2px); }
-.botaoPrincipal:active, .botaoSecundario:active { transform: translateY(2px); border-bottom-width: 2px; }
-.dica { margin: 22px 0 0; color: #c5d5e5; font-size: 15px; line-height: 1.5; }
-.dica strong { color: var(--ouro); }
 
-:focus-visible { outline: 3px solid #fff1a8; outline-offset: 3px; }
+.botaoPrincipal {
+    flex: 1 1 200px;
+    background: var(--amarelo);
+    border: 1px solid var(--amarelo-escuro);
+    border-bottom-width: 4px;
+    color: #222;
+    font-weight: 700;
+}
 
-@keyframes entrar { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: none; } }
-@keyframes pular { 50% { transform: translateY(-6px); } }
+.botaoSecundario {
+    background: #1a6fb5;
+    border: 1px solid #0f4a80;
+    border-bottom-width: 4px;
+    color: #fff;
+}
+
+.botaoPrincipal:hover, .botaoSecundario:hover { transform: scale(1.03); filter: brightness(1.08); }
+.botaoPrincipal:active, .botaoSecundario:active { transform: scale(0.97); }
+
+.dica {
+    margin: 18px 0 0;
+    font-size: 15px;
+    line-height: 1.4;
+    color: #b8c8e0;
+}
+.dica strong { color: var(--amarelo); font-weight: 400; }
+
+/* easter egg: a borboleta cruza a tela da esquerda para a direita, balançando */
+.borboleta {
+    position: fixed;
+    top: 0;
+    left: 0;
+    z-index: 20;
+    width: 40px;
+    padding: 0;
+    border: 0;
+    background: none;
+    cursor: pointer;
+    touch-action: manipulation;
+    animation: voar 3.2s linear forwards;
+}
+.borboleta[hidden] { display: none; }
+/* facilita o clique sem aumentar o desenho: area invisivel em volta, e ela para quando o mouse chega perto */
+.borboleta::before { content: ""; position: absolute; inset: -28px; }
+.borboleta:hover { animation-play-state: paused; }
+/* a imagem nao recebe o mouse: assim o navegador nao tenta "arrastar a figura" em vez de clicar */
+.borboleta img { display: block; width: 100%; pointer-events: none; user-select: none; -webkit-user-drag: none; animation: bater 0.35s ease-in-out infinite alternate; }
+
+@keyframes voar {
+    0%   { transform: translate(-120px, var(--altura)); }
+    25%  { transform: translate(25vw, calc(var(--altura) - 60px)); }
+    50%  { transform: translate(50vw, calc(var(--altura) + 40px)); }
+    75%  { transform: translate(75vw, calc(var(--altura) - 50px)); }
+    100% { transform: translate(calc(100vw + 120px), var(--altura)); }
+}
+
+@keyframes bater {
+    from { transform: scaleX(1) rotate(-6deg); }
+    to   { transform: scaleX(0.82) rotate(6deg); }
+}
+
+.easterEgg {
+    position: fixed;
+    inset: 0;
+    z-index: 30;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 16px;
+    background: rgba(0, 0, 0, 0.85);
+    cursor: pointer;
+}
+.easterEgg[hidden] { display: none; }
+.easterEgg img { max-width: 100%; max-height: 100%; border-radius: 8px; }
+
+@keyframes entrar {
+    from { opacity: 0; transform: translateY(14px); }
+    to   { opacity: 1; transform: none; }
+}
+
+@keyframes pular {
+    50% { transform: translateY(-6px); }
+}
+
 @media (prefers-reduced-motion: reduce) {
-    *, *::before, *::after { scroll-behavior: auto !important; animation-duration: .01ms !important; animation-iteration-count: 1 !important; transition-duration: .01ms !important; }
-    .videoFundo { display: none; }
+    .boasVindas, .companheiro img, .borboleta img { animation: none; }
 }
+
 @media (max-width: 560px) {
-    .headerHome { min-height: 58px; padding: 4px 14px; }
-    .logo { height: 42px; }
-    .botaoSair { min-height: 38px; padding-inline: 12px; }
-    main { min-height: calc(100vh - 58px); padding: 22px 14px; }
-    .boasVindas { padding: 24px 20px; }
-    .texto { font-size: 16px; }
-    .botaoPrincipal, .botaoSecundario { flex-basis: 100%; }
+    .headerHome { padding: 8px 12px; }
+    .logo { height: 44px; }
+    h1 { font-size: 34px; }
+    .boasVindas { padding: 22px 20px 20px; }
 }

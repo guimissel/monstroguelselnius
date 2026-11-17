@@ -40,6 +40,54 @@ async function chamarAmigo() {
     }
 }
 
+// easter egg: a borboleta passa voando de vez em quando e, se clicarem nela, abre uma imagem escondida
+const borboleta = document.getElementById("borboleta");
+const easterEgg = document.getElementById("easterEgg");
+
+function passarBorboleta() {
+    if (!easterEgg.hidden) return;
+
+    // altura sorteada (entre 15% e 70% da tela); reinicia a animacao a cada passagem
+    borboleta.style.setProperty("--altura", Math.round(window.innerHeight * (0.15 + Math.random() * 0.55)) + "px");
+    borboleta.hidden = false;
+    borboleta.style.animation = "none";
+    void borboleta.offsetWidth;
+    borboleta.style.animation = "";
+}
+
+borboleta.addEventListener("animationend", (evento) => {
+    // so o voo termina a passagem (o bater de asas tambem dispara animationend no <img>)
+    if (evento.target === borboleta) borboleta.hidden = true;
+});
+
+function agendarBorboleta(espera) {
+    setTimeout(() => {
+        passarBorboleta();
+        agendarBorboleta(12000 + Math.random() * 12000);
+    }, espera);
+}
+
+// abre no momento em que aperta o botao do mouse (nao espera soltar), porque ela esta em movimento
+function abrirEasterEgg() {
+    borboleta.hidden = true;
+    easterEgg.hidden = false;
+}
+
+borboleta.addEventListener("pointerdown", (evento) => {
+    evento.preventDefault();
+    abrirEasterEgg();
+});
+// teclado (Tab + Enter) tambem funciona
+borboleta.addEventListener("click", abrirEasterEgg);
+
+easterEgg.addEventListener("click", () => { easterEgg.hidden = true; });
+document.addEventListener("keydown", (evento) => {
+    if (evento.key === "Escape") easterEgg.hidden = true;
+});
+
+// quem pediu menos movimento no sistema nao ve a borboleta voando
+if (!window.matchMedia("(prefers-reduced-motion: reduce)").matches) agendarBorboleta(2000);
+
 document.addEventListener("DOMContentLoaded", async () => {
     saudacao.textContent = saudacaoDoDia();
     document.getElementById("dica").textContent = DICAS[Math.floor(Math.random() * DICAS.length)];

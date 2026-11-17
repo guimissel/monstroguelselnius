@@ -6,11 +6,11 @@
     <title>Início</title>
     <base href="/monstroguelselnius/">
     <link href="https://fonts.googleapis.com/css2?family=Pixelify+Sans&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="public/style/home.css">
+    <link rel="stylesheet" href="public/style/home.css?v=3">
 </head>
 <body>
-    <!-- O video e decorativo; a imagem do body continua como alternativa e durante o carregamento. -->
-    <video class="videoFundo" autoplay muted loop playsinline disablepictureinpicture preload="metadata" poster="public/img/fundo home.webp" aria-hidden="true">
+    <!-- video de fundo: sem som, repete sozinho. Se nao carregar, aparece a imagem de fundo do body -->
+    <video class="videoFundo" autoplay muted loop playsinline disablepictureinpicture preload="auto" aria-hidden="true">
         <source src="public/video/abertura.mp4" type="video/mp4">
     </video>
 
@@ -46,6 +46,15 @@
             <p class="dica"><strong>Dica:</strong> <span id="dica"></span></p>
         </section>
     </main>
-    <script src="public/javascript/home.js"></script>
+
+    <!-- easter egg: uma borboleta cruza a tela de vez em quando; clicar nela abre a imagem -->
+    <button class="borboleta" id="borboleta" type="button" aria-label="Uma borboleta passou voando. Clique para ver o que ela esconde" hidden>
+        <img src="public/img/borboleta.webp" alt="" draggable="false">
+    </button>
+    <div class="easterEgg" id="easterEgg" hidden>
+        <img src="public/img/easter egg.webp" alt="Os treinadores com seus pokémons">
+    </div>
+
+    <script src="public/javascript/home.js?v=3"></script>
 </body>
 </html>
