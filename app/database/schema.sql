@@ -1,269 +1,225 @@
--- SCHEMA DO JOGO (tudo do banco em um arquivo so)
---
--- E o schema.sql do Guilherme, consertado para rodar e com o que o jogo usa acrescentado
--- (antes eram schema.sql + inventario.sql + loja.sql + equipe.sql).
---
--- Como rodar: phpMyAdmin > aba SQL > colar tudo > Executar. Nao precisa criar o banco antes.
--- Serve para banco novo (vazio) e para banco que ja existe.
--- Pode rodar quantas vezes quiser: nao apaga jogador, item, pokedolar, equipe nem pokemon.
--- (so refaz as tabelas antigas da modelagem que eram "casca", so com os ids e sem nenhum dado)
--- Usa "ADD COLUMN IF NOT EXISTS", que o MariaDB do XAMPP aceita.
---
--- O que mudou em relacao ao schema.sql original:
---   * faltavam virgulas/sobravam virgulas em eficaz_tipo, fraqueza_tipo, imune_tipo e monstro_batalha_usuario (dava erro de sintaxe)
---   * ataque.id_categoria_dano era VARCHAR e a chave dele e INT
---   * imagem_monstro nao tinha chave estrangeira para monstro; monstro_batalha_usuario nao tinha chave primaria
---   * usuario: o dinheiro se chama "pokedolares" (e o nome que o jogo usa)
---   * item_loja e item_usuario: versao do jogo (com chave, descricao, categoria, cura, quantidade...)
---   * batalha: id_usuario_2 pode ser vazio (contra o robo nao existe segundo usuario) e ganhou
---     status, recompensa, iniciada_em e finalizada_em (o servidor abre a batalha e paga a recompensa uma vez)
---   * novos: tipo.chave, tipo_monstro.ordem, resiste_tipo, evolucao_monstro, log_usuario, log_loja
---     e mais colunas em log; alem de triggers, views e uma procedure (secao 7)
---   * dados: itens da loja, pokemons (stats e tipos da PokeAPI) e evolucoes
---   * as imagens dos pokemons vem direto da PokeAPI (a tabela imagem_monstro fica sem uso)
+DROP TABLE IF EXISTS monstro_batalha_usuario;
+DROP TABLE IF EXISTS log;
+DROP TABLE IF EXISTS batalha;
+DROP TABLE IF EXISTS ataque_possivel_monstro;
+DROP TABLE IF EXISTS ataque;
+DROP TABLE IF EXISTS imagem_monstro;
+DROP TABLE IF EXISTS tipo_monstro;
+DROP TABLE IF EXISTS imune_tipo;
+DROP TABLE IF EXISTS fraqueza_tipo;
+DROP TABLE IF EXISTS eficaz_tipo;
+DROP TABLE IF EXISTS categoria_dano;
+DROP TABLE IF EXISTS tipo;
+DROP TABLE IF EXISTS evolucao;
+DROP TABLE IF EXISTS monstro;
+DROP TABLE IF EXISTS item_usuario;
+DROP TABLE IF EXISTS item_loja;
+DROP TABLE IF EXISTS tipo_imagem;
+DROP TABLE IF EXISTS efeito;
+DROP TABLE IF EXISTS usuario;
 
-CREATE DATABASE IF NOT EXISTS monstroguelselnius DEFAULT CHARACTER SET utf8mb4;
-USE monstroguelselnius;
-
-SET NAMES utf8mb4;   -- para os acentos ficarem certos
-
-
--- ======================================================================
--- 1. LIMPEZA: tabelas antigas que eram so "casca" (so os ids, nunca tiveram dado)
---    Sao refeitas na versao completa logo abaixo. Se ja estiverem na versao nova, nada e apagado.
--- ======================================================================
-
--- modelagem: a casca antiga de tipo/monstro/ataque nao tinha a coluna "nome"
-SET @modelo_antigo = (
-    EXISTS (SELECT 1 FROM information_schema.tables  WHERE table_schema = DATABASE() AND table_name = 'tipo')
-    AND NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_schema = DATABASE() AND table_name = 'tipo' AND column_name = 'nome')
-) OR (
-    EXISTS (SELECT 1 FROM information_schema.tables  WHERE table_schema = DATABASE() AND table_name = 'monstro')
-    AND NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_schema = DATABASE() AND table_name = 'monstro' AND column_name = 'nome')
-) OR (
-    EXISTS (SELECT 1 FROM information_schema.tables  WHERE table_schema = DATABASE() AND table_name = 'ataque')
-    AND NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_schema = DATABASE() AND table_name = 'ataque' AND column_name = 'nome')
+CREATE TABLE usuario (
+    id_usuario INT AUTO_INCREMENT PRIMARY KEY,
+    nome VARCHAR(255) NOT NULL,
+    senha VARCHAR(255) NOT NULL,
+    pokedolares INT DEFAULT 0 NOT NULL,
+    is_bot BOOLEAN DEFAULT FALSE NOT NULL,
+    is_ativo BOOLEAN DEFAULT TRUE NOT NULL
 );
 
--- itens: a casca antiga de item_loja so tinha o id (sem a coluna "chave")
-SET @itens_antigos = (
-    EXISTS (SELECT 1 FROM information_schema.tables  WHERE table_schema = DATABASE() AND table_name = 'item_loja')
-    AND NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_schema = DATABASE() AND table_name = 'item_loja' AND column_name = 'chave')
+CREATE TABLE efeito (
+    id_efeito INT AUTO_INCREMENT PRIMARY KEY,
+    nome VARCHAR(255) NOT NULL,
+    is_ativo BOOLEAN DEFAULT TRUE NOT NULL
 );
 
-SET FOREIGN_KEY_CHECKS = 0;
-SET @comando = IF(@modelo_antigo,
-    'DROP TABLE IF EXISTS `log`, monstro_batalha, monstro_batalha_usuario, ataque_monstro, ataque_possivel_monstro, imagem_monstro, tipo_monstro, eficaz_tipo, fraqueza_tipo, imune_tipo, ataque, monstro, tipo',
-    'DO 0');
-PREPARE passo FROM @comando; EXECUTE passo; DEALLOCATE PREPARE passo;
-SET @comando = IF(@itens_antigos, 'DROP TABLE IF EXISTS item_usuario, item_loja', 'DO 0');
-PREPARE passo FROM @comando; EXECUTE passo; DEALLOCATE PREPARE passo;
-SET FOREIGN_KEY_CHECKS = 1;
-
-
--- ======================================================================
--- 2. JOGADORES E BATALHAS
--- ======================================================================
-
--- jogadores. O id numera sozinho (o cadastro nao manda id). Dinheiro em pokedolares: ganho nas batalhas, gasto na loja
-CREATE TABLE IF NOT EXISTS usuario (
-    id_usuario  INT          NOT NULL AUTO_INCREMENT,
-    nome        VARCHAR(255) NOT NULL,
-    senha       VARCHAR(255) NOT NULL,
-    pokedolares INT          NOT NULL DEFAULT 0,
-    is_bot      BOOLEAN      NOT NULL DEFAULT FALSE,
-    is_ativo    BOOLEAN      NOT NULL DEFAULT TRUE,
-    PRIMARY KEY (id_usuario)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
-
--- bancos que ja existiam: acrescenta o que falta (nao mexe nos dados)
-ALTER TABLE usuario
-    ADD COLUMN IF NOT EXISTS pokedolares INT     NOT NULL DEFAULT 0,
-    ADD COLUMN IF NOT EXISTS is_bot      BOOLEAN NOT NULL DEFAULT FALSE,
-    ADD COLUMN IF NOT EXISTS is_ativo    BOOLEAN NOT NULL DEFAULT TRUE;
-
--- batalhas. id_usuario_2 e o adversario quando e outro jogador; contra o robo fica vazio.
--- status: em_andamento, vitoria, derrota ou fuga. recompensa: pokedolares ganhos.
--- is_boss: batalha contra o chefe (aparece depois de 7 batalhas normais, ver BatalhaDAO)
-CREATE TABLE IF NOT EXISTS batalha (
-    id_batalha       INT         NOT NULL AUTO_INCREMENT,
-    id_usuario       INT         NOT NULL,
-    id_usuario_2     INT         NULL,
-    turno_atual      INT         NOT NULL DEFAULT 1,
-    cooldown_troca_1 INT         NOT NULL DEFAULT 0,
-    cooldown_troca_2 INT         NOT NULL DEFAULT 0,
-    status           VARCHAR(15) NOT NULL DEFAULT 'em_andamento',
-    recompensa       INT         NOT NULL DEFAULT 0,
-    iniciada_em      DATETIME    NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    finalizada_em    DATETIME    NULL,
-    is_boss          BOOLEAN     NOT NULL DEFAULT FALSE,
-    PRIMARY KEY (id_batalha),
-    CONSTRAINT fk_batalha_usuario   FOREIGN KEY (id_usuario)   REFERENCES usuario(id_usuario) ON DELETE RESTRICT ON UPDATE CASCADE,
-    CONSTRAINT fk_batalha_usuario_2 FOREIGN KEY (id_usuario_2) REFERENCES usuario(id_usuario) ON DELETE RESTRICT ON UPDATE CASCADE
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
-
-ALTER TABLE batalha
-    ADD COLUMN IF NOT EXISTS id_usuario_2     INT         NULL,
-    ADD COLUMN IF NOT EXISTS turno_atual      INT         NOT NULL DEFAULT 1,
-    ADD COLUMN IF NOT EXISTS cooldown_troca_1 INT         NOT NULL DEFAULT 0,
-    ADD COLUMN IF NOT EXISTS cooldown_troca_2 INT         NOT NULL DEFAULT 0,
-    ADD COLUMN IF NOT EXISTS status           VARCHAR(15) NOT NULL DEFAULT 'em_andamento',
-    ADD COLUMN IF NOT EXISTS recompensa       INT         NOT NULL DEFAULT 0,
-    ADD COLUMN IF NOT EXISTS iniciada_em      DATETIME    NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    ADD COLUMN IF NOT EXISTS finalizada_em    DATETIME    NULL,
-    ADD COLUMN IF NOT EXISTS is_boss          BOOLEAN     NOT NULL DEFAULT FALSE;
-
--- bancos antigos tinham esses ids sem numerar sozinho e o adversario obrigatorio
--- (as chaves ficam desligadas so durante a troca, porque outras tabelas apontam para estas)
-SET FOREIGN_KEY_CHECKS = 0;
-ALTER TABLE usuario MODIFY id_usuario   INT NOT NULL AUTO_INCREMENT;
-ALTER TABLE batalha MODIFY id_batalha   INT NOT NULL AUTO_INCREMENT;
-ALTER TABLE batalha MODIFY id_usuario_2 INT NULL;
-SET FOREIGN_KEY_CHECKS = 1;
-
--- chave estrangeira do adversario (so cria se ainda nao existir)
-SET @tem_fk = EXISTS (
-    SELECT 1 FROM information_schema.table_constraints
-    WHERE table_schema = DATABASE() AND table_name = 'batalha' AND constraint_name = 'fk_batalha_usuario_2'
+CREATE TABLE tipo_imagem (
+    id_tipo_imagem INT AUTO_INCREMENT PRIMARY KEY,
+    nome VARCHAR(255) NOT NULL
 );
-SET @comando = IF(@tem_fk, 'DO 0',
-    'ALTER TABLE batalha ADD CONSTRAINT fk_batalha_usuario_2 FOREIGN KEY (id_usuario_2) REFERENCES usuario(id_usuario) ON DELETE RESTRICT ON UPDATE CASCADE');
-PREPARE passo FROM @comando; EXECUTE passo; DEALLOCATE PREPARE passo;
 
+CREATE TABLE item_loja (
+    id_item_loja INT AUTO_INCREMENT PRIMARY KEY,
+    nome VARCHAR(255) NOT NULL,
+    preco INT DEFAULT 0 NOT NULL
+);
 
--- ======================================================================
--- 3. MODELAGEM: tipos, efeitos, monstros e ataques
--- ======================================================================
+CREATE TABLE item_usuario (
+    id_usuario INT NOT NULL,
+    id_item_loja INT NOT NULL,
+    quantidade INT DEFAULT 1 NOT NULL,
 
-CREATE TABLE IF NOT EXISTS efeito (
-    id_efeito INT          NOT NULL AUTO_INCREMENT,
-    nome      VARCHAR(255) NOT NULL,
-    is_ativo  BOOLEAN      NOT NULL DEFAULT TRUE,
-    PRIMARY KEY (id_efeito)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+    PRIMARY KEY (id_usuario, id_item_loja),
 
-CREATE TABLE IF NOT EXISTS tipo (
-    id_tipo INT          NOT NULL AUTO_INCREMENT,
-    nome    VARCHAR(255) NOT NULL,
-    chave   VARCHAR(20)  NULL,   -- nome em ingles que a PokeAPI e o jogo usam (fire, water...)
-    PRIMARY KEY (id_tipo)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+    FOREIGN KEY (id_usuario) REFERENCES usuario(id_usuario)
+        ON DELETE CASCADE
+        ON UPDATE CASCADE,
+    FOREIGN KEY (id_item_loja) REFERENCES item_loja(id_item_loja)
+        ON DELETE CASCADE
+        ON UPDATE CASCADE
+);
 
-ALTER TABLE tipo ADD COLUMN IF NOT EXISTS chave VARCHAR(20) NULL;
+CREATE TABLE monstro (
+    id_monstro INT AUTO_INCREMENT PRIMARY KEY,
+    nome VARCHAR(255) NOT NULL,
+    vida_base INT NOT NULL,
+    ataque_base INT NOT NULL,
+    defesa_base INT NOT NULL,
+    ataque_esp_base INT NOT NULL,
+    defesa_esp_base INT NOT NULL,
+    velocidade_base INT NOT NULL,
+    is_ativo BOOLEAN DEFAULT TRUE NOT NULL
+);
 
-CREATE TABLE IF NOT EXISTS categoria_dano (
-    id_categoria_dano INT          NOT NULL AUTO_INCREMENT,
-    nome              VARCHAR(255) NOT NULL,
-    PRIMARY KEY (id_categoria_dano)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+CREATE TABLE evolucao (
+    id_monstro_base INT NOT NULL,
+    id_monstro_evoluido INT NOT NULL,
+    pokedolares_necessarios INT NOT NULL,
 
--- contra quem cada tipo e eficaz / fraco / imune
-CREATE TABLE IF NOT EXISTS eficaz_tipo (
-    id_tipo        INT NOT NULL,
+    PRIMARY KEY (id_monstro_base, id_monstro_evoluido),
+
+    FOREIGN KEY (id_monstro_base) REFERENCES monstro(id_monstro)
+        ON DELETE RESTRICT
+        ON UPDATE CASCADE,
+    FOREIGN KEY (id_monstro_evoluido) REFERENCES monstro(id_monstro)
+        ON DELETE RESTRICT
+        ON UPDATE CASCADE
+);
+
+CREATE TABLE tipo (
+    id_tipo INT AUTO_INCREMENT PRIMARY KEY,
+    nome VARCHAR(255) NOT NULL
+);
+
+CREATE TABLE categoria_dano (
+    id_categoria_dano INT AUTO_INCREMENT PRIMARY KEY,
+    nome VARCHAR(255) NOT NULL
+);
+
+CREATE TABLE eficaz_tipo (
+    id_tipo INT NOT NULL,
     id_tipo_eficaz INT NOT NULL,
+
     PRIMARY KEY (id_tipo, id_tipo_eficaz),
-    FOREIGN KEY (id_tipo)        REFERENCES tipo(id_tipo) ON DELETE CASCADE ON UPDATE CASCADE,
-    FOREIGN KEY (id_tipo_eficaz) REFERENCES tipo(id_tipo) ON DELETE CASCADE ON UPDATE CASCADE
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
-CREATE TABLE IF NOT EXISTS fraqueza_tipo (
-    id_tipo          INT NOT NULL,
+    FOREIGN KEY (id_tipo) REFERENCES tipo(id_tipo)
+        ON DELETE CASCADE
+        ON UPDATE CASCADE,
+    FOREIGN KEY (id_tipo_eficaz) REFERENCES tipo(id_tipo)
+        ON DELETE CASCADE
+        ON UPDATE CASCADE
+);
+
+CREATE TABLE fraqueza_tipo (
+    id_tipo INT NOT NULL,
     id_tipo_fraqueza INT NOT NULL,
+
     PRIMARY KEY (id_tipo, id_tipo_fraqueza),
-    FOREIGN KEY (id_tipo)          REFERENCES tipo(id_tipo) ON DELETE CASCADE ON UPDATE CASCADE,
-    FOREIGN KEY (id_tipo_fraqueza) REFERENCES tipo(id_tipo) ON DELETE CASCADE ON UPDATE CASCADE
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
-CREATE TABLE IF NOT EXISTS resiste_tipo (
-    id_tipo         INT NOT NULL,
-    id_tipo_resiste INT NOT NULL,
-    PRIMARY KEY (id_tipo, id_tipo_resiste),
-    FOREIGN KEY (id_tipo)         REFERENCES tipo(id_tipo) ON DELETE CASCADE ON UPDATE CASCADE,
-    FOREIGN KEY (id_tipo_resiste) REFERENCES tipo(id_tipo) ON DELETE CASCADE ON UPDATE CASCADE
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+    FOREIGN KEY (id_tipo) REFERENCES tipo(id_tipo)
+        ON DELETE CASCADE
+        ON UPDATE CASCADE,
+    FOREIGN KEY (id_tipo_fraqueza) REFERENCES tipo(id_tipo)
+        ON DELETE CASCADE
+        ON UPDATE CASCADE
+);
 
-CREATE TABLE IF NOT EXISTS imune_tipo (
-    id_tipo       INT NOT NULL,
+CREATE TABLE imune_tipo (
+    id_tipo INT NOT NULL,
     id_tipo_imune INT NOT NULL,
+
     PRIMARY KEY (id_tipo, id_tipo_imune),
-    FOREIGN KEY (id_tipo)       REFERENCES tipo(id_tipo) ON DELETE CASCADE ON UPDATE CASCADE,
-    FOREIGN KEY (id_tipo_imune) REFERENCES tipo(id_tipo) ON DELETE CASCADE ON UPDATE CASCADE
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
-CREATE TABLE IF NOT EXISTS monstro (
-    id_monstro      INT          NOT NULL AUTO_INCREMENT,
-    nome            VARCHAR(255) NOT NULL,
-    vida_base       INT          NOT NULL,
-    ataque_base     INT          NOT NULL,
-    defesa_base     INT          NOT NULL,
-    ataque_esp_base INT          NOT NULL,
-    defesa_esp_base INT          NOT NULL,
-    velocidade_base INT          NOT NULL,
-    is_ativo        BOOLEAN      NOT NULL DEFAULT TRUE,
-    PRIMARY KEY (id_monstro)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+    FOREIGN KEY (id_tipo) REFERENCES tipo(id_tipo)
+        ON DELETE CASCADE
+        ON UPDATE CASCADE,
+    FOREIGN KEY (id_tipo_imune) REFERENCES tipo(id_tipo)
+        ON DELETE CASCADE
+        ON UPDATE CASCADE
+);
 
-CREATE TABLE IF NOT EXISTS tipo_monstro (
-    id_monstro INT     NOT NULL,
-    id_tipo    INT     NOT NULL,
-    ordem      TINYINT NOT NULL DEFAULT 1,   -- 1 = tipo principal, 2 = secundario
-    PRIMARY KEY (id_monstro, id_tipo),
-    FOREIGN KEY (id_monstro) REFERENCES monstro(id_monstro) ON DELETE CASCADE  ON UPDATE CASCADE,
-    FOREIGN KEY (id_tipo)    REFERENCES tipo(id_tipo)       ON DELETE RESTRICT ON UPDATE CASCADE
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
-
--- (sem uso: as imagens dos pokemons vem direto da PokeAPI)
-CREATE TABLE IF NOT EXISTS imagem_monstro (
-    id_imagem_monstro INT          NOT NULL AUTO_INCREMENT,
-    id_monstro        INT          NOT NULL,
-    caminho           VARCHAR(255) NOT NULL,
-    PRIMARY KEY (id_imagem_monstro),
-    FOREIGN KEY (id_monstro) REFERENCES monstro(id_monstro) ON DELETE CASCADE ON UPDATE CASCADE
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
-
-ALTER TABLE tipo_monstro ADD COLUMN IF NOT EXISTS ordem TINYINT NOT NULL DEFAULT 1;
-
--- quem evolui para quem (a evolucao acontece ao usar a Pedra Evolutiva comprada na loja)
-CREATE TABLE IF NOT EXISTS evolucao_monstro (
-    id_monstro  INT NOT NULL,
-    id_evolucao INT NOT NULL,
-    PRIMARY KEY (id_monstro),
-    FOREIGN KEY (id_monstro)  REFERENCES monstro(id_monstro) ON DELETE CASCADE ON UPDATE CASCADE,
-    FOREIGN KEY (id_evolucao) REFERENCES monstro(id_monstro) ON DELETE CASCADE ON UPDATE CASCADE
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
-
-CREATE TABLE IF NOT EXISTS ataque (
-    id_ataque         INT          NOT NULL AUTO_INCREMENT,
-    nome              VARCHAR(255) NULL,
-    poder             INT          NULL,
-    precisao          FLOAT        NULL,
-    chance_efeito     FLOAT        NULL,
-    is_ativo          BOOLEAN      NOT NULL DEFAULT TRUE,
-    id_categoria_dano INT          NOT NULL,
-    id_tipo           INT          NOT NULL,
-    id_efeito         INT          NULL,
-    PRIMARY KEY (id_ataque),
-    FOREIGN KEY (id_categoria_dano) REFERENCES categoria_dano(id_categoria_dano) ON DELETE RESTRICT ON UPDATE CASCADE,
-    FOREIGN KEY (id_tipo)           REFERENCES tipo(id_tipo)                     ON DELETE RESTRICT ON UPDATE CASCADE,
-    FOREIGN KEY (id_efeito)         REFERENCES efeito(id_efeito)                 ON DELETE RESTRICT ON UPDATE CASCADE
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
-
--- quais ataques cada monstro pode aprender
-CREATE TABLE IF NOT EXISTS ataque_possivel_monstro (
-    id_ataque  INT NOT NULL,
+CREATE TABLE tipo_monstro (
     id_monstro INT NOT NULL,
+    id_tipo INT NOT NULL,
+
+    PRIMARY KEY (id_monstro, id_tipo),
+
+    FOREIGN KEY (id_monstro) REFERENCES monstro(id_monstro)
+        ON DELETE CASCADE
+        ON UPDATE CASCADE,
+    FOREIGN KEY (id_tipo) REFERENCES tipo(id_tipo)
+        ON DELETE RESTRICT
+        ON UPDATE CASCADE
+);
+
+CREATE TABLE imagem_monstro (
+    id_imagem_monstro INT AUTO_INCREMENT PRIMARY KEY,
+    id_monstro INT NOT NULL,
+    caminho VARCHAR(255) NOT NULL,
+    id_tipo_imagem INT NOT NULL,
+    
+    FOREIGN KEY (id_monstro) REFERENCES monstro(id_monstro)
+    	  ON DELETE CASCADE
+    	  ON UPDATE CASCADE,
+    FOREIGN KEY (id_tipo_imagem) REFERENCES tipo_imagem(id_tipo_imagem)
+        ON DELETE RESTRICT
+        ON UPDATE CASCADE
+);
+
+CREATE TABLE ataque (
+    id_ataque INT AUTO_INCREMENT PRIMARY KEY,
+    nome VARCHAR(255),
+    poder INT,
+    precisao FLOAT,
+    chance_efeito FLOAT,
+    is_ativo BOOLEAN DEFAULT TRUE NOT NULL,
+    id_categoria_dano INT NOT NULL,
+    id_tipo INT NOT NULL,
+    id_efeito INT,
+
+    FOREIGN KEY (id_categoria_dano) REFERENCES categoria_dano(id_categoria_dano)
+        ON DELETE RESTRICT
+        ON UPDATE CASCADE,
+    FOREIGN KEY (id_tipo) REFERENCES tipo(id_tipo)
+        ON DELETE RESTRICT
+        ON UPDATE CASCADE,
+    FOREIGN KEY (id_efeito) REFERENCES efeito(id_efeito)
+        ON DELETE RESTRICT
+        ON UPDATE CASCADE
+);
+
+CREATE TABLE ataque_possivel_monstro (
+    id_ataque INT,
+    id_monstro INT,
+
     PRIMARY KEY (id_ataque, id_monstro),
-    FOREIGN KEY (id_ataque)  REFERENCES ataque(id_ataque)   ON DELETE CASCADE ON UPDATE CASCADE,
-    FOREIGN KEY (id_monstro) REFERENCES monstro(id_monstro) ON DELETE CASCADE ON UPDATE CASCADE
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
+    FOREIGN KEY (id_ataque) REFERENCES ataque(id_ataque)
+        ON DELETE CASCADE
+        ON UPDATE CASCADE,
+    FOREIGN KEY (id_monstro) REFERENCES monstro(id_monstro)
+        ON DELETE CASCADE
+        ON UPDATE CASCADE
+);
 
--- ======================================================================
--- 4. DENTRO DA BATALHA: log e monstros em campo
--- ======================================================================
+CREATE TABLE batalha (
+    id_batalha INT AUTO_INCREMENT PRIMARY KEY,
+    id_usuario INT NOT NULL,
+    id_usuario_2 INT NOT NULL,
+    turno_atual INT DEFAULT 1 NOT NULL,
+    cooldown_troca_1 INT DEFAULT 0 NOT NULL,
+    cooldown_troca_2 INT DEFAULT 0 NOT NULL,
 
-CREATE TABLE IF NOT EXISTS `log` (
-    id_log     INT NOT NULL AUTO_INCREMENT,
+    FOREIGN KEY (id_usuario) REFERENCES usuario(id_usuario)
+        ON DELETE RESTRICT
+        ON UPDATE CASCADE,
+    FOREIGN KEY (id_usuario_2) REFERENCES usuario(id_usuario)
+        ON DELETE RESTRICT
+        ON UPDATE CASCADE
+);
+
+CREATE TABLE log (
+    id_log INT AUTO_INCREMENT PRIMARY KEY,
     id_batalha INT NOT NULL,
     PRIMARY KEY (id_log),
     FOREIGN KEY (id_batalha) REFERENCES batalha(id_batalha) ON DELETE CASCADE ON UPDATE CASCADE

@@ -25,7 +25,6 @@
     <span><b>Treinador:</b> <span id="nome"></span></span>
     <span><b>Pokédollars:</b> <span id="dinheiro"></span></span>
     <span><b>Ranking:</b> <span id="posicao"></span></span>
-    <span><b>Chefe:</b> <span id="chefe"></span></span>
   </div>
   <div class="acoes">
     <button class="botao claro" id="trocar">Trocar de perfil</button>
@@ -61,17 +60,6 @@
 </div>
 
 <div class="secao">
-  <h2>Salvar progresso</h2>
-  <p class="nota">Baixa um arquivo com o seu dinheiro, equipe, coleção e itens. Em outro computador, entre numa conta e carregue o arquivo para continuar de onde parou.</p>
-  <div class="acoes">
-    <a class="botao" id="baixar" href="api/progresso/exportar">Baixar progresso</a>
-    <button class="botao claro" id="escolherArquivo" type="button">Carregar progresso...</button>
-    <input id="arquivo" type="file" accept=".json,application/json" hidden>
-  </div>
-  <p class="mensagem" id="mensagemProgresso"></p>
-</div>
-
-<div class="secao">
   <h2>Mudar nome ou senha</h2>
   <form id="formulario">
     <label>Novo nome (deixe vazio para manter)<input id="novoNome" maxlength="50" autocomplete="off"></label>
@@ -82,6 +70,6 @@
   <p class="mensagem" id="mensagemForm"></p>
 </div>
 
-<script src="public/javascript/perfil.js?v=4"></script>
+<script src="public/javascript/perfil.js?v=2"></script>
 </body>
 </html>

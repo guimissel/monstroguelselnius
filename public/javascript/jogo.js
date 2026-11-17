@@ -161,7 +161,7 @@ class Pokemon {
         const critico = Math.random() < 1 / 16;
         const aleatorio = 0.85 + Math.random() * 0.15;
 
-        const base = Math.floor((Math.floor((2 * this.nivel) / 5) + 2) * golpe.poder * ataque / defesa / 50) + 2;
+        const base = Math.floor((Math.floor((2 * NIVEL) / 5) + 2) * golpe.poder * ataque / defesa / 50) + 2;
         const total = Math.floor(base * stab * ef * (critico ? 1.5 : 1) * aleatorio);
 
         return { dano: ef === 0 ? 0 : Math.max(1, total), ef, critico };
@@ -210,10 +210,7 @@ class Jogador extends Treinador {
 }
 
 class Robo extends Treinador {
-    constructor() {
-        super("robo");
-        this.chefe = false;   // true na batalha contra o chefe
-    }
+    constructor() { super("robo"); }
 
     // 70% das vezes escolhe o golpe que causa mais dano, senao um aleatorio
     escolherAcao(batalha) {
@@ -232,7 +229,7 @@ class Robo extends Treinador {
     }
 
     escolherSubstituto() { return this.equipe.proximoVivo(); }
-    mensagemEntrada(pokemon) { return `${this.chefe ? "O chefe" : "O robô"} enviou ${pokemon.nome}!`; }
+    mensagemEntrada(pokemon) { return `O robô enviou ${pokemon.nome}!`; }
 }
 
 // a batalha inteira: os dois treinadores e o andamento
@@ -391,7 +388,7 @@ async function abrirBatalhaNoServidor() {
             mostrarErroTecnico("Abrir a batalha: resposta inesperada do servidor:\n" + texto.slice(0, 600));
             return null;
         }
-        return { id: corpo.id, robo: corpo.robo, chefe: !!corpo.chefe, nivel: corpo.nivel || NIVEL_ROBO };
+        return { id: corpo.id, robo: corpo.robo };
     } catch (erro) {
         mostrarErroTecnico("Abrir a batalha: " + erro);
         return null;
@@ -472,7 +469,7 @@ function normalizarGolpe(m) {
 async function escolherGolpes(dados, tipos, nivel, poderMax = Infinity) {
     const candidatos = dados.moves
         .filter((m) => !GOLPES_PROIBIDOS.has(m.move.name) && m.version_group_details.some(
-            (v) => v.move_learn_method.name === "level-up" && v.level_learned_at <= nivel))
+            (v) => v.move_learn_method.name === "level-up" && v.level_learned_at <= NIVEL))
         .map((m) => m.move.url);
 
     embaralhar(candidatos);
@@ -508,14 +505,13 @@ async function criarPokemon(id, nivel, chefe = false) {
 
     const animado = dados.sprites.versions?.["generation-v"]?.["black-white"]?.animated;
 
-    const stat = (b) => Math.floor((2 * b * nivel) / 100) + 5;
+    const stat = (b) => Math.floor((2 * b * NIVEL) / 100) + 5;
     const tipos = dados.types.map((t) => t.type.name);
-    const maxHp = Math.floor((2 * base.hp * nivel) / 100) + nivel + 10;
+    const maxHp = Math.floor((2 * base.hp * NIVEL) / 100) + NIVEL + 10;
 
     return new Pokemon({
         id,
         nome: formatarNome(dados.name),
-        nivel,
         tipos,
         maxHp,
         hp: maxHp,
@@ -715,7 +711,7 @@ function atualizarInfo(lado) {
     const caixa = LADOS[lado].info;
 
     caixa.querySelector(".nome").textContent = mon.nome;
-    caixa.querySelector(".nivel").textContent = "Nv" + mon.nivel;
+    caixa.querySelector(".nivel").textContent = "Nv" + NIVEL;
 
     const barra = caixa.querySelector(".barra");
     const pct = (mon.hp / mon.maxHp) * 100;
@@ -893,7 +889,7 @@ function criarLinhaPokemon(mon, { desabilitado, onclick, extra }) {
         </div>`;
     b.querySelector("img").src = mon.frente;
     b.querySelector(".dados > div").textContent =
-        `${mon.nome}  Nv${mon.nivel}` + (mon.status ? `  [${STATUS[mon.status].sigla}]` : "");
+        `${mon.nome}  Nv${NIVEL}` + (mon.status ? `  [${STATUS[mon.status].sigla}]` : "");
     const barra = b.querySelector(".barra");
     barra.style.width = pct + "%";
     barra.classList.toggle("amarelo", pct <= 50 && pct > 20);
@@ -1313,7 +1309,6 @@ async function terminar(vitoria, fugiu = false) {
     else await dizer("Você não ganhou pokédollars.");
 
     if (vitoria && !resposta.erro) await anunciarConquistas(resposta.pokemons || []);
-    if (resposta.pedra) await dizer("Como prêmio pelo chefe, você ganhou uma Pedra Evolutiva!");
 
     bloquearMenu(false);
     mostrarVoltar(null);

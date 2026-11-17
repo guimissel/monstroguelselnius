@@ -72,11 +72,6 @@ define("ROTAS_API_NEEDAUTH", [
             $controlador->evoluir();
         },
 
-        "api/progresso/importar" => function () {
-            $controlador = new ProgressoController();
-            $controlador->importar();
-        },
-
         "api/usuario/atualizar" => function () {
             $controlador = new UsuarioController();
             $controlador->atualizar();

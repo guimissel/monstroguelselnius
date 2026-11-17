@@ -1,5 +1,6 @@
 <?php
 
+
 class BatalhaController
 {
     // POST api/batalha/iniciar: abre uma batalha e devolve o id e o time do robo (ids da PokeAPI)
@@ -21,14 +22,13 @@ class BatalhaController
 
         try
         {
-            $batalha = (new BatalhaDAO(Conexao::getConexao()))->iniciar((int) $meuId);
+            $batalhaDAO = new BatalhaDAO(Conexao::getConexao());
+            $dados = $batalhaDAO->iniciar((int) $meuId);
 
             echo json_encode([
                 "status" => 200,
-                "id" => $batalha["id"],
-                "robo" => $batalha["robo"],
-                "chefe" => $batalha["chefe"],
-                "nivel" => $batalha["nivel"]
+                "id" => $dados["id"],
+                "robo" => $dados["robo"]
             ]);
             return;
         }
@@ -46,14 +46,13 @@ class BatalhaController
 
         catch (Exception $e)
         {
-            // o motivo real fica no log do apache (xampp/apache/logs/error.log)
+            // (xampp/apache/logs/error.log)
             error_log("BatalhaController::iniciar: " . $e->getMessage());
 
             http_response_code(500);
             echo json_encode([
                 "status" => 500,
                 "mensagem" => "Nao foi possivel iniciar a batalha",
-                // o jogo mostra isso no console do navegador (F12) para descobrir o que faltou no banco
                 "detalhe" => $e->getMessage()
             ]);
             return;
@@ -79,10 +78,16 @@ class BatalhaController
         }
 
         $resultado = $_POST["resultado"] ?? "";
+
+        // valida os dados recebidos do navegador
         $vivos = filter_var($_POST["vivos"] ?? 0, FILTER_VALIDATE_INT);
         $idBatalha = filter_var($id, FILTER_VALIDATE_INT);
 
-        if (!in_array($resultado, ["vitoria", "derrota", "fuga"], true) || $vivos === false || $idBatalha === false)
+        // simplificando as condições de validação
+        $resultadoValido = in_array($resultado, ["vitoria", "derrota", "fuga"], true);
+        
+        // caso seja inválido, retorna 400 Bad Request
+        if (!$resultadoValido || $vivos === false || $idBatalha === false)
         {
             http_response_code(400);
             echo json_encode([
@@ -94,15 +99,15 @@ class BatalhaController
 
         try
         {
-            $dados = (new BatalhaDAO(Conexao::getConexao()))->finalizar($idBatalha, (int) $meuId, $resultado, $vivos);
+            // finaliza a batalha e calcula a recompensa
+            $batalhaDAO = new BatalhaDAO(Conexao::getConexao());
+            $dadosBatalha = $batalhaDAO->finalizar($idBatalha, (int) $meuId, $resultado, $vivos);
 
             echo json_encode([
                 "status" => 200,
-                "recompensa" => $dados["recompensa"],
-                "pokedolares" => $dados["pokedolares"],
-                "pokemons" => $dados["pokemons"],
-                "chefe" => $dados["chefe"],
-                "pedra" => $dados["pedra"]
+                "recompensa" => $dadosBatalha["recompensa"],
+                "pokedolares" => $dadosBatalha["pokedolares"],
+                "pokemons" => $dadosBatalha["pokemons"]
             ]);
             return;
         }

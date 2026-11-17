@@ -312,3 +312,50 @@ button:disabled { cursor: not-allowed; }
 .slotItem img { width: 4.5cqw; height: 4.5cqw; object-fit: contain; image-rendering: pixelated; }
 .slotItem:hover:not(:disabled) { filter: brightness(1.08); }
 .slotItem:disabled { opacity: .45; }
+
+/* ---------- estados de interacao e adaptacao ---------- */
+
+button { touch-action: manipulation; }
+button:focus-visible, #logTexto:focus-visible {
+    outline: .35cqw solid #fff4a8;
+    outline-offset: .15cqw;
+    filter: brightness(1.12);
+}
+.linhaPokemon, .slotItem {
+    cursor: pointer;
+    transition: background-color .15s, filter .15s, transform .15s;
+}
+.linhaPokemon:hover:not(:disabled), .slotItem:hover:not(:disabled) {
+    transform: translateY(-.15cqw);
+    box-shadow: 0 .25cqw .6cqw rgba(0, 0, 0, .2);
+}
+.linhaPokemon:active:not(:disabled), .slotItem:active:not(:disabled) { transform: translateY(.1cqw); }
+.linhaPokemon:disabled, .slotItem:disabled { cursor: not-allowed; }
+
+#painelLista.grade { gap: .8cqw; padding: .2cqw; }
+#painelLista.grade .slotItem { min-width: 0; overflow-wrap: anywhere; }
+#painelLista.grade .slotItem img { flex: 0 0 auto; }
+#painelLista:not(.grade) { overflow-y: auto; padding: .2cqw; }
+#painelLista::-webkit-scrollbar, #logTexto::-webkit-scrollbar { width: .7cqw; }
+#painelLista::-webkit-scrollbar-thumb { background: #7790a3; border: .15cqw solid #e8f0f8; border-radius: 1cqw; }
+
+#painelAviso:empty { min-height: 0; }
+#painelAviso:not(:empty) {
+    padding: .5cqw .8cqw;
+    background: #fff0e8;
+    border-left: .35cqw solid #b53c32;
+    border-radius: .4cqw;
+}
+#tempo { font-variant-numeric: tabular-nums; }
+#tempo.urgente { animation: pulsar .65s ease-in-out infinite alternate; }
+@keyframes pulsar { to { filter: brightness(1.35); transform: scale(1.05); } }
+
+@media (max-width: 700px) {
+    #painel { left: 4%; width: 92%; padding: 2cqw; }
+    #painelLista.grade { grid-template-columns: repeat(4, minmax(0, 1fr)); grid-auto-rows: minmax(14cqw, 1fr); }
+    .linhaPokemon { gap: 1cqw; padding-inline: 1cqw; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after { animation-duration: .01ms !important; animation-iteration-count: 1 !important; transition-duration: .01ms !important; }
+}
