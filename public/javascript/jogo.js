@@ -1,7 +1,9 @@
 // ===================== configuracoes =====================
 
 const API = "https://pokeapi.co/api/v2";
-const NIVEL = 50;
+const NIVEL_JOGADOR = 10;      // nivel baixo: os pokemons ficam fracos e a batalha mais equilibrada
+const NIVEL_ROBO = 10;         // (o chefe vem do servidor com o seu proprio nivel)
+const PODER_MAX_CHEFE = 45;    // o chefe so usa golpes ate esse poder (senao ele derruba o time em 2 ou 3 golpes)
 const TEMPO_ESCOLHA = 20;      // segundos para escolher a jogada
 const COOLDOWN_TROCA = 3;      // 3 porque o round da troca tambem conta (sobram 2 rounds bloqueados)
 const MAX_POKEMON_ID = 151;    // sorteia pokemons da 1a geracao
@@ -381,7 +383,8 @@ async function abrirBatalhaNoServidor() {
             return null;
         }
 
-        if (!corpo.id || !Array.isArray(corpo.robo) || corpo.robo.length !== 3) {
+        // robo normal: 3 pokemons. chefe: 1 so
+        if (!corpo.id || !Array.isArray(corpo.robo) || corpo.robo.length !== (corpo.chefe ? 1 : 3)) {
             mostrarErroTecnico("Abrir a batalha: resposta inesperada do servidor:\n" + texto.slice(0, 600));
             return null;
         }
@@ -463,7 +466,7 @@ function normalizarGolpe(m) {
     };
 }
 
-async function escolherGolpes(dados, tipos) {
+async function escolherGolpes(dados, tipos, nivel, poderMax = Infinity) {
     const candidatos = dados.moves
         .filter((m) => !GOLPES_PROIBIDOS.has(m.move.name) && m.version_group_details.some(
             (v) => v.move_learn_method.name === "level-up" && v.level_learned_at <= NIVEL))
@@ -474,7 +477,8 @@ async function escolherGolpes(dados, tipos) {
     const respostas = await Promise.all(
         candidatos.slice(0, 16).map((url) => buscar(url).catch(() => null))
     );
-    const validos = respostas.filter(Boolean).map(normalizarGolpe).filter(Boolean);
+    const validos = respostas.filter(Boolean).map(normalizarGolpe).filter(Boolean)
+        .filter((g) => !g.poder || g.poder <= poderMax);
 
     const pontos = (g) => g.poder * ((g.precisao || 100) / 100) * (tipos.includes(g.tipo) ? 1.5 : 1);
     const danos = validos.filter((g) => g.poder).sort((a, b) => pontos(b) - pontos(a));
@@ -492,7 +496,8 @@ async function escolherGolpes(dados, tipos) {
     return escolhidos;
 }
 
-async function criarPokemon(id) {
+// chefe = versao brilhante ("shiny", cores diferentes) e com golpes limitados em PODER_MAX_CHEFE
+async function criarPokemon(id, nivel, chefe = false) {
     const dados = await buscar(`${API}/pokemon/${id}`);
 
     const base = {};
@@ -515,14 +520,14 @@ async function criarPokemon(id) {
         spa: stat(base["special-attack"]),
         spd: stat(base["special-defense"]),
         spe: stat(base.speed),
-        golpes: await escolherGolpes(dados, tipos),
+        golpes: await escolherGolpes(dados, tipos, nivel, chefe ? PODER_MAX_CHEFE : Infinity),
         status: null,
         sono: 0,
-        frente: dados.sprites.front_default,
-        costas: dados.sprites.back_default || dados.sprites.front_default,
+        frente: (chefe && dados.sprites.front_shiny) || dados.sprites.front_default,
+        costas: (chefe && dados.sprites.back_shiny) || dados.sprites.back_default || dados.sprites.front_default,
         // sprites animados (GIF). Nem todo pokemon tem; sem eles vale a imagem parada
-        frenteAnim: animado?.front_default || null,
-        costasAnim: animado?.back_default || null
+        frenteAnim: (chefe && animado?.front_shiny) || animado?.front_default || null,
+        costasAnim: (chefe && animado?.back_shiny) || animado?.back_default || null
     });
 }
 
@@ -549,7 +554,9 @@ logTexto.addEventListener("click", () => pularTexto && pularTexto());
 // escreve no log letra por letra. rapido = aparece na hora e nao espera
 // musica de fundo da batalha: fica em loop enquanto a tela estiver aberta
 // (o navegador so deixa tocar som depois que a pessoa clicou em algo no site; se bloquear, tenta de novo no primeiro clique)
-const musicaFundo = new Audio("public/audio/fundo.mp3");
+const MUSICA_NORMAL = "public/audio/fundo.mp3";
+const MUSICA_CHEFE = "public/audio/suspense.mp3";
+const musicaFundo = new Audio(MUSICA_NORMAL);
 musicaFundo.loop = true;
 musicaFundo.preload = "auto";
 musicaFundo.volume = 0.4;
@@ -573,9 +580,17 @@ function tocarMusica() {
     });
 }
 
-function iniciarMusica() {
+// chefe = true: musica de suspense e trovoes. Na batalha normal (ou depois que o chefe acaba) volta a musica de sempre
+function iniciarMusica(chefe = false) {
+    const arquivo = chefe ? MUSICA_CHEFE : MUSICA_NORMAL;
+    if (!musicaFundo.src.endsWith(arquivo)) musicaFundo.src = arquivo;   // trocar o arquivo para a musica
+
+    musicaFundo.volume = chefe ? 0.5 : 0.4;
     musicaLigada = true;
     if (musicaFundo.paused) tocarMusica();   // na revanche ela ja esta tocando e continua de onde estava
+
+    if (chefe) trovoes.ligar();
+    else trovoes.desligar();
 }
 
 // aba escondida: pausa a musica; ao voltar, continua
@@ -583,6 +598,53 @@ document.addEventListener("visibilitychange", () => {
     if (document.hidden) musicaFundo.pause();
     else if (musicaLigada) tocarMusica();
 });
+
+// trovoes da batalha do chefe: de tempos em tempos soa um trovao e a tela da um clarao
+class Trovoes {
+    #sons = [new Audio("public/audio/trovao1.mp3"), new Audio("public/audio/trovao2.mp3")];
+    #timer = null;
+
+    constructor() {
+        this.#sons.forEach((som) => { som.preload = "auto"; som.volume = 0.7; });
+    }
+
+    ligar() {
+        if (this.#timer !== null) return;   // ja esta ligado
+        this.#agendar(3000 + Math.random() * 3000);
+    }
+
+    desligar() {
+        clearTimeout(this.#timer);
+        this.#timer = null;
+        this.#sons.forEach((som) => som.pause());
+    }
+
+    #agendar(ms) {
+        this.#timer = setTimeout(() => {
+            this.#trovejar();
+            this.#agendar(7000 + Math.random() * 9000);
+        }, ms);
+    }
+
+    #trovejar() {
+        if (document.hidden) return;
+
+        const som = this.#sons[Math.floor(Math.random() * this.#sons.length)];
+        som.currentTime = 0;
+        const tocando = som.play();
+        // o clarao so aparece se o som tocou (o navegador pode bloquear o som ate o primeiro clique)
+        if (tocando) tocando.then(() => this.#clarao()).catch(() => {});
+        else this.#clarao();
+    }
+
+    #clarao() {
+        palco.classList.remove("relampago");
+        void palco.offsetWidth;
+        palco.classList.add("relampago");
+    }
+}
+
+const trovoes = new Trovoes();
 
 // som de texto sendo escrito: toca toda vez que algo aparece na caixa de log
 // (o navegador so deixa tocar som depois que a pessoa clicou em algo no site; se bloquear, o jogo segue sem som)
@@ -1234,7 +1296,10 @@ async function terminar(vitoria, fugiu = false) {
     const resultado = fugiu ? "fuga" : (vitoria ? "vitoria" : "derrota");
     const vivos = estado.jogador.equipe.vivos().length;
 
-    if (vitoria) await dizer("Você venceu a batalha!");
+    // acabou o suspense: some o trovao e volta a musica de sempre
+    if (estado.robo.chefe) iniciarMusica(false);
+
+    if (vitoria) await dizer(estado.robo.chefe ? "Você derrotou o chefe!" : "Você venceu a batalha!");
     else if (!fugiu) await dizer("Todos os seus pokémons desmaiaram...");
 
     const resposta = await fecharBatalhaNoServidor(resultado, vivos);
@@ -1373,6 +1438,9 @@ async function iniciar() {
 
     try {
         const idsRobo = batalha ? batalha.robo : sortearIds(3, idsJogador, idsBasicos.length >= 6 ? idsBasicos : null);
+        const nivelRobo = batalha ? batalha.nivel : NIVEL_ROBO;
+        estado.robo.chefe = !!(batalha && batalha.chefe);
+        palco.classList.toggle("chefe", estado.robo.chefe);   // cenario escuro do chefe
 
         // se so o inventario falhar (ex: banco sem as tabelas novas) o jogo continua, sem itens
         const [, , ...pokemons] = await Promise.all([
@@ -1382,7 +1450,8 @@ async function iniciar() {
                 inventarioOk = false;
             }),
             TabelaTipos.carregar(),
-            ...[...idsJogador, ...idsRobo].map(criarPokemon)
+            ...idsJogador.map((id) => criarPokemon(id, NIVEL_JOGADOR)),
+            ...idsRobo.map((id) => criarPokemon(id, nivelRobo, estado.robo.chefe))
         ]);
 
         estado.jogador.equipe = new Time(pokemons.slice(0, 3));
@@ -1404,12 +1473,17 @@ async function iniciar() {
 
     logTexto.innerHTML = "";
     protegerBotaoVoltar();
-    iniciarMusica();
+    iniciarMusica(estado.robo.chefe);
     mostrarPokemon("robo");
     if (!inventarioOk) await dizer("Não consegui carregar o seu inventário, então você vai sem itens nesta batalha.");
     if (!estado.idBatalha) await dizer("Não consegui registrar a batalha. Rode o app/database/schema.sql no banco.");
-    await dizer("Um treinador robô quer batalhar!");
-    await dizer(`Ele enviou ${ativo("robo").nome}!`);
+    if (estado.robo.chefe) {
+        await dizer("Atenção! O chefe da Equipe Robô apareceu para te desafiar!");
+        await dizer(`Ele enviou ${ativo("robo").nome}, um pokémon brilhante e muito forte!`);
+    } else {
+        await dizer("Um treinador robô quer batalhar!");
+        await dizer(`Ele enviou ${ativo("robo").nome}!`);
+    }
     mostrarPokemon("jogador");
     await dizer(`Vai, ${ativo("jogador").nome}!`);
     await dizer("Atenção: se você sair da tela de batalha, você perde a batalha!");

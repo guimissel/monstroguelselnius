@@ -6,7 +6,7 @@
 <title>Equipe</title>
 <base href="/monstroguelselnius/">
 <link href="https://fonts.googleapis.com/css2?family=Pixelify+Sans&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="public/style/equipe.css">
+<link rel="stylesheet" href="public/style/equipe.css?v=2">
 
 </head>
 <body>
@@ -26,6 +26,19 @@
 
 <div class="equipe" id="equipe"></div>
 
+<section class="analise-equipe" aria-label="Análise de tipos da equipe">
+  <div class="analise-bloco">
+    <h2>Fraquezas do time</h2>
+    <p class="analise-vazia" id="fraquezas-vazio">Escolha pokémons para ver as fraquezas.</p>
+    <ul class="analise-lista" id="fraquezas-time"></ul>
+  </div>
+  <div class="analise-bloco">
+    <h2>Eficaz contra</h2>
+    <p class="analise-vazia" id="eficaz-vazio">Escolha pokémons para ver contra quem o time é eficaz.</p>
+    <ul class="analise-lista" id="eficaz-time"></ul>
+  </div>
+</section>
+
 <p class="mensagem" id="mensagem"></p>
 
 <div class="lista" id="lista"></div>
@@ -35,6 +48,6 @@
   <span id="contagem"></span>
 </div>
 
-<script src="public/javascript/equipe.js?v=5"></script>
+<script src="public/javascript/equipe.js?v=8"></script>
 </body>
 </html>
