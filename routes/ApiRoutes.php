@@ -35,6 +35,11 @@ define("ROTAS_API_NEEDAUTH", [
             $controlador->ver();
         },
 
+        "api/progresso/exportar" => function () {
+            $controlador = new ProgressoController();
+            $controlador->exportar();
+        },
+
         "api/montarSeed" => function () {
             $montadorSeed = new MontadorSeed(__DIR__ . "/../app/database/seeds/");
             $montadorSeed->run();

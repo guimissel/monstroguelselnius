@@ -5,6 +5,13 @@ class BatalhaDAO
     // uma batalha de verdade dura mais que isso (so contando as mensagens do log)
     private const SEGUNDOS_MINIMOS = 10;
 
+    // depois de tantas batalhas normais, a proxima e contra o chefe
+    private const BATALHAS_PARA_CHEFE = 7;
+
+    // nivel dos pokemons (quanto menor, mais fracos). O chefe e um pouco mais forte
+    public const NIVEL_NORMAL = 10;
+    public const NIVEL_CHEFE = 10;
+
     private PDO $pdo;
 
     public function __construct(PDO $pdo)
@@ -55,6 +62,7 @@ class BatalhaDAO
     }
 
     // abre uma batalha para o jogador e devolve o id e o time do robo (so quem tem equipe de 3 pode batalhar).
+    // a cada 7 batalhas a vez e do chefe: UM pokemon so, um dos 3 mais fortes de forma final, e de nivel maior.
     // quem sorteia o robo e o servidor: assim ele sabe quais pokemons o jogador ganha se vencer
     // (3 basicos que nao estao na equipe do jogador)
     public function iniciar(int $idUsuario): array
@@ -68,17 +76,40 @@ class BatalhaDAO
         $this->pdo->beginTransaction();
 
         try {
-            $prepare = $this->pdo->prepare(
-                "SELECT id_pokemon FROM pokemon_basico
-                 WHERE id_pokemon NOT IN (SELECT id_pokemon FROM equipe_usuario WHERE id_usuario = :id)
-                 ORDER BY RAND()
-                 LIMIT 3"
-            );
+            $chefe = $this->batalhasParaChefe($idUsuario) === 0;
+
+            if ($chefe) {
+                // chefe: um pokemon de forma final (que ja evoluiu ao maximo), sorteado entre os 3 de maior soma de status
+                // (fora os que estao na equipe do jogador)
+                $prepare = $this->pdo->prepare(
+                    "SELECT id_pokemon FROM (
+                         SELECT id_monstro AS id_pokemon FROM monstro
+                         WHERE id_monstro IN (SELECT id_evolucao FROM evolucao_monstro)
+                           AND id_monstro NOT IN (SELECT id_monstro FROM evolucao_monstro)
+                           AND id_monstro NOT IN (SELECT id_pokemon FROM equipe_usuario WHERE id_usuario = :id)
+                         ORDER BY vida_base + ataque_base + defesa_base + ataque_esp_base + defesa_esp_base + velocidade_base DESC
+                         LIMIT 3
+                     ) AS fortes
+                     ORDER BY RAND()
+                     LIMIT 1"
+                );
+                $quantos = 1;
+            } else {
+                // robo normal: 3 basicos
+                $prepare = $this->pdo->prepare(
+                    "SELECT id_pokemon FROM pokemon_basico
+                     WHERE id_pokemon NOT IN (SELECT id_pokemon FROM equipe_usuario WHERE id_usuario = :id)
+                     ORDER BY RAND()
+                     LIMIT 3"
+                );
+                $quantos = 3;
+            }
+
             $prepare->execute(["id" => $idUsuario]);
             $robo = array_map("intval", $prepare->fetchAll(PDO::FETCH_COLUMN));
 
-            if (count($robo) !== 3) {
-                throw new RuntimeException("pokemons basicos insuficientes para montar o time do robo");
+            if (count($robo) !== $quantos) {
+                throw new RuntimeException("pokemons insuficientes para montar o time do robo");
             }
 
             $idBatalha = $this->inserirBatalha($idUsuario);
