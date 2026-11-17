@@ -9,8 +9,8 @@
     <link rel="stylesheet" href="public/style/home.css">
 </head>
 <body>
-    <!-- video de fundo: sem som, repete sozinho. Se nao carregar, aparece a imagem de fundo do body -->
-    <video class="videoFundo" autoplay muted loop playsinline disablepictureinpicture preload="auto" aria-hidden="true">
+    <!-- O video e decorativo; a imagem do body continua como alternativa e durante o carregamento. -->
+    <video class="videoFundo" autoplay muted loop playsinline disablepictureinpicture preload="metadata" poster="public/img/fundo home.webp" aria-hidden="true">
         <source src="public/video/abertura.mp4" type="video/mp4">
     </video>
 

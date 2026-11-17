@@ -101,7 +101,7 @@ class Roteador
         // rota não encontrada 404
         if ($rotaEncontrada === null) {
             http_response_code(404);
-            echo '404 - Rota não encontrada';
+            view("404");
             return;
         }
 
