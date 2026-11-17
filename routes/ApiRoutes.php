@@ -42,7 +42,7 @@ define("ROTAS_API_NEEDAUTH", [
 
         "api/montarSeed" => function () {
             $montadorSeed = new MontadorSeed(__DIR__ . "/../app/database/seeds/");
-            $montadorSeed->run();
+            $montadorSeed->criarSeeds();
         }
     ],
 

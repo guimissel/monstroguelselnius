@@ -18,8 +18,10 @@ class MontadorSeed {
   private array $arquivosSeeds;
   private string $urlBase;
   private array $geracao;
+  private PDO $conexao;
 
   public function __construct(string $diretorioSeeds) {
+    $this->conexao = Conexao::getConexao();
     $this->diretorioSeeds = $diretorioSeeds;
     if (!is_dir($this->diretorioSeeds)) mkdir($this->diretorioSeeds, 0777);
 
@@ -304,7 +306,7 @@ class MontadorSeed {
     }
   }
 
-  public function run(): void {
+  public function criarSeeds(): void {
     // remove os arquivos para não ficar dando append nos que já existem
     $this->removerSeeds();
 
@@ -316,6 +318,26 @@ class MontadorSeed {
       echo "<h1>{$nome}</h1>";
       echo "<pre>" . file_get_contents($this->diretorioSeeds . $seed["arquivo"]) . "</pre>";
     }
+    
+    $this->popularBanco();
+  }
 
+  public function popularBanco(): void {
+    try {
+      $this->conexao->beginTransaction();
+
+      foreach ($this->arquivosSeeds as $seed) {
+        $arquivo = $this->diretorioSeeds . $seed["arquivo"];
+        
+        $sql = file_get_contents($arquivo);
+
+        $stmtDml = $this->conexao->prepare($sql);
+        $stmtDml->execute();
+      }
+
+      $this->conexao->commit();
+    } catch (PDOException $e) {
+      $this->conexao->rollBack();
+    }
   }
 }
