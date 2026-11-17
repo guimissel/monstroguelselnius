@@ -290,7 +290,7 @@ async function carregarInventario() {
 
     for (const item of dados.itens) {
         // a Pedra Evolutiva e para a tela da equipe, nao para a batalha
-        if (item.categoria === "evolucao") continue;
+        if (item.categoria === "evolucao" || item.categoria === "pokebola") continue;
 
         ITENS[item.chave] = {
             nome: item.nome,

@@ -6,7 +6,7 @@
 <title>Inventário</title>
 <base href="/monstroguelselnius/">
 <link href="https://fonts.googleapis.com/css2?family=Pixelify+Sans&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="public/style/inventario.css">
+<link rel="stylesheet" href="public/style/inventario.css?v=2">
 </head>
 <body>
 
@@ -36,6 +36,19 @@
   </aside>
 </div>
 
-<script src="public/javascript/inventario.js?v=3"></script>
+<dialog class="abertura-pokebola" id="aberturaPokebola" aria-labelledby="resultadoNome">
+  <div class="abertura-animacao" id="aberturaAnimacao" aria-live="polite">
+    <img src="public/img/pokebola.svg" alt="">
+    <p>A Pokébola está abrindo...</p>
+  </div>
+  <section class="resultado-captura" id="resultadoCaptura" hidden>
+    <p id="resultadoTipo"></p>
+    <img id="resultadoImagem" alt="">
+    <h2 id="resultadoNome"></h2>
+    <button class="botao" id="fecharAbertura" type="button">Continuar</button>
+  </section>
+</dialog>
+
+<script src="public/javascript/inventario.js?v=4"></script>
 </body>
 </html>

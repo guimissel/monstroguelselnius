@@ -3,17 +3,26 @@ const gradeEl = document.getElementById("inventario");
 const detalhesEl = document.getElementById("detalhes");
 const mensagemEl = document.getElementById("mensagem");
 const pokedolaresEl = document.getElementById("pokedolares");
+const aberturaEl = document.getElementById("aberturaPokebola");
+const aberturaAnimacaoEl = document.getElementById("aberturaAnimacao");
+const resultadoCapturaEl = document.getElementById("resultadoCaptura");
+const resultadoImagemEl = document.getElementById("resultadoImagem");
+const resultadoNomeEl = document.getElementById("resultadoNome");
+const resultadoTipoEl = document.getElementById("resultadoTipo");
+const fecharAberturaEl = document.getElementById("fecharAbertura");
 
 // nomes das categorias que vem do banco (item_loja.categoria)
 const NOMES_CATEGORIAS = {
     pocao_hp: "Poções de HP",
     pocao_condicao: "Poções de condição",
-    evolucao: "Evolução"
+    evolucao: "Evolução",
+    pokebola: "Pokébolas"
 };
 
 let itens = [];
 let filtro = "todos";
 let selecionado = null;   // chave do item aberto nos detalhes
+let abrindoPokebola = false;
 
 const caminhoImg = (arquivo) => "public/img/" + encodeURI(arquivo);
 
@@ -140,6 +149,16 @@ function desenharDetalhes() {
     preco.textContent = `Preço na loja: ${item.preco} pokédollars`;
 
     detalhesEl.append(img, titulo, descricao, quantidade, preco);
+
+    if (item.chave === "pokebola") {
+        const abrir = document.createElement("button");
+        abrir.type = "button";
+        abrir.className = "botao abrir-pokebola";
+        abrir.textContent = abrindoPokebola ? "Abrindo..." : "Abrir Pokébola";
+        abrir.disabled = abrindoPokebola || item.quantidade < 1;
+        abrir.addEventListener("click", abrirPokebola);
+        detalhesEl.appendChild(abrir);
+    }
 }
 
 function desenhar() {
@@ -150,5 +169,71 @@ function desenhar() {
     desenharGrade();
     desenharDetalhes();
 }
+
+function esperar(ms) {
+    return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+async function abrirPokebola() {
+    if (abrindoPokebola) return;
+    abrindoPokebola = true;
+    aberturaAnimacaoEl.hidden = false;
+    resultadoCapturaEl.hidden = true;
+    aberturaEl.showModal();
+    desenharDetalhes();
+
+    const inicioAbertura = performance.now();
+    const somAbertura = new Audio("public/audio/abrindo.wav");
+    somAbertura.currentTime = 0;
+    somAbertura.play().catch((erro) => {
+        if (erro.name !== "AbortError") console.warn("Não foi possível tocar o som de abertura:", erro);
+    });
+
+    try {
+        const resposta = await fetch("/monstroguelselnius/api/inventario/pokebola/usar", { method: "POST" });
+        const resultado = await resposta.json();
+        if (resposta.status === 401) {
+            window.location.href = "/monstroguelselnius/login";
+            return;
+        }
+        if (!resposta.ok) throw new Error(resultado.mensagem || "Não foi possível abrir a Pokébola.");
+
+        await esperar(Math.max(0, 6400 - (performance.now() - inicioAbertura)));
+        somAbertura.pause();
+        aberturaAnimacaoEl.hidden = true;
+        resultadoCapturaEl.hidden = false;
+        resultadoCapturaEl.className = "resultado-captura" + (resultado.pokemon.lendario ? " lendario" : "");
+        resultadoImagemEl.src = `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/${resultado.pokemon.id}.png`;
+        resultadoImagemEl.alt = resultado.pokemon.nome;
+        resultadoNomeEl.textContent = resultado.pokemon.nome;
+        resultadoTipoEl.textContent = resultado.pokemon.jaTinha
+            ? "Você já tinha este Pokémon."
+            : resultado.pokemon.lendario ? "Pokémon lendário!" : "Pokémon encontrado!";
+        const somPego = new Audio("public/audio/pego.mp3");
+        somPego.play().catch((erro) => console.warn("Não foi possível tocar o som de captura:", erro));
+
+        selecionado = "pokebola";
+        await carregar();
+        if (resultado.pokemon.jaTinha) {
+            mostrarMensagem(`Você encontrou ${resultado.pokemon.nome}, mas já tinha esse Pokémon na coleção.`);
+        }
+    } catch (erro) {
+        console.error(erro);
+        somAbertura.pause();
+        aberturaEl.close();
+        mostrarMensagem(erro.message || "Não foi possível abrir a Pokébola.", true);
+    } finally {
+        abrindoPokebola = false;
+        desenharDetalhes();
+    }
+}
+
+fecharAberturaEl.addEventListener("click", () => aberturaEl.close());
+aberturaEl.addEventListener("click", (evento) => {
+    if (evento.target === aberturaEl && !abrindoPokebola) aberturaEl.close();
+});
+aberturaEl.addEventListener("cancel", (evento) => {
+    if (abrindoPokebola) evento.preventDefault();
+});
 
 carregar();

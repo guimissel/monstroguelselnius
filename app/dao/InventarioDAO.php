@@ -4,6 +4,8 @@ require_once __DIR__ . "/../model/ItemInventario.php";
 
 class InventarioDAO
 {
+    private const IDS_LENDARIOS = [144, 145, 146, 150];
+
     private PDO $pdo;
 
     public function __construct(PDO $pdo)
@@ -50,11 +52,97 @@ class InventarioDAO
                 JOIN item_loja i ON i.id_item_loja = iu.id_item_loja
                 SET iu.quantidade = iu.quantidade - 1
                 WHERE iu.id_usuario = :id AND i.chave = :chave AND iu.quantidade > 0
-                  AND i.categoria <> 'evolucao'";
+                  AND i.categoria NOT IN ('evolucao', 'pokebola')";
         $prepare = $this->pdo->prepare($sql);
         $prepare->execute(["id" => $idUsuario, "chave" => $chave]);
 
         return $prepare->rowCount() > 0;
+    }
+
+    public function abrirPokebola(int $idUsuario): array
+    {
+        $this->pdo->beginTransaction();
+
+        try {
+            $prepare = $this->pdo->prepare(
+                "SELECT iu.id_item_loja, iu.quantidade
+                 FROM item_usuario iu
+                 JOIN item_loja i ON i.id_item_loja = iu.id_item_loja
+                 WHERE iu.id_usuario = :usuario AND i.chave = 'pokebola'
+                 FOR UPDATE"
+            );
+            $prepare->execute(["usuario" => $idUsuario]);
+            $item = $prepare->fetch();
+            if (!$item || (int) $item["quantidade"] < 1) {
+                throw new RegraDeJogoException("Voce nao tem uma Pokebola Surpresa", 409);
+            }
+
+            $prepare = $this->pdo->prepare(
+                "SELECT p.id_pokemon, p.nome,
+                        EXISTS (SELECT 1 FROM pokemon_usuario pu
+                                WHERE pu.id_usuario = :usuario AND pu.id_pokemon = p.id_pokemon) AS ja_tinha
+                 FROM vw_pokedex p"
+            );
+            $prepare->execute(["usuario" => $idUsuario]);
+            $lendarios = [];
+            $comuns = [];
+            foreach ($prepare->fetchAll() as $opcao) {
+                if (in_array((int) $opcao["id_pokemon"], self::IDS_LENDARIOS, true)) {
+                    $lendarios[] = $opcao;
+                } else {
+                    $comuns[] = $opcao;
+                }
+            }
+
+            if (!$lendarios || !$comuns) {
+                throw new RuntimeException("Catalogo sem Pokemons lendarios ou comuns para a Pokebola");
+            }
+
+            $lendario = random_int(1, 100) === 1;
+            $opcoes = $lendario ? $lendarios : $comuns;
+            $novos = array_values(array_filter($opcoes, fn (array $opcao) => !(bool) $opcao["ja_tinha"]));
+            if ($novos) {
+                $opcoes = $novos;
+            }
+            $pokemon = $opcoes[random_int(0, count($opcoes) - 1)];
+
+            $prepare = $this->pdo->prepare(
+                "UPDATE item_usuario SET quantidade = quantidade - 1
+                 WHERE id_usuario = :usuario AND id_item_loja = :item AND quantidade > 0"
+            );
+            $prepare->execute(["usuario" => $idUsuario, "item" => $item["id_item_loja"]]);
+            if ($prepare->rowCount() !== 1) {
+                throw new RegraDeJogoException("Voce nao tem uma Pokebola Surpresa", 409);
+            }
+
+            $prepare = $this->pdo->prepare(
+                "INSERT IGNORE INTO pokemon_usuario (id_usuario, id_pokemon) VALUES (:usuario, :pokemon)"
+            );
+            $prepare->execute(["usuario" => $idUsuario, "pokemon" => $pokemon["id_pokemon"]]);
+
+            $prepare = $this->pdo->prepare(
+                "SELECT quantidade FROM item_usuario WHERE id_usuario = :usuario AND id_item_loja = :item"
+            );
+            $prepare->execute(["usuario" => $idUsuario, "item" => $item["id_item_loja"]]);
+            $quantidade = (int) $prepare->fetchColumn();
+
+            $this->pdo->commit();
+
+            return [
+                "pokemon" => [
+                    "id" => (int) $pokemon["id_pokemon"],
+                    "nome" => $pokemon["nome"],
+                    "lendario" => $lendario,
+                    "jaTinha" => (bool) $pokemon["ja_tinha"]
+                ],
+                "quantidade" => $quantidade
+            ];
+        } catch (Throwable $erro) {
+            if ($this->pdo->inTransaction()) {
+                $this->pdo->rollBack();
+            }
+            throw $erro;
+        }
     }
 
     public function pokedolares(int $idUsuario): int

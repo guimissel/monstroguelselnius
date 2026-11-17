@@ -578,6 +578,7 @@ INSERT INTO item_loja (chave, nome, descricao, categoria, preco, imagem, cura_hp
 ('revive',        'Reviver',        'Traz um pokémon desmaiado de volta com metade do HP.',   'pocao_hp',      350, 'reviver.webp',            0,    NULL,       1, 0),
 ('antidote',      'Antídoto',       'Cura um pokémon envenenado.',                            'pocao_condicao', 60, 'antidote.png',            0,    'poison',   0, 0),
 ('pedra-evolutiva','Pedra Evolutiva','Faz um pokémon evoluir. Use na tela da equipe.',          'evolucao',      500, 'pedra evolutiva.png',     0,    NULL,       0, 0),
+('pokebola',      'Pokébola Surpresa','Abra para ganhar um Pokémon. Há 1% de chance de lendário.','pokebola',       500, 'pokebola.svg',            0,    NULL,       0, 0),
 ('burn-heal',     'Anti-Queimadura','Cura um pokémon queimado.',                              'pocao_condicao', 60, 'burn heal.png',           0,    'burn',     0, 0),
 ('paralyze-heal', 'Anti-Paralisia', 'Cura um pokémon paralisado.',                            'pocao_condicao', 60, 'paralyse heal.png',       0,    'paralysis',0, 0),
 ('awakening',     'Despertar',      'Acorda um pokémon que está dormindo.',                   'pocao_condicao', 60, 'awakening.png',           0,    'sleep',    0, 0),
@@ -746,14 +747,19 @@ INSERT INTO monstro (id_monstro, nome, vida_base, ataque_base, defesa_base, ataq
     (134, 'Vaporeon', 130, 65, 60, 110, 95, 65),
     (147, 'Dratini', 41, 64, 45, 50, 50, 50),
     (148, 'Dragonair', 61, 84, 65, 70, 70, 70),
-    (149, 'Dragonite', 91, 134, 95, 100, 100, 80)
+    (149, 'Dragonite', 91, 134, 95, 100, 100, 80),
+    (144, 'Articuno', 90, 85, 100, 95, 125, 85),
+    (145, 'Zapdos', 90, 90, 85, 125, 90, 100),
+    (146, 'Moltres', 90, 100, 90, 125, 85, 90),
+    (150, 'Mewtwo', 106, 110, 90, 154, 90, 130),
+    (151, 'Mew', 100, 100, 100, 100, 100, 100)
 ON DUPLICATE KEY UPDATE nome = VALUES(nome), vida_base = VALUES(vida_base), ataque_base = VALUES(ataque_base),
     defesa_base = VALUES(defesa_base), ataque_esp_base = VALUES(ataque_esp_base), defesa_esp_base = VALUES(defesa_esp_base),
     velocidade_base = VALUES(velocidade_base);
 
 -- Associa cada monstro aos tipos principal e secundario, atualizando a ordem se ja existir.
 INSERT INTO tipo_monstro (id_monstro, id_tipo, ordem) VALUES
-(1,12,1), (1,4,2), (2,12,1), (2,4,2), (3,12,1), (3,4,2), (4,10,1), (5,10,1), (6,10,1), (6,3,2), (7,11,1), (8,11,1), (9,11,1), (16,1,1), (16,3,2), (17,1,1), (17,3,2), (18,1,1), (18,3,2), (19,1,1), (20,1,1), (23,4,1), (24,4,1), (25,13,1), (26,13,1), (27,5,1), (28,5,1), (35,18,1), (36,18,1), (37,10,1), (38,10,1), (39,1,1), (39,18,2), (40,1,1), (40,18,2), (43,12,1), (43,4,2), (44,12,1), (44,4,2), (45,12,1), (45,4,2), (52,1,1), (53,1,1), (54,11,1), (55,11,1), (56,2,1), (57,2,1), (58,10,1), (59,10,1), (60,11,1), (61,11,1), (62,11,1), (62,2,2), (63,14,1), (64,14,1), (65,14,1), (66,2,1), (67,2,1), (68,2,1), (69,12,1), (69,4,2), (70,12,1), (70,4,2), (71,12,1), (71,4,2), (72,11,1), (72,4,2), (73,11,1), (73,4,2), (74,6,1), (74,5,2), (75,6,1), (75,5,2), (76,6,1), (76,5,2), (77,10,1), (78,10,1), (79,11,1), (79,14,2), (80,11,1), (80,14,2), (81,13,1), (81,9,2), (82,13,1), (82,9,2), (92,8,1), (92,4,2), (93,8,1), (93,4,2), (94,8,1), (94,4,2), (104,5,1), (105,5,1), (116,11,1), (117,11,1), (133,1,1), (134,11,1), (147,16,1), (148,16,1), (149,16,1), (149,3,2)
+(1,12,1), (1,4,2), (2,12,1), (2,4,2), (3,12,1), (3,4,2), (4,10,1), (5,10,1), (6,10,1), (6,3,2), (7,11,1), (8,11,1), (9,11,1), (16,1,1), (16,3,2), (17,1,1), (17,3,2), (18,1,1), (18,3,2), (19,1,1), (20,1,1), (23,4,1), (24,4,1), (25,13,1), (26,13,1), (27,5,1), (28,5,1), (35,18,1), (36,18,1), (37,10,1), (38,10,1), (39,1,1), (39,18,2), (40,1,1), (40,18,2), (43,12,1), (43,4,2), (44,12,1), (44,4,2), (45,12,1), (45,4,2), (52,1,1), (53,1,1), (54,11,1), (55,11,1), (56,2,1), (57,2,1), (58,10,1), (59,10,1), (60,11,1), (61,11,1), (62,11,1), (62,2,2), (63,14,1), (64,14,1), (65,14,1), (66,2,1), (67,2,1), (68,2,1), (69,12,1), (69,4,2), (70,12,1), (70,4,2), (71,12,1), (71,4,2), (72,11,1), (72,4,2), (73,11,1), (73,4,2), (74,6,1), (74,5,2), (75,6,1), (75,5,2), (76,6,1), (76,5,2), (77,10,1), (78,10,1), (79,11,1), (79,14,2), (80,11,1), (80,14,2), (81,13,1), (81,9,2), (82,13,1), (82,9,2), (92,8,1), (92,4,2), (93,8,1), (93,4,2), (94,8,1), (94,4,2), (104,5,1), (105,5,1), (116,11,1), (117,11,1), (133,1,1), (134,11,1), (147,16,1), (148,16,1), (149,16,1), (149,3,2), (144,15,1), (144,3,2), (145,13,1), (145,3,2), (146,10,1), (146,3,2), (150,14,1), (151,14,1)
 ON DUPLICATE KEY UPDATE ordem = VALUES(ordem);
 
 -- Define as evolucoes que podem ser ativadas com a Pedra Evolutiva.
