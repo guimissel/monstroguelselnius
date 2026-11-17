@@ -32,11 +32,11 @@ class BatalhaDAO
     // cria a linha da batalha e devolve o numero dela.
     // normalmente o banco numera sozinho. se a tabela estiver sem AUTO_INCREMENT (sql nao rodou direito),
     // o numero e calculado aqui (maior + 1) para o jogo nao travar com "Duplicate entry '0'"
-    private function inserirBatalha(int $idUsuario): int
+    private function inserirBatalha(int $idUsuario, bool $chefe): int
     {
         if ($this->numeraSozinha()) {
-            $prepare = $this->pdo->prepare("INSERT INTO batalha (id_usuario) VALUES (:id)");
-            $prepare->execute(["id" => $idUsuario]);
+            $prepare = $this->pdo->prepare("INSERT INTO batalha (id_usuario, is_boss) VALUES (:id, :chefe)");
+            $prepare->execute(["id" => $idUsuario, "chefe" => (int) $chefe]);
 
             return (int) $this->pdo->lastInsertId();
         }
@@ -45,8 +45,14 @@ class BatalhaDAO
             $proximo = (int) $this->pdo->query("SELECT COALESCE(MAX(id_batalha), 0) + 1 FROM batalha")->fetchColumn();
 
             try {
-                $prepare = $this->pdo->prepare("INSERT INTO batalha (id_batalha, id_usuario) VALUES (:batalha, :usuario)");
-                $prepare->execute(["batalha" => $proximo, "usuario" => $idUsuario]);
+                $prepare = $this->pdo->prepare(
+                    "INSERT INTO batalha (id_batalha, id_usuario, is_boss) VALUES (:batalha, :usuario, :chefe)"
+                );
+                $prepare->execute([
+                    "batalha" => $proximo,
+                    "usuario" => $idUsuario,
+                    "chefe" => (int) $chefe
+                ]);
 
                 return $proximo;
             } catch (PDOException $erro) {
@@ -59,6 +65,35 @@ class BatalhaDAO
         }
 
         throw new RuntimeException("nao consegui gerar o numero da batalha");
+    }
+
+    private function batalhasParaChefe(int $idUsuario): int
+    {
+        $prepare = $this->pdo->prepare(
+            "SELECT COUNT(*)
+             FROM batalha
+             WHERE id_usuario = :usuario
+               AND is_boss = 0
+               AND status <> 'em_andamento'
+               AND id_batalha > COALESCE(
+                   (SELECT MAX(id_batalha) FROM batalha WHERE id_usuario = :usuario_chefe AND is_boss = 1),
+                   0
+               )"
+        );
+        $prepare->execute(["usuario" => $idUsuario, "usuario_chefe" => $idUsuario]);
+        $batalhasNormais = (int) $prepare->fetchColumn();
+
+        $prepare = $this->pdo->prepare(
+            "SELECT 1 FROM batalha
+             WHERE id_usuario = :usuario AND is_boss = 1 AND status = 'em_andamento'
+             LIMIT 1"
+        );
+        $prepare->execute(["usuario" => $idUsuario]);
+        if ($prepare->fetchColumn()) {
+            return self::BATALHAS_PARA_CHEFE;
+        }
+
+        return $batalhasNormais;
     }
 
     // abre uma batalha para o jogador e devolve o id e o time do robo (so quem tem equipe de 3 pode batalhar).
@@ -76,7 +111,7 @@ class BatalhaDAO
         $this->pdo->beginTransaction();
 
         try {
-            $chefe = $this->batalhasParaChefe($idUsuario) === 0;
+            $chefe = $this->batalhasParaChefe($idUsuario) >= self::BATALHAS_PARA_CHEFE;
 
             if ($chefe) {
                 // chefe: um pokemon de forma final (que ja evoluiu ao maximo), sorteado entre os 3 de maior soma de status
@@ -112,7 +147,7 @@ class BatalhaDAO
                 throw new RuntimeException("pokemons insuficientes para montar o time do robo");
             }
 
-            $idBatalha = $this->inserirBatalha($idUsuario);
+            $idBatalha = $this->inserirBatalha($idUsuario, $chefe);
 
             $prepare = $this->pdo->prepare(
                 "INSERT INTO batalha_robo (id_batalha, posicao, id_pokemon) VALUES (:batalha, :posicao, :pokemon)"
@@ -123,7 +158,12 @@ class BatalhaDAO
 
             $this->pdo->commit();
 
-            return ["id" => $idBatalha, "robo" => $robo];
+            return [
+                "id" => $idBatalha,
+                "robo" => $robo,
+                "chefe" => $chefe,
+                "nivel" => $chefe ? self::NIVEL_CHEFE : self::NIVEL_NORMAL
+            ];
         } catch (Throwable $erro) {
             if ($this->pdo->inTransaction()) {
                 $this->pdo->rollBack();

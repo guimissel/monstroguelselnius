@@ -209,6 +209,7 @@ CREATE TABLE batalha (
     turno_atual INT DEFAULT 1 NOT NULL,
     cooldown_troca_1 INT DEFAULT 0 NOT NULL,
     cooldown_troca_2 INT DEFAULT 0 NOT NULL,
+    is_boss BOOLEAN DEFAULT FALSE NOT NULL,
 
     FOREIGN KEY (id_usuario) REFERENCES usuario(id_usuario)
         ON DELETE RESTRICT
@@ -372,8 +373,8 @@ CREATE TABLE IF NOT EXISTS batalha_robo (
 DELETE FROM batalha_robo WHERE id_batalha NOT IN (SELECT id_batalha FROM batalha);
 
 -- ======================================================================
--- 7. TRIGGERS, VIEWS E PROCEDURE
---    (os triggers e a procedure usam DELIMITER; no phpMyAdmin pode colar do jeito que esta)
+-- 7. TRIGGERS E VIEWS
+--    (os triggers usam DELIMITER; no phpMyAdmin pode colar do jeito que esta)
 -- ======================================================================
 
 -- registros das batalhas que ja existiam antes dos triggers (so entra o que ainda nao tem registro)
@@ -548,65 +549,6 @@ SELECT i.chave,
 FROM item_loja i
 LEFT JOIN log_loja l ON l.id_item_loja = i.id_item_loja AND l.estornada = 0
 GROUP BY i.id_item_loja, i.chave, i.nome;
-
--- ---------- PROCEDURE (controle de transacao: DTL) ----------
--- Desfaz uma compra da loja: devolve os pokedolares e tira os itens do inventario.
--- Mostra START TRANSACTION, SAVEPOINT, ROLLBACK TO SAVEPOINT, COMMIT e ROLLBACK.
--- Uso: CALL sp_estornar_compra(<id_log_loja>);
-DROP PROCEDURE IF EXISTS sp_estornar_compra;
-
-DELIMITER $$
-
-CREATE PROCEDURE sp_estornar_compra(IN p_id_log_loja INT)
-BEGIN
-    DECLARE v_usuario INT DEFAULT NULL;
-    DECLARE v_item    INT DEFAULT NULL;
-    DECLARE v_qtd     INT DEFAULT 0;
-    DECLARE v_total   INT DEFAULT 0;
-    DECLARE v_tem     INT DEFAULT NULL;
-
-    -- qualquer erro desfaz tudo e repassa o erro
-    DECLARE EXIT HANDLER FOR SQLEXCEPTION
-    BEGIN
-        ROLLBACK;
-        RESIGNAL;
-    END;
-
-    START TRANSACTION;
-
-    SELECT id_usuario, id_item_loja, quantidade, total
-      INTO v_usuario, v_item, v_qtd, v_total
-      FROM log_loja
-     WHERE id_log_loja = p_id_log_loja AND estornada = 0
-       FOR UPDATE;
-
-    IF v_usuario IS NULL THEN
-        SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'Compra nao encontrada ou ja estornada';
-    END IF;
-
-    SAVEPOINT antes_do_estorno;
-
-    SELECT quantidade INTO v_tem
-      FROM item_usuario
-     WHERE id_usuario = v_usuario AND id_item_loja = v_item
-       FOR UPDATE;
-
-    -- se o jogador ja gastou os itens, nao da para devolver o dinheiro
-    IF v_tem IS NULL OR v_tem < v_qtd THEN
-        ROLLBACK TO SAVEPOINT antes_do_estorno;
-        SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'O jogador ja usou os itens dessa compra';
-    END IF;
-
-    UPDATE item_usuario SET quantidade = quantidade - v_qtd
-     WHERE id_usuario = v_usuario AND id_item_loja = v_item;
-    UPDATE usuario SET pokedolares = pokedolares + v_total WHERE id_usuario = v_usuario;
-    UPDATE log_loja SET estornada = 1 WHERE id_log_loja = p_id_log_loja;
-
-    COMMIT;
-END$$
-
-DELIMITER ;
-
 
 -- ======================================================================
 -- 8. DADOS: itens da loja, pokemons basicos e kit inicial

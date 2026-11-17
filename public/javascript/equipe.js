@@ -344,7 +344,7 @@ function desenharLista() {
         carta.appendChild(caixaFraquezas);
 
         // evolucao: so para quem ja tem pokemons (na primeira escolha ainda nao existe colecao)
-        const evolucao = catalogo[pokemon.id]?.evolucao;
+        const evolucao = pokemon.evolucao || catalogo[pokemon.id]?.evolucao;
         if (evolucao && !inicial) {
             const botao = document.createElement("button");
             botao.type = "button";
