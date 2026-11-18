@@ -46,7 +46,8 @@
       "03h6qaaefk4f5rfx8dviv5dih",
       "03h7ebzz3e85dotdfp8auksip",
       "03h82urxvtmx5lj6p2edrpug4",
-      "03h832ymba6x65o04xynz5sex"
+      "03h832ymba6x65o04xynz5sex",
+      "03h97sa6gypl5zwzqtypm7702"
     ],
     "relationshipIds": [
       "VpLL9-aT-5OL4eQTkzQ-X",
@@ -78,14 +79,16 @@
       "03h7ec98pkmifu2jm61b9t2ap",
       "03h82uzhjn7tw95a8lllom4qk",
       "03h8333hvpt6hnvbu5x2od2gf",
-      "03h8336r4feavbsd6502goli0"
+      "03h8336r4feavbsd6502goli0",
+      "03h97uoc9eu724kq8ukyzppbo",
+      "03h97up4p80mzkchukpkp3q9u"
     ]
   },
   "collections": {
     "tableEntities": {
       "03h6ibh4o37pef7pnadsfx11k": {
         "id": "03h6ibh4o37pef7pnadsfx11k",
-        "name": "fraqueza_tipo",
+        "name": "fraquezas",
         "comment": "armazena as fraquezas de um tipo",
         "columnIds": [
           "03h6iblpfi8zb4oy76v20cfav",
@@ -111,7 +114,7 @@
       },
       "03h6qaaefk4f5rfx8dviv5dih": {
         "id": "03h6qaaefk4f5rfx8dviv5dih",
-        "name": "imune_tipo",
+        "name": "imunidades",
         "comment": "armazena as imunidades do tipo",
         "columnIds": [
           "03h6qal7af0gzarxttcr7lwxb",
@@ -159,6 +162,19 @@
           "y": -1232
         }
       },
+      "03h97sa6gypl5zwzqtypm7702": {
+        "id": "03h97sa6gypl5zwzqtypm7702",
+        "name": "monstro_usuario",
+        "columnIds": [
+          "03h97uoc99f1usdcidc7vcqp3",
+          "03h97up4p80mzkchuko0zgrpl",
+          "03h97zzs3fi5yelr05egrvtaa"
+        ],
+        "ui": {
+          "x": -1473.4765,
+          "y": -787.1763
+        }
+      },
       "7u6Lba8BssSgz3LrIT_aY": {
         "id": "7u6Lba8BssSgz3LrIT_aY",
         "name": "monstro_batalha_usuario",
@@ -176,8 +192,8 @@
           "03h6qgab2dteewncl1yebvul6"
         ],
         "ui": {
-          "x": -949.6972,
-          "y": -654.2418
+          "x": -996.7565,
+          "y": -627.1828
         }
       },
       "FiIiOWBYa19NcbrtfwJ3l": {
@@ -231,21 +247,21 @@
           "03h7eeqph0dnv30io1z5p8s89"
         ],
         "ui": {
-          "x": -1459.2275,
-          "y": -431.3817
+          "x": -2080.4199,
+          "y": -652.7303
         }
       },
       "PHShaIkdYJd-eSXGCEjKZ": {
         "id": "PHShaIkdYJd-eSXGCEjKZ",
-        "name": "eficaz_tipo",
+        "name": "eficacias",
         "comment": "armazena as supereficácias do tipo",
         "columnIds": [
           "iMZZc6J31zNE0a7lg6u_E",
           "wt1gQnREMG7MhPFrL9oBI"
         ],
         "ui": {
-          "x": 493.6593,
-          "y": -1126.7865
+          "x": 509.6593,
+          "y": -1113.7865
         }
       },
       "SB-xGiuNtq1avOtb3YnAw": {
@@ -256,8 +272,8 @@
           "nOrm6LGzwckSQb69YaYwe"
         ],
         "ui": {
-          "x": -1919.4095,
-          "y": -866.7878
+          "x": -2252.3762,
+          "y": -1062.392
         }
       },
       "WRRj36aQY7RRyJt-SW1fD": {
@@ -303,8 +319,8 @@
           "03h6qdyss7e5l3errjmpbz4yr"
         ],
         "ui": {
-          "x": -1478.552,
-          "y": -680.3773
+          "x": -1578.7622,
+          "y": -1095.8381
         }
       },
       "dXiJRb0ShLWI4f_mWdTim": {
@@ -335,8 +351,8 @@
           "03h7wikdhbnbpida4ek1uie8a"
         ],
         "ui": {
-          "x": -601.7069,
-          "y": -969.0461
+          "x": -948.942,
+          "y": -963.5369
         }
       },
       "xVHm1JIqC5kzlqCKr28Df": {
@@ -357,6 +373,7 @@
         "id": "03h6iblpfi8zb4oy76v20cfav",
         "tableId": "03h6ibh4o37pef7pnadsfx11k",
         "name": "id_tipo",
+        "comment": "causa a metade de dano em id_tipo_fraqueza",
         "dataType": "int",
         "options": 10
       },
@@ -364,7 +381,6 @@
         "id": "03h6ibptirkaagmamslnjctup",
         "tableId": "03h6ibh4o37pef7pnadsfx11k",
         "name": "id_tipo_fraqueza",
-        "comment": "o tipo que id_tipo é fraco",
         "dataType": "int",
         "options": 10
       },
@@ -394,14 +410,14 @@
         "id": "03h6qal7af0gzarxttcr7lwxb",
         "tableId": "03h6qaaefk4f5rfx8dviv5dih",
         "name": "id_tipo",
+        "comment": "nao da dano em id_tipo_imunidade",
         "dataType": "int",
         "options": 10
       },
       "03h6qapjr1osg0n7tlpnnr5a4": {
         "id": "03h6qapjr1osg0n7tlpnnr5a4",
         "tableId": "03h6qaaefk4f5rfx8dviv5dih",
-        "name": "id_tipo_imune",
-        "comment": "o tipo que id_tipo é imune",
+        "name": "id_tipo_imunidade",
         "dataType": "int",
         "options": 10
       },
@@ -452,6 +468,28 @@
         "tableId": "03h832ymba6x65o04xynz5sex",
         "name": "pokedolares_necessarios",
         "dataType": "int",
+        "options": 8
+      },
+      "03h97uoc99f1usdcidc7vcqp3": {
+        "id": "03h97uoc99f1usdcidc7vcqp3",
+        "tableId": "03h97sa6gypl5zwzqtypm7702",
+        "name": "id_monstro",
+        "dataType": "int",
+        "options": 10
+      },
+      "03h97up4p80mzkchuko0zgrpl": {
+        "id": "03h97up4p80mzkchuko0zgrpl",
+        "tableId": "03h97sa6gypl5zwzqtypm7702",
+        "name": "id_usuario",
+        "dataType": "int",
+        "options": 10
+      },
+      "03h97zzs3fi5yelr05egrvtaa": {
+        "id": "03h97zzs3fi5yelr05egrvtaa",
+        "tableId": "03h97sa6gypl5zwzqtypm7702",
+        "name": "experiencia",
+        "dataType": "int",
+        "default": "0",
         "options": 8
       },
       "03h6qehjyadhvumr7dl2g20ej": {
@@ -645,14 +683,14 @@
         "id": "iMZZc6J31zNE0a7lg6u_E",
         "tableId": "PHShaIkdYJd-eSXGCEjKZ",
         "name": "id_tipo",
+        "comment": "causa dobro de dano em id_tipo_eficacia",
         "dataType": "int",
         "options": 10
       },
       "wt1gQnREMG7MhPFrL9oBI": {
         "id": "wt1gQnREMG7MhPFrL9oBI",
         "tableId": "PHShaIkdYJd-eSXGCEjKZ",
-        "name": "id_tipo_eficaz",
-        "comment": "o tipo que id_tipo é eficaz",
+        "name": "id_tipo_eficacia",
         "dataType": "int",
         "options": 10
       },
@@ -1179,6 +1217,42 @@
           "tableId": "03h832ymba6x65o04xynz5sex",
           "columnIds": [
             "03h8336r4feavbsd64xg48wtt"
+          ]
+        }
+      },
+      "03h97uoc9eu724kq8ukyzppbo": {
+        "id": "03h97uoc9eu724kq8ukyzppbo",
+        "relationshipType": 4,
+        "onDelete": 1,
+        "onUpdate": 1,
+        "start": {
+          "tableId": "pKbfL43y4jWKgMF0lTnhs",
+          "columnIds": [
+            "W6PaqySKapII2e5njMkqI"
+          ]
+        },
+        "end": {
+          "tableId": "03h97sa6gypl5zwzqtypm7702",
+          "columnIds": [
+            "03h97uoc99f1usdcidc7vcqp3"
+          ]
+        }
+      },
+      "03h97up4p80mzkchukpkp3q9u": {
+        "id": "03h97up4p80mzkchukpkp3q9u",
+        "relationshipType": 4,
+        "onDelete": 1,
+        "onUpdate": 1,
+        "start": {
+          "tableId": "NWLC9VWd2IlJ8me5Oflpc",
+          "columnIds": [
+            "eZvHsX3CHHrP-X9-7qu1V"
+          ]
+        },
+        "end": {
+          "tableId": "03h97sa6gypl5zwzqtypm7702",
+          "columnIds": [
+            "03h97up4p80mzkchuko0zgrpl"
           ]
         }
       },

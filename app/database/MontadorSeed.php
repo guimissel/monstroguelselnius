@@ -4,12 +4,12 @@
 Ordem das insercoes:
 
 efeito
-monstro
 tipo
-eficaz, fraqueza e imune_tipo
-tipo_monstro
-imagem_monstro
 ataque
+monstro
+tipo_monstro
+eficaz, fraqueza e imune_tipo
+imagem_monstro
 ataque_possivel_monstro
 */
 
@@ -17,43 +17,46 @@ class MontadorSeed {
   private string $diretorioSeeds;
   private array $arquivosSeeds;
   private string $urlBase;
+  private array $geracao;
+  private PDO $conexao;
 
   public function __construct(string $diretorioSeeds) {
+    $this->conexao = Conexao::getConexao();
     $this->diretorioSeeds = $diretorioSeeds;
-    if (!is_dir($this->diretorioSeeds)) mkdir($this->diretorioSeeds, 0755);
+    if (!is_dir($this->diretorioSeeds)) mkdir($this->diretorioSeeds, 0777);
 
     $this->arquivosSeeds = [
       "efeito" => [
         "arquivo" => "1-efeito",
         "metodo" => "seedEfeito"
       ],
-      "monstro" => [
-        "arquivo" => "2-monstro",
-        "metodo" => "seedMonstro"
-      ],
-      "evolucao" => [
-        "arquivo" => "3-evolucao",
-        "metodo" => "seedEvolucao"
-      ],
       "tipo" => [
-        "arquivo" => "4-tipo",
+        "arquivo" => "2-tipo",
         "metodo" => "seedTipo"
+        ],
+      "ataque" => [
+        "arquivo" => "3-ataque",
+        "metodo" => "seedAtaque"
       ],
-      "relacoes_tipos" => [
-        "arquivo" => "5-relacoes_tipos",
-        "metodo" => "seedRelacoesTipos"
+      "monstro" => [
+      "arquivo" => "4-monstro",
+      "metodo" => "seedMonstro"
       ],
       "tipo_monstro" => [
-        "arquivo" => "6-tipo_monstro",
+        "arquivo" => "5-tipo_monstro",
         "metodo" => "seedTipoMonstro"
       ],
-      "imagem_monstro" => [
-        "arquivo" => "7-imagem_monstro",
-        "metodo" => "seedImagemMonstro"
+      "evolucao" => [
+        "arquivo" => "6-evolucao",
+        "metodo" => "seedEvolucao"
       ],
-      "ataque" => [
-        "arquivo" => "8-ataque",
-        "metodo" => "seedAtaque"
+      "relacoes_tipos" => [
+        "arquivo" => "7-relacoes_tipos",
+        "metodo" => "seedRelacoesTipos"
+      ],
+      "imagem_monstro" => [
+        "arquivo" => "8-imagem_monstro",
+        "metodo" => "seedImagemMonstro"
       ],
       "ataque_possivel_monstro" => [
         "arquivo" => "9-ataque_possivel_monstro",
@@ -64,6 +67,8 @@ class MontadorSeed {
     $this->montaNomeSeed();
 
     $this->urlBase = "https://pokeapi.co/api/v2/";
+
+    $this->geracao = $this->fazerRequisicao($this->urlBase . "generation/generation-i/");
   }
 
   private function salvarTextoNaSeed(string $nomeSeed, string $texto): void {
@@ -101,13 +106,93 @@ class MontadorSeed {
   private function seedEfeito(): void {
     $dados = $this->fazerRequisicao($this->urlBase . "move-ailment");
 
-    echo "<h1>Efeito</h1>";
     foreach ($dados["results"] as $efeito) {
-      $sql = "INSERT INTO efeito(nome) VALUES ('{$efeito['name']}')";
-
-      echo $sql . "<br/>";
+      $sql = "INSERT INTO efeito(nome) VALUES ('{$efeito["name"]}')";
 
       $this->salvarTextoNaSeed($this->arquivosSeeds["efeito"]["arquivo"], $sql);
+    }
+  }
+
+  private function seedTipo(): void {
+    $url = "{$this->urlBase}type/";
+
+    $dados = $this->fazerRequisicao($url);
+    $tipos = $dados["results"];
+
+    foreach ($tipos as $tipo) {
+      $id = $this->extrairIdUrl($tipo["url"]);
+      $nome = $tipo["name"];
+
+      $sql = "INSERT INTO tipo(id_tipo, nome) VALUES ({$id}, '{$nome}')";
+
+      $this->salvarTextoNaSeed($this->arquivosSeeds["tipo"]["arquivo"], $sql);
+    }
+  }
+
+  private function seedRelacoesTipos(): void {
+    for ($idTipo = 1; $idTipo <= 19; $idTipo++) {
+      $url = "{$this->urlBase}type/{$idTipo}/";
+
+      $dados = $this->fazerRequisicao($url);
+      $relacoes = $dados["damage_relations"];
+
+      // Imunidades
+      $this->salvarTextoNaSeed($this->arquivosSeeds["relacoes_tipos"]["arquivo"], "\n-- Imunidades");
+      foreach ($relacoes["no_damage_to"] as $tipoAlvo) {
+        $idAlvo = $this->extrairIdUrl($tipoAlvo["url"]);
+        $sql = "INSERT INTO imunidades_tipo(id_tipo, id_tipo_imunidade) VALUES ({$idTipo}, {$idAlvo})";
+
+        $this->salvarTextoNaSeed($this->arquivosSeeds["relacoes_tipos"]["arquivo"], $sql);
+      }
+
+      // Eficacias
+      $this->salvarTextoNaSeed($this->arquivosSeeds["relacoes_tipos"]["arquivo"], "\n-- Eficacias");
+      foreach ($relacoes["double_damage_to"] as $tipoAlvo) {
+        $idAlvo = $this->extrairIdUrl($tipoAlvo["url"]);
+        $sql = "INSERT INTO eficacias_tipo(id_tipo, id_tipo_eficacia) VALUES ({$idTipo}, {$idAlvo})";
+
+        $this->salvarTextoNaSeed($this->arquivosSeeds["relacoes_tipos"]["arquivo"], $sql);
+      }
+
+      // Fraquezas
+      $this->salvarTextoNaSeed($this->arquivosSeeds["relacoes_tipos"]["arquivo"], "\n-- Fraquezas");
+      foreach ($relacoes["half_damage_to"] as $tipoAlvo) {
+        $idAlvo = $this->extrairIdUrl($tipoAlvo["url"]);
+        $sql = "INSERT INTO fraquezas_tipo(id_tipo, id_tipo_eficacia) VALUES ({$idTipo}, {$idAlvo})";
+
+        $this->salvarTextoNaSeed($this->arquivosSeeds["relacoes_tipos"]["arquivo"], $sql);
+      }
+    }
+  }
+
+  private function seedAtaque(): void {
+    $categorias = "INSERT INTO categoria_dano(id_categoria_dano, nome) VALUES
+(1, 'Physical'),
+(2, 'Special'),
+(3, 'Status')";
+
+    $this->salvarTextoNaSeed($this->arquivosSeeds["ataque"]["arquivo"], $categorias);
+
+    $idComeco = $this->extrairIdUrl($this->geracao["moves"][0]["url"]);
+    $idFim = $this->extrairIdUrl($this->geracao["moves"][count($this->geracao["moves"]) - 1]["url"]);
+
+    for ($idAtaque = $idComeco; $idAtaque <= $idFim; $idAtaque++) {
+      $url = "{$this->urlBase}move/{$idAtaque}";
+
+      $dados = $this->fazerRequisicao($url);
+
+      $id = $dados["id"];
+      $nome = $dados["name"];
+      $poder = $dados["power"] ?? "null";
+      $precisao = $dados["accuracy"] ?? "null";
+      $chanceEfeito = $dados["effect_chance"] ?? "null";
+      $idCategoriaDano = $this->extrairIdUrl($dados["damage_class"]["url"]);
+      $idTipo = $this->extrairIdUrl($dados["type"]["url"]);
+      $idEfeito = $this->extrairIdUrl($dados["meta"]["ailment"]["url"]) != 0 ? $this->extrairIdUrl($dados["meta"]["ailment"]["url"]) : "null";
+
+      $sql = "INSERT INTO ataque(id_ataque, nome, poder, precisao, chance_efeito, id_categoria_dano, id_tipo, id_efeito) VALUES ({$id}, '{$nome}', {$poder}, {$precisao}, {$chanceEfeito}, {$idCategoriaDano}, {$idTipo}, {$idEfeito})";
+
+      $this->salvarTextoNaSeed($this->arquivosSeeds["ataque"]["arquivo"], $sql);
     }
   }
 
@@ -119,15 +204,20 @@ class MontadorSeed {
 (3, 'front_batalha'),
 (4, 'back_batalha')";
 
-      $this->salvarTextoNaSeed($this->arquivosSeeds["imagem_monstro"]["arquivo"], $tiposImagem);
-    echo "<h1>Monstro</h1>";
-    for ($id = 1; $id <= 151; $id++) {
+    $this->salvarTextoNaSeed($this->arquivosSeeds["imagem_monstro"]["arquivo"], $tiposImagem);
+  
+
+    $idComeco = $this->extrairIdUrl($this->geracao["pokemon_species"][0]["url"]);
+    $idFim = $this->extrairIdUrl($this->geracao["pokemon_species"][count($this->geracao["pokemon_species"]) - 1]["url"]);
+
+    for ($id = $idComeco; $id <= $idFim; $id++) {
       $url = "{$this->urlBase}pokemon/{$id}/";
       $dados = $this->fazerRequisicao($url);
 
       if (empty($dados)) continue;
 
       // 1. Extracao dos dados do pokemon
+      $idMonstro = $dados["id"];
       $nome = $dados["name"];
       $vidaBase = $dados["stats"][0]["base_stat"];
       $ataqueBase = $dados["stats"][1]["base_stat"];
@@ -136,9 +226,7 @@ class MontadorSeed {
       $defesaEspBase = $dados["stats"][4]["base_stat"];
       $velocidadeBase = $dados["stats"][5]["base_stat"];
 
-      $sql = "INSERT INTO monstro(nome, vida_base, ataque_base, defesa_base, ataque_esp_base, defesa_esp_base, velocidade_base) VALUES ('{$nome}', {$vidaBase}, {$ataqueBase}, {$defesaBase}, {$ataqueEspBase}, {$defesaEspBase}, {$velocidadeBase})";
-
-      echo $sql . "<br/>";
+      $sql = "INSERT INTO monstro(id_monstro, nome, vida_base, ataque_base, defesa_base, ataque_esp_base, defesa_esp_base, velocidade_base) VALUES ({$idMonstro}, '{$nome}', {$vidaBase}, {$ataqueBase}, {$defesaBase}, {$ataqueEspBase}, {$defesaEspBase}, {$velocidadeBase})";
       
       $this->salvarTextoNaSeed($this->arquivosSeeds["monstro"]["arquivo"], $sql);
 
@@ -153,16 +241,34 @@ class MontadorSeed {
       foreach ($imagens as $tipoImagem => $imagem) {
         if (empty($imagem)) continue;
 
-        $sqlImagem = "INSERT INTO imagem_monstro(id_monstro, caminho, id_tipo_imagem) VALUES ({$id}, '{$imagem}', {$tipoImagem})";
+        $sqlImagem = "INSERT INTO imagem_monstro(id_monstro, caminho, id_tipo_imagem) VALUES ({$idMonstro}, '{$imagem}', {$tipoImagem})";
 
         $this->salvarTextoNaSeed($this->arquivosSeeds["imagem_monstro"]["arquivo"], $sqlImagem);
+      }
+
+      // tipo_monstro
+      foreach ($dados["types"] as $tipoMonstro) {
+        $idTipo = $this->extrairIdUrl($tipoMonstro["type"]["url"]);
+        $sqlTipoMonstro = "INSERT INTO tipo_monstro(id_monstro, id_tipo) VALUES ({$idMonstro}, {$idTipo})";
+
+        $this->salvarTextoNaSeed($this->arquivosSeeds["tipo_monstro"]["arquivo"], $sqlTipoMonstro);
+      }
+
+      // ataques possiveis
+      foreach ($dados["moves"] as $ataque) {
+        $idAtaque = $this->extrairIdUrl($ataque["move"]["url"]);
+
+        // se o ataque nao for da geracao 1, nao registra
+        if ($idAtaque > $this->extrairIdUrl($this->geracao["moves"][count($this->geracao["moves"]) - 1]["url"])) continue;
+
+        $sql = "INSERT INTO ataque_possivel_monstro(id_ataque, id_monstro) VALUES ({$idAtaque}, {$idMonstro})";
+
+        $this->salvarTextoNaSeed($this->arquivosSeeds["ataque_possivel_monstro"]["arquivo"], $sql);
       }
     }
   }
 
   private function seedEvolucao(): void {
-    echo "<h1>Evolução</h1>";
-
     for ($i = 1; $i <= 78; $i++) {
       $url = "{$this->urlBase}evolution-chain/{$i}";
       $dados = $this->fazerRequisicao($url);
@@ -196,21 +302,42 @@ class MontadorSeed {
 
       $this->salvarTextoNaSeed($this->arquivosSeeds["evolucao"]["arquivo"], $sqlEvolucaoDireta);
 
-      echo $sqlEvolucaoDireta . "<br/>";
-
       $this->processarCadeiaEvolutiva($evolucaoDireta, $nivel + 1);
     }
   }
 
-  public function run(): void {
+  public function criarSeeds(): void {
     // remove os arquivos para não ficar dando append nos que já existem
     $this->removerSeeds();
 
-    foreach ($this->arquivosSeeds as $seed) {
+    foreach ($this->arquivosSeeds as $nome => $seed) {
       $metodo = $seed["metodo"];
 
       if (method_exists($this, $metodo)) $this->$metodo();
-    }
 
+      echo "<h1>{$nome}</h1>";
+      echo "<pre>" . file_get_contents($this->diretorioSeeds . $seed["arquivo"]) . "</pre>";
+    }
+    
+    $this->popularBanco();
+  }
+
+  public function popularBanco(): void {
+    try {
+      $this->conexao->beginTransaction();
+
+      foreach ($this->arquivosSeeds as $seed) {
+        $arquivo = $this->diretorioSeeds . $seed["arquivo"];
+        
+        $sql = file_get_contents($arquivo);
+
+        $stmtDml = $this->conexao->prepare($sql);
+        $stmtDml->execute();
+      }
+
+      $this->conexao->commit();
+    } catch (PDOException $e) {
+      $this->conexao->rollBack();
+    }
   }
 }
