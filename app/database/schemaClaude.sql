@@ -1,39 +1,18 @@
--- SCHEMA DO JOGO (tudo do banco em um arquivo so)
---
--- E o schema.sql do Guilherme, consertado para rodar e com o que o jogo usa acrescentado
--- (antes eram schema.sql + inventario.sql + loja.sql + equipe.sql).
---
--- Como rodar: phpMyAdmin > aba SQL > colar tudo > Executar. Nao precisa criar o banco antes.
--- Serve para banco novo (vazio) e para banco que ja existe.
--- Pode rodar quantas vezes quiser: nao apaga jogador, item, pokedolar, equipe nem pokemon.
--- (so refaz as tabelas antigas da modelagem que eram "casca", so com os ids e sem nenhum dado)
--- Usa "ADD COLUMN IF NOT EXISTS", que o MariaDB do XAMPP aceita.
---
--- O que mudou em relacao ao schema.sql original:
---   * faltavam virgulas/sobravam virgulas em eficaz_tipo, fraqueza_tipo, imune_tipo e monstro_batalha_usuario (dava erro de sintaxe)
---   * ataque.id_categoria_dano era VARCHAR e a chave dele e INT
---   * imagem_monstro nao tinha chave estrangeira para monstro; monstro_batalha_usuario nao tinha chave primaria
---   * usuario: o dinheiro se chama "pokedolares" (e o nome que o jogo usa)
---   * item_loja e item_usuario: versao do jogo (com chave, descricao, categoria, cura, quantidade...)
---   * batalha: id_usuario_2 pode ser vazio (contra o robo nao existe segundo usuario) e ganhou
---     status, recompensa, iniciada_em e finalizada_em (o servidor abre a batalha e paga a recompensa uma vez)
---   * novos: tipo.chave, tipo_monstro.ordem, resiste_tipo, evolucao_monstro, log_usuario, log_loja
---     e mais colunas em log; alem de triggers, views e uma procedure (secao 7)
---   * dados: itens da loja, pokemons (stats e tipos da PokeAPI) e evolucoes
---   * as imagens dos pokemons vem direto da PokeAPI (a tabela imagem_monstro fica sem uso)
+-- Schema completo do jogo. Pode ser executado pelo phpMyAdmin em banco novo ou existente.
+-- Preserva dados dos jogadores; so remove tabelas antigas quando detecta a estrutura incompleta.
+-- Requer MariaDB com suporte a ADD COLUMN IF NOT EXISTS.
 
+-- Cria o banco com suporte a caracteres acentuados e seleciona-o para os comandos seguintes.
 CREATE DATABASE IF NOT EXISTS monstroguelselnius DEFAULT CHARACTER SET utf8mb4;
 USE monstroguelselnius;
 
-SET NAMES utf8mb4;   -- para os acentos ficarem certos
+-- Mantem a conexao SQL em UTF-8 para nomes e textos acentuados.
+SET NAMES utf8mb4;
 
 
--- ======================================================================
--- 1. LIMPEZA: tabelas antigas que eram so "casca" (so os ids, nunca tiveram dado)
---    Sao refeitas na versao completa logo abaixo. Se ja estiverem na versao nova, nada e apagado.
--- ======================================================================
+-- 1. MIGRACAO: detecta e remove apenas tabelas antigas incompletas antes de recria-las.
 
--- modelagem: a casca antiga de tipo/monstro/ataque nao tinha a coluna "nome"
+-- Identifica tabelas da modelagem antiga que ainda nao possuem a coluna nome.
 SET @modelo_antigo = (
     EXISTS (SELECT 1 FROM information_schema.tables  WHERE table_schema = DATABASE() AND table_name = 'tipo')
     AND NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_schema = DATABASE() AND table_name = 'tipo' AND column_name = 'nome')
@@ -45,12 +24,13 @@ SET @modelo_antigo = (
     AND NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_schema = DATABASE() AND table_name = 'ataque' AND column_name = 'nome')
 );
 
--- itens: a casca antiga de item_loja so tinha o id (sem a coluna "chave")
+-- Identifica o catalogo antigo de itens, que nao possuia a chave interna do jogo.
 SET @itens_antigos = (
     EXISTS (SELECT 1 FROM information_schema.tables  WHERE table_schema = DATABASE() AND table_name = 'item_loja')
     AND NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_schema = DATABASE() AND table_name = 'item_loja' AND column_name = 'chave')
 );
 
+-- Desativa temporariamente as FKs para permitir remover tabelas legadas relacionadas.
 SET FOREIGN_KEY_CHECKS = 0;
 SET @comando = IF(@modelo_antigo,
     'DROP TABLE IF EXISTS `log`, monstro_batalha, monstro_batalha_usuario, ataque_monstro, ataque_possivel_monstro, imagem_monstro, tipo_monstro, eficaz_tipo, fraqueza_tipo, imune_tipo, ataque, monstro, tipo',
@@ -58,14 +38,13 @@ SET @comando = IF(@modelo_antigo,
 PREPARE passo FROM @comando; EXECUTE passo; DEALLOCATE PREPARE passo;
 SET @comando = IF(@itens_antigos, 'DROP TABLE IF EXISTS item_usuario, item_loja', 'DO 0');
 PREPARE passo FROM @comando; EXECUTE passo; DEALLOCATE PREPARE passo;
+-- Restaura a validacao de FKs depois da migracao condicional.
 SET FOREIGN_KEY_CHECKS = 1;
 
 
--- ======================================================================
 -- 2. JOGADORES E BATALHAS
--- ======================================================================
 
--- jogadores. O id numera sozinho (o cadastro nao manda id). Dinheiro em pokedolares: ganho nas batalhas, gasto na loja
+-- Guarda contas de jogadores e bots, saldo e estado de ativacao.
 CREATE TABLE IF NOT EXISTS usuario (
     id_usuario  INT          NOT NULL AUTO_INCREMENT,
     nome        VARCHAR(255) NOT NULL,
@@ -76,14 +55,14 @@ CREATE TABLE IF NOT EXISTS usuario (
     PRIMARY KEY (id_usuario)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
--- bancos que ja existiam: acrescenta o que falta (nao mexe nos dados)
+-- Completa a tabela de usuarios em bancos criados por versoes anteriores.
 ALTER TABLE usuario
     ADD COLUMN IF NOT EXISTS pokedolares INT     NOT NULL DEFAULT 0,
     ADD COLUMN IF NOT EXISTS is_bot      BOOLEAN NOT NULL DEFAULT FALSE,
     ADD COLUMN IF NOT EXISTS is_ativo    BOOLEAN NOT NULL DEFAULT TRUE;
 
--- batalhas. id_usuario_2 e o adversario quando e outro jogador; contra o robo fica vazio.
--- status: em_andamento, vitoria, derrota ou fuga. recompensa: pokedolares ganhos.
+-- Registra partidas, participantes, turno, cooldowns, resultado e recompensa.
+-- id_usuario_2 fica NULL quando a partida e contra o robo.
 CREATE TABLE IF NOT EXISTS batalha (
     id_batalha       INT         NOT NULL AUTO_INCREMENT,
     id_usuario       INT         NOT NULL,
@@ -91,6 +70,7 @@ CREATE TABLE IF NOT EXISTS batalha (
     turno_atual      INT         NOT NULL DEFAULT 1,
     cooldown_troca_1 INT         NOT NULL DEFAULT 0,
     cooldown_troca_2 INT         NOT NULL DEFAULT 0,
+    is_boss          BOOLEAN     NOT NULL DEFAULT FALSE,
     status           VARCHAR(15) NOT NULL DEFAULT 'em_andamento',
     recompensa       INT         NOT NULL DEFAULT 0,
     iniciada_em      DATETIME    NOT NULL DEFAULT CURRENT_TIMESTAMP,
@@ -100,25 +80,26 @@ CREATE TABLE IF NOT EXISTS batalha (
     CONSTRAINT fk_batalha_usuario_2 FOREIGN KEY (id_usuario_2) REFERENCES usuario(id_usuario) ON DELETE RESTRICT ON UPDATE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
+-- Adiciona campos de batalha ausentes sem alterar os registros existentes.
 ALTER TABLE batalha
     ADD COLUMN IF NOT EXISTS id_usuario_2     INT         NULL,
     ADD COLUMN IF NOT EXISTS turno_atual      INT         NOT NULL DEFAULT 1,
     ADD COLUMN IF NOT EXISTS cooldown_troca_1 INT         NOT NULL DEFAULT 0,
     ADD COLUMN IF NOT EXISTS cooldown_troca_2 INT         NOT NULL DEFAULT 0,
+    ADD COLUMN IF NOT EXISTS is_boss          BOOLEAN     NOT NULL DEFAULT FALSE,
     ADD COLUMN IF NOT EXISTS status           VARCHAR(15) NOT NULL DEFAULT 'em_andamento',
     ADD COLUMN IF NOT EXISTS recompensa       INT         NOT NULL DEFAULT 0,
     ADD COLUMN IF NOT EXISTS iniciada_em      DATETIME    NOT NULL DEFAULT CURRENT_TIMESTAMP,
     ADD COLUMN IF NOT EXISTS finalizada_em    DATETIME    NULL;
 
--- bancos antigos tinham esses ids sem numerar sozinho e o adversario obrigatorio
--- (as chaves ficam desligadas so durante a troca, porque outras tabelas apontam para estas)
+-- Atualiza IDs antigos para AUTO_INCREMENT e permite partidas sem segundo usuario.
 SET FOREIGN_KEY_CHECKS = 0;
 ALTER TABLE usuario MODIFY id_usuario   INT NOT NULL AUTO_INCREMENT;
 ALTER TABLE batalha MODIFY id_batalha   INT NOT NULL AUTO_INCREMENT;
 ALTER TABLE batalha MODIFY id_usuario_2 INT NULL;
 SET FOREIGN_KEY_CHECKS = 1;
 
--- chave estrangeira do adversario (so cria se ainda nao existir)
+-- Recria a FK do segundo participante somente quando ela ainda nao existe.
 SET @tem_fk = EXISTS (
     SELECT 1 FROM information_schema.table_constraints
     WHERE table_schema = DATABASE() AND table_name = 'batalha' AND constraint_name = 'fk_batalha_usuario_2'
@@ -128,10 +109,9 @@ SET @comando = IF(@tem_fk, 'DO 0',
 PREPARE passo FROM @comando; EXECUTE passo; DEALLOCATE PREPARE passo;
 
 
--- ======================================================================
--- 3. MODELAGEM: tipos, efeitos, monstros e ataques
--- ======================================================================
+-- 3. CATALOGO DE TIPOS, EFEITOS, MONSTROS E ATAQUES
 
+-- Efeitos que podem ser aplicados durante uma batalha.
 CREATE TABLE IF NOT EXISTS efeito (
     id_efeito INT          NOT NULL AUTO_INCREMENT,
     nome      VARCHAR(255) NOT NULL,
@@ -139,6 +119,7 @@ CREATE TABLE IF NOT EXISTS efeito (
     PRIMARY KEY (id_efeito)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
+-- Tipos elementais; chave guarda o identificador em ingles usado pelo jogo.
 CREATE TABLE IF NOT EXISTS tipo (
     id_tipo INT          NOT NULL AUTO_INCREMENT,
     nome    VARCHAR(255) NOT NULL,
@@ -146,15 +127,17 @@ CREATE TABLE IF NOT EXISTS tipo (
     PRIMARY KEY (id_tipo)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
+-- Adiciona o identificador de tipo em bancos criados antes desse campo.
 ALTER TABLE tipo ADD COLUMN IF NOT EXISTS chave VARCHAR(20) NULL;
 
+-- Categorias de dano dos ataques (por exemplo, fisico, especial ou status).
 CREATE TABLE IF NOT EXISTS categoria_dano (
     id_categoria_dano INT          NOT NULL AUTO_INCREMENT,
     nome              VARCHAR(255) NOT NULL,
     PRIMARY KEY (id_categoria_dano)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
--- contra quem cada tipo e eficaz / fraco / imune
+-- Relaciona tipos contra os quais cada tipo causa dano dobrado.
 CREATE TABLE IF NOT EXISTS eficaz_tipo (
     id_tipo        INT NOT NULL,
     id_tipo_eficaz INT NOT NULL,
@@ -163,6 +146,7 @@ CREATE TABLE IF NOT EXISTS eficaz_tipo (
     FOREIGN KEY (id_tipo_eficaz) REFERENCES tipo(id_tipo) ON DELETE CASCADE ON UPDATE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
+-- Relaciona tipos que causam dano dobrado a cada tipo defensor.
 CREATE TABLE IF NOT EXISTS fraqueza_tipo (
     id_tipo          INT NOT NULL,
     id_tipo_fraqueza INT NOT NULL,
@@ -171,6 +155,7 @@ CREATE TABLE IF NOT EXISTS fraqueza_tipo (
     FOREIGN KEY (id_tipo_fraqueza) REFERENCES tipo(id_tipo) ON DELETE CASCADE ON UPDATE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
+-- Relaciona tipos que causam metade do dano a cada tipo defensor.
 CREATE TABLE IF NOT EXISTS resiste_tipo (
     id_tipo         INT NOT NULL,
     id_tipo_resiste INT NOT NULL,
@@ -179,6 +164,7 @@ CREATE TABLE IF NOT EXISTS resiste_tipo (
     FOREIGN KEY (id_tipo_resiste) REFERENCES tipo(id_tipo) ON DELETE CASCADE ON UPDATE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
+-- Relaciona tipos que nao causam dano a cada tipo defensor.
 CREATE TABLE IF NOT EXISTS imune_tipo (
     id_tipo       INT NOT NULL,
     id_tipo_imune INT NOT NULL,
@@ -187,6 +173,7 @@ CREATE TABLE IF NOT EXISTS imune_tipo (
     FOREIGN KEY (id_tipo_imune) REFERENCES tipo(id_tipo) ON DELETE CASCADE ON UPDATE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
+-- Guarda os atributos base dos monstros usados no jogo.
 CREATE TABLE IF NOT EXISTS monstro (
     id_monstro      INT          NOT NULL AUTO_INCREMENT,
     nome            VARCHAR(255) NOT NULL,
@@ -200,6 +187,7 @@ CREATE TABLE IF NOT EXISTS monstro (
     PRIMARY KEY (id_monstro)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
+-- Associa um ou dois tipos a cada monstro; ordem 1 indica o tipo principal.
 CREATE TABLE IF NOT EXISTS tipo_monstro (
     id_monstro INT     NOT NULL,
     id_tipo    INT     NOT NULL,
@@ -209,7 +197,7 @@ CREATE TABLE IF NOT EXISTS tipo_monstro (
     FOREIGN KEY (id_tipo)    REFERENCES tipo(id_tipo)       ON DELETE RESTRICT ON UPDATE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
--- (sem uso: as imagens dos pokemons vem direto da PokeAPI)
+-- Mantem caminhos de imagem opcionais; a interface atualmente busca imagens na PokeAPI.
 CREATE TABLE IF NOT EXISTS imagem_monstro (
     id_imagem_monstro INT          NOT NULL AUTO_INCREMENT,
     id_monstro        INT          NOT NULL,
@@ -218,9 +206,10 @@ CREATE TABLE IF NOT EXISTS imagem_monstro (
     FOREIGN KEY (id_monstro) REFERENCES monstro(id_monstro) ON DELETE CASCADE ON UPDATE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
+-- Acrescenta a ordem do tipo em bancos criados antes da tipagem dupla.
 ALTER TABLE tipo_monstro ADD COLUMN IF NOT EXISTS ordem TINYINT NOT NULL DEFAULT 1;
 
--- quem evolui para quem (a evolucao acontece ao usar a Pedra Evolutiva comprada na loja)
+-- Define a evolucao disponivel para cada monstro.
 CREATE TABLE IF NOT EXISTS evolucao_monstro (
     id_monstro  INT NOT NULL,
     id_evolucao INT NOT NULL,
@@ -229,6 +218,7 @@ CREATE TABLE IF NOT EXISTS evolucao_monstro (
     FOREIGN KEY (id_evolucao) REFERENCES monstro(id_monstro) ON DELETE CASCADE ON UPDATE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
+-- Catalogo de ataques, seus atributos e referencias a tipo, categoria e efeito.
 CREATE TABLE IF NOT EXISTS ataque (
     id_ataque         INT          NOT NULL AUTO_INCREMENT,
     nome              VARCHAR(255) NULL,
@@ -245,7 +235,7 @@ CREATE TABLE IF NOT EXISTS ataque (
     FOREIGN KEY (id_efeito)         REFERENCES efeito(id_efeito)                 ON DELETE RESTRICT ON UPDATE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
--- quais ataques cada monstro pode aprender
+-- Relaciona os ataques que cada monstro pode usar.
 CREATE TABLE IF NOT EXISTS ataque_possivel_monstro (
     id_ataque  INT NOT NULL,
     id_monstro INT NOT NULL,
@@ -255,10 +245,9 @@ CREATE TABLE IF NOT EXISTS ataque_possivel_monstro (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 
--- ======================================================================
--- 4. DENTRO DA BATALHA: log e monstros em campo
--- ======================================================================
+-- 4. ESTADO E HISTORICO DAS BATALHAS
 
+-- Cria a tabela de eventos de batalha; as colunas de historico sao adicionadas abaixo.
 CREATE TABLE IF NOT EXISTS `log` (
     id_log     INT NOT NULL AUTO_INCREMENT,
     id_batalha INT NOT NULL,
@@ -266,8 +255,7 @@ CREATE TABLE IF NOT EXISTS `log` (
     FOREIGN KEY (id_batalha) REFERENCES batalha(id_batalha) ON DELETE CASCADE ON UPDATE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
--- historico de todas as batalhas. Quem escreve aqui sao os triggers da secao 7 (ninguem insere na mao):
--- um registro quando a batalha comeca e outro quando ela termina (vitoria, derrota ou fuga)
+-- Armazena participante, resultado, descricao e data de cada evento da batalha.
 ALTER TABLE `log`
     ADD COLUMN IF NOT EXISTS id_usuario INT          NULL,
     ADD COLUMN IF NOT EXISTS evento     VARCHAR(15)  NOT NULL DEFAULT 'iniciada',
@@ -276,19 +264,17 @@ ALTER TABLE `log`
     ADD COLUMN IF NOT EXISTS descricao  VARCHAR(255) NULL,
     ADD COLUMN IF NOT EXISTS criado_em  DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP;
 
--- historico dos jogadores (cadastro, troca de nome/senha, exclusao).
--- Sem chave estrangeira de proposito: o registro tem que sobreviver quando a conta for apagada.
+-- Registra eventos da conta sem FK para preservar o historico apos a exclusao do usuario.
 CREATE TABLE IF NOT EXISTS log_usuario (
     id_log_usuario INT          NOT NULL AUTO_INCREMENT,
     id_usuario     INT          NOT NULL,
     nome           VARCHAR(255) NOT NULL,
-    evento         VARCHAR(20)  NOT NULL,   -- cadastro, troca_nome, troca_senha, exclusao
+    evento         VARCHAR(20)  NOT NULL,
     criado_em      DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP,
     PRIMARY KEY (id_log_usuario)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
--- historico da loja: toda compra (quem, o que, quanto, por quanto). O LojaDAO grava junto com a compra.
--- Tambem sem chave estrangeira, pelo mesmo motivo.
+-- Registra os dados da compra para auditoria, sem FK para preservar o historico.
 CREATE TABLE IF NOT EXISTS log_loja (
     id_log_loja    INT        NOT NULL AUTO_INCREMENT,
     id_usuario     INT        NOT NULL,
@@ -301,6 +287,7 @@ CREATE TABLE IF NOT EXISTS log_loja (
     PRIMARY KEY (id_log_loja)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
+-- Guarda os monstros de cada participante, com vida, efeito e ataques selecionados.
 CREATE TABLE IF NOT EXISTS monstro_batalha_usuario (
     id_monstro              INT     NOT NULL,
     id_batalha              INT     NOT NULL,
@@ -325,29 +312,27 @@ CREATE TABLE IF NOT EXISTS monstro_batalha_usuario (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 
--- ======================================================================
 -- 5. ITENS, INVENTARIO E LOJA
--- ======================================================================
 
--- catalogo de itens: serve para o inventario, para a batalha e para a loja
+-- Define itens compraveis e seus efeitos no inventario e na batalha.
 CREATE TABLE IF NOT EXISTS item_loja (
     id_item_loja INT NOT NULL AUTO_INCREMENT,
-    chave        VARCHAR(30)  NOT NULL,            -- nome interno usado pelo jogo (ex: potion)
+    chave        VARCHAR(30)  NOT NULL,
     nome         VARCHAR(60)  NOT NULL,
     descricao    VARCHAR(255) NOT NULL,
-    categoria    VARCHAR(20)  NOT NULL,            -- pocao_hp (inclui reviver) ou pocao_condicao
-    preco        INT          NOT NULL,            -- em pokedolares
-    imagem       VARCHAR(100) NOT NULL,            -- arquivo dentro de public/img
-    cura_hp      INT          NOT NULL DEFAULT 0,  -- 0 = nao cura HP, -1 = cura todo o HP
-    cura_status  VARCHAR(100) NULL,                -- 'todos' ou lista separada por virgula (poison,burn...)
-    reviver      TINYINT(1)   NOT NULL DEFAULT 0,  -- 1 = revive pokemon desmaiado com metade do HP
-    kit_inicial  INT          NOT NULL DEFAULT 0,  -- quantos o jogador ganha ao criar a conta
+    categoria    VARCHAR(20)  NOT NULL,
+    preco        INT          NOT NULL,
+    imagem       VARCHAR(100) NOT NULL,
+    cura_hp      INT          NOT NULL DEFAULT 0,
+    cura_status  VARCHAR(100) NULL,
+    reviver      TINYINT(1)   NOT NULL DEFAULT 0,
+    kit_inicial  INT          NOT NULL DEFAULT 0,
     PRIMARY KEY (id_item_loja),
     UNIQUE KEY uq_item_chave (chave),
     CHECK (preco >= 0)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
--- o que cada jogador tem
+-- Relaciona cada jogador aos itens e quantidades que possui.
 CREATE TABLE IF NOT EXISTS item_usuario (
     id_usuario   INT NOT NULL,
     id_item_loja INT NOT NULL,
@@ -358,27 +343,19 @@ CREATE TABLE IF NOT EXISTS item_usuario (
     CHECK (quantidade >= 0)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
--- ======================================================================
--- 6. EQUIPE, COLECAO DE POKEMONS E TIME DO ROBO
---    pokemon_basico : os pokemons de nivel basico (de onde saem os 3 primeiros e os do robo)
---    equipe_usuario : os 3 pokemons que o jogador leva para a batalha
---    pokemon_usuario: a colecao (os pokemons que o jogador tem; cresce ao vencer batalhas)
---    batalha_robo   : o time do robo de cada batalha (o servidor sorteia; quem vence leva os 3)
--- ======================================================================
+-- 6. EQUIPE, COLECAO E TIME DO ROBO
 
--- id_pokemon e o numero do pokemon na PokeAPI. O jogo busca imagem, tipos e golpes la.
+-- Define os monstros basicos disponiveis para sorteios e equipe inicial.
 CREATE TABLE IF NOT EXISTS pokemon_basico (
     id_pokemon INT         NOT NULL,
     nome       VARCHAR(30) NOT NULL,
     PRIMARY KEY (id_pokemon)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
--- a equipe de cada jogador: 3 posicoes, sem repetir pokemon.
--- id_pokemon nao tem chave estrangeira para pokemon_basico de proposito:
--- quando o pokemon evoluir, o id da evolucao vai ficar aqui.
+-- Guarda os tres monstros escolhidos por jogador; permite atualizar o ID ao evoluir.
 CREATE TABLE IF NOT EXISTS equipe_usuario (
     id_usuario INT     NOT NULL,
-    posicao    TINYINT NOT NULL,   -- 1, 2 ou 3
+    posicao    TINYINT NOT NULL,
     id_pokemon INT     NOT NULL,
     PRIMARY KEY (id_usuario, posicao),
     UNIQUE KEY uq_equipe_pokemon (id_usuario, id_pokemon),
@@ -386,7 +363,7 @@ CREATE TABLE IF NOT EXISTS equipe_usuario (
     CHECK (posicao BETWEEN 1 AND 3)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
--- colecao: os pokemons que o jogador tem. A equipe e escolhida entre eles.
+-- Mantem a colecao de monstros adquiridos por cada jogador.
 CREATE TABLE IF NOT EXISTS pokemon_usuario (
     id_usuario     INT      NOT NULL,
     id_pokemon     INT      NOT NULL,
@@ -395,34 +372,34 @@ CREATE TABLE IF NOT EXISTS pokemon_usuario (
     FOREIGN KEY (id_usuario) REFERENCES usuario(id_usuario) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
--- quem ja tinha equipe antes da colecao existir: os pokemons da equipe entram na colecao
+-- Migra para a colecao os monstros que ja estavam nas equipes.
 INSERT IGNORE INTO pokemon_usuario (id_usuario, id_pokemon)
 SELECT id_usuario, id_pokemon FROM equipe_usuario;
 
--- time do robo de cada batalha. O servidor sorteia ao abrir a batalha e entrega ao jogador se ele vencer.
--- (o navegador nao escolhe, senao daria para pedir qualquer pokemon)
+-- Persiste o time sorteado no servidor para cada batalha contra o robo.
 CREATE TABLE IF NOT EXISTS batalha_robo (
     id_batalha INT     NOT NULL,
-    posicao    TINYINT NOT NULL,   -- 1, 2 ou 3
+    posicao    TINYINT NOT NULL,
     id_pokemon INT     NOT NULL,
     PRIMARY KEY (id_batalha, posicao),
     FOREIGN KEY (id_batalha) REFERENCES batalha(id_batalha) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
--- limpa times de robo de batalhas que nao existem mais
+-- Remove times sem batalha correspondente, caso tenham restado de uma limpeza anterior.
 DELETE FROM batalha_robo WHERE id_batalha NOT IN (SELECT id_batalha FROM batalha);
 
 -- ======================================================================
--- 7. TRIGGERS, VIEWS E PROCEDURE
---    (os triggers e a procedure usam DELIMITER; no phpMyAdmin pode colar do jeito que esta)
+-- 7. TRIGGERS E VIEWS
+-- Os triggers abaixo usam DELIMITER para agrupar seus comandos.
 -- ======================================================================
 
--- registros das batalhas que ja existiam antes dos triggers (so entra o que ainda nao tem registro)
+-- Preenche o historico de inicio das batalhas antigas sem duplicar eventos existentes.
 INSERT INTO `log` (id_batalha, id_usuario, evento, status, recompensa, descricao, criado_em)
 SELECT b.id_batalha, b.id_usuario, 'iniciada', 'em_andamento', 0, 'Batalha iniciada', b.iniciada_em
 FROM batalha b
 WHERE NOT EXISTS (SELECT 1 FROM `log` l WHERE l.id_batalha = b.id_batalha AND l.evento = 'iniciada');
 
+-- Preenche o historico de encerramento das batalhas antigas sem duplicar eventos existentes.
 INSERT INTO `log` (id_batalha, id_usuario, evento, status, recompensa, descricao, criado_em)
 SELECT b.id_batalha, b.id_usuario, 'finalizada', b.status, b.recompensa,
        CONCAT('Batalha terminou em ', b.status, ' e rendeu ', b.recompensa, ' pokedolares'),
@@ -431,12 +408,13 @@ FROM batalha b
 WHERE b.status <> 'em_andamento'
   AND NOT EXISTS (SELECT 1 FROM `log` l WHERE l.id_batalha = b.id_batalha AND l.evento = 'finalizada');
 
+-- Registra contas existentes que ainda nao possuem evento de cadastro no historico.
 INSERT INTO log_usuario (id_usuario, nome, evento)
 SELECT u.id_usuario, u.nome, 'cadastro'
 FROM usuario u
 WHERE NOT EXISTS (SELECT 1 FROM log_usuario l WHERE l.id_usuario = u.id_usuario AND l.evento = 'cadastro');
 
--- ---------- TRIGGERS ----------
+-- Remove as definicoes anteriores para recriar triggers sem duplicidade.
 DROP TRIGGER IF EXISTS trg_batalha_iniciada;
 DROP TRIGGER IF EXISTS trg_batalha_finalizada;
 DROP TRIGGER IF EXISTS trg_usuario_cadastro;
@@ -446,7 +424,7 @@ DROP TRIGGER IF EXISTS trg_usuario_exclusao;
 
 DELIMITER $$
 
--- toda batalha nova entra no log
+-- Registra o evento de inicio sempre que uma batalha e criada.
 CREATE TRIGGER trg_batalha_iniciada AFTER INSERT ON batalha
 FOR EACH ROW
 BEGIN
@@ -454,7 +432,7 @@ BEGIN
     VALUES (NEW.id_batalha, NEW.id_usuario, 'iniciada', 'em_andamento', 0, 'Batalha iniciada');
 END$$
 
--- quando a batalha sai de "em_andamento" (vitoria, derrota ou fuga), o resultado e a recompensa entram no log
+-- Registra o resultado uma unica vez quando a batalha deixa o estado em andamento.
 CREATE TRIGGER trg_batalha_finalizada AFTER UPDATE ON batalha
 FOR EACH ROW
 BEGIN
@@ -465,14 +443,14 @@ BEGIN
     END IF;
 END$$
 
--- conta nova
+-- Registra a criacao de uma conta sem armazenar a senha no historico.
 CREATE TRIGGER trg_usuario_cadastro AFTER INSERT ON usuario
 FOR EACH ROW
 BEGIN
     INSERT INTO log_usuario (id_usuario, nome, evento) VALUES (NEW.id_usuario, NEW.nome, 'cadastro');
 END$$
 
--- trava de seguranca: o saldo de pokedolares nunca pode ficar negativo
+-- Impede atualizacoes que deixariam o saldo de pokedolares negativo.
 CREATE TRIGGER trg_usuario_antes_de_alterar BEFORE UPDATE ON usuario
 FOR EACH ROW
 BEGIN
@@ -481,7 +459,7 @@ BEGIN
     END IF;
 END$$
 
--- troca de nome e de senha ficam registradas (a senha em si nao vai para o log)
+-- Registra alteracoes de nome e senha sem gravar o valor da senha.
 CREATE TRIGGER trg_usuario_depois_de_alterar AFTER UPDATE ON usuario
 FOR EACH ROW
 BEGIN
@@ -493,7 +471,7 @@ BEGIN
     END IF;
 END$$
 
--- conta apagada
+-- Registra a exclusao antes que os dados da conta desaparecam.
 CREATE TRIGGER trg_usuario_exclusao BEFORE DELETE ON usuario
 FOR EACH ROW
 BEGIN
@@ -502,9 +480,9 @@ END$$
 
 DELIMITER ;
 
--- ---------- VIEWS (consultas prontas; o jogo usa na tela de perfil) ----------
+-- Views disponibilizam consultas agregadas para historico, perfil e telas do jogo.
 
--- todas as batalhas, com o nome do jogador e do adversario ("Robo" quando nao tem segundo jogador)
+-- Exibe cada batalha com os nomes dos participantes e sua duracao.
 CREATE OR REPLACE VIEW vw_historico_batalhas AS
 SELECT b.id_batalha,
        b.id_usuario,
@@ -514,12 +492,13 @@ SELECT b.id_batalha,
        b.recompensa,
        b.iniciada_em,
        b.finalizada_em,
+       b.is_boss,
        TIMESTAMPDIFF(SECOND, b.iniciada_em, b.finalizada_em) AS duracao_segundos
 FROM batalha b
 JOIN usuario u        ON u.id_usuario  = b.id_usuario
 LEFT JOIN usuario u2  ON u2.id_usuario = b.id_usuario_2;
 
--- placar de cada jogador (so batalhas terminadas): agrupa e conta por resultado
+-- Resume partidas concluidas, resultados e ganhos de cada jogador humano.
 CREATE OR REPLACE VIEW vw_ranking_jogadores AS
 SELECT u.id_usuario,
        u.nome,
@@ -534,7 +513,7 @@ LEFT JOIN batalha b ON b.id_usuario = u.id_usuario AND b.status <> 'em_andamento
 WHERE u.is_bot = 0
 GROUP BY u.id_usuario, u.nome, u.pokedolares;
 
--- o que cada jogador tem no inventario (so o que tem pelo menos 1)
+-- Lista itens e valor acumulado apenas para inventarios com quantidade positiva.
 CREATE OR REPLACE VIEW vw_inventario_usuario AS
 SELECT iu.id_usuario,
        u.nome AS jogador,
@@ -548,7 +527,7 @@ JOIN usuario   u ON u.id_usuario   = iu.id_usuario
 JOIN item_loja i ON i.id_item_loja = iu.id_item_loja
 WHERE iu.quantidade > 0;
 
--- colecao de pokemons de cada jogador, dizendo quais estao na equipe
+-- Lista a colecao de cada jogador e indica quais monstros estao em sua equipe.
 CREATE OR REPLACE VIEW vw_colecao_usuario AS
 SELECT pu.id_usuario,
        u.nome AS jogador,
@@ -561,7 +540,7 @@ FROM pokemon_usuario pu
 JOIN usuario u ON u.id_usuario = pu.id_usuario
 LEFT JOIN monstro m ON m.id_monstro = pu.id_pokemon;
 
--- "pokedex": cada pokemon com seus stats, seus tipos (principal primeiro) e a evolucao
+-- Consolida atributos, tipos ordenados e proxima evolucao de cada monstro ativo.
 CREATE OR REPLACE VIEW vw_pokedex AS
 SELECT m.id_monstro AS id_pokemon,
        m.nome,
@@ -576,7 +555,7 @@ LEFT JOIN evolucao_monstro e ON e.id_monstro = m.id_monstro
 LEFT JOIN monstro ev         ON ev.id_monstro = e.id_evolucao
 WHERE m.is_ativo = TRUE;
 
--- quanto cada item vendeu na loja (compras estornadas nao contam)
+-- Resume compras por item e ignora registros marcados como estornados.
 CREATE OR REPLACE VIEW vw_vendas_loja AS
 SELECT i.chave,
        i.nome AS item,
@@ -587,71 +566,9 @@ FROM item_loja i
 LEFT JOIN log_loja l ON l.id_item_loja = i.id_item_loja AND l.estornada = 0
 GROUP BY i.id_item_loja, i.chave, i.nome;
 
--- ---------- PROCEDURE (controle de transacao: DTL) ----------
--- Desfaz uma compra da loja: devolve os pokedolares e tira os itens do inventario.
--- Mostra START TRANSACTION, SAVEPOINT, ROLLBACK TO SAVEPOINT, COMMIT e ROLLBACK.
--- Uso: CALL sp_estornar_compra(<id_log_loja>);
-DROP PROCEDURE IF EXISTS sp_estornar_compra;
+-- 8. DADOS INICIAIS DA LOJA, POKEMONS BASICOS E INVENTARIO
 
-DELIMITER $$
-
-CREATE PROCEDURE sp_estornar_compra(IN p_id_log_loja INT)
-BEGIN
-    DECLARE v_usuario INT DEFAULT NULL;
-    DECLARE v_item    INT DEFAULT NULL;
-    DECLARE v_qtd     INT DEFAULT 0;
-    DECLARE v_total   INT DEFAULT 0;
-    DECLARE v_tem     INT DEFAULT NULL;
-
-    -- qualquer erro desfaz tudo e repassa o erro
-    DECLARE EXIT HANDLER FOR SQLEXCEPTION
-    BEGIN
-        ROLLBACK;
-        RESIGNAL;
-    END;
-
-    START TRANSACTION;
-
-    SELECT id_usuario, id_item_loja, quantidade, total
-      INTO v_usuario, v_item, v_qtd, v_total
-      FROM log_loja
-     WHERE id_log_loja = p_id_log_loja AND estornada = 0
-       FOR UPDATE;
-
-    IF v_usuario IS NULL THEN
-        SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'Compra nao encontrada ou ja estornada';
-    END IF;
-
-    SAVEPOINT antes_do_estorno;
-
-    SELECT quantidade INTO v_tem
-      FROM item_usuario
-     WHERE id_usuario = v_usuario AND id_item_loja = v_item
-       FOR UPDATE;
-
-    -- se o jogador ja gastou os itens, nao da para devolver o dinheiro
-    IF v_tem IS NULL OR v_tem < v_qtd THEN
-        ROLLBACK TO SAVEPOINT antes_do_estorno;
-        SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'O jogador ja usou os itens dessa compra';
-    END IF;
-
-    UPDATE item_usuario SET quantidade = quantidade - v_qtd
-     WHERE id_usuario = v_usuario AND id_item_loja = v_item;
-    UPDATE usuario SET pokedolares = pokedolares + v_total WHERE id_usuario = v_usuario;
-    UPDATE log_loja SET estornada = 1 WHERE id_log_loja = p_id_log_loja;
-
-    COMMIT;
-END$$
-
-DELIMITER ;
-
-
--- ======================================================================
--- 8. DADOS: itens da loja, pokemons basicos e kit inicial
--- ======================================================================
-
--- itens do jogo (precos sao ponto de partida, podem ser ajustados aqui e o arquivo rodado de novo).
--- KIT INICIAL (ultima coluna): jogador novo comeca so com 3 pocoes basicas (Pocao) e mais nada.
+-- Insere ou atualiza o catalogo da loja; kit_inicial define os itens de novas contas.
 INSERT INTO item_loja (chave, nome, descricao, categoria, preco, imagem, cura_hp, cura_status, reviver, kit_inicial) VALUES
 ('potion',        'Poção',          'Recupera 20 de HP de um pokémon.',                       'pocao_hp',      50,  'potion.png',              20,   NULL,       0, 3),
 ('super-potion',  'Super Poção',    'Recupera 50 de HP de um pokémon.',                       'pocao_hp',      120, 'super potion.png',        50,   NULL,       0, 0),
@@ -661,6 +578,7 @@ INSERT INTO item_loja (chave, nome, descricao, categoria, preco, imagem, cura_hp
 ('revive',        'Reviver',        'Traz um pokémon desmaiado de volta com metade do HP.',   'pocao_hp',      350, 'reviver.webp',            0,    NULL,       1, 0),
 ('antidote',      'Antídoto',       'Cura um pokémon envenenado.',                            'pocao_condicao', 60, 'antidote.png',            0,    'poison',   0, 0),
 ('pedra-evolutiva','Pedra Evolutiva','Faz um pokémon evoluir. Use na tela da equipe.',          'evolucao',      500, 'pedra evolutiva.png',     0,    NULL,       0, 0),
+('pokebola',      'Pokébola Surpresa','Abra para ganhar um Pokémon. Há 1% de chance de lendário.','pokebola',       500, 'pokebola.svg',            0,    NULL,       0, 0),
 ('burn-heal',     'Anti-Queimadura','Cura um pokémon queimado.',                              'pocao_condicao', 60, 'burn heal.png',           0,    'burn',     0, 0),
 ('paralyze-heal', 'Anti-Paralisia', 'Cura um pokémon paralisado.',                            'pocao_condicao', 60, 'paralyse heal.png',       0,    'paralysis',0, 0),
 ('awakening',     'Despertar',      'Acorda um pokémon que está dormindo.',                   'pocao_condicao', 60, 'awakening.png',           0,    'sleep',    0, 0),
@@ -671,6 +589,7 @@ ON DUPLICATE KEY UPDATE
     imagem = VALUES(imagem), cura_hp = VALUES(cura_hp), cura_status = VALUES(cura_status),
     reviver = VALUES(reviver), kit_inicial = VALUES(kit_inicial);
 
+-- Define os monstros basicos que podem ser sorteados para novos jogadores e bots.
 INSERT INTO pokemon_basico (id_pokemon, nome) VALUES
     (1,   'Bulbasaur'),
     (4,   'Charmander'),
@@ -704,25 +623,20 @@ INSERT INTO pokemon_basico (id_pokemon, nome) VALUES
     (147, 'Dratini')
 ON DUPLICATE KEY UPDATE nome = VALUES(nome);
 
--- jogadores que ja existem recebem o kit inicial (contas novas recebem pelo cadastro).
--- So entra o que o jogador ainda nao tem, entao quem ja usou ou comprou itens nao e afetado.
+-- Entrega o kit inicial a contas existentes sem substituir itens que elas ja possuem.
 INSERT IGNORE INTO item_usuario (id_usuario, id_item_loja, quantidade)
 SELECT u.id_usuario, i.id_item_loja, i.kit_inicial
 FROM usuario u CROSS JOIN item_loja i
 WHERE i.kit_inicial > 0;
 
--- OPCIONAL: deixar TODAS as contas que ja existem so com 3 pocoes. Para usar, tire o "-- " do comeco das 3 linhas.
--- CUIDADO: apaga todos os itens que essas contas tem hoje, inclusive os comprados na loja.
+-- Opcional e destrutivo: descomente para substituir todo o inventario por tres pocoes.
 -- DELETE FROM item_usuario;
 -- INSERT INTO item_usuario (id_usuario, id_item_loja, quantidade)
 -- SELECT u.id_usuario, i.id_item_loja, 3 FROM usuario u JOIN item_loja i ON i.chave = 'potion';
 
--- ======================================================================
--- 9. POKEMONS: tipos, stats e evolucoes
---    (dados da PokeAPI)
--- ======================================================================
+-- 9. DADOS DE TIPOS, EFETIVIDADES, MONSTROS E EVOLUCOES (PokeAPI)
 
--- tipos (o id e o mesmo da PokeAPI; "chave" e o nome em ingles que o jogo usa)
+-- Insere os tipos elementais com os IDs usados pela PokeAPI.
 INSERT INTO tipo (id_tipo, chave, nome) VALUES
     (1, 'normal', 'Normal'),
     (2, 'fighting', 'Lutador'),
@@ -744,23 +658,23 @@ INSERT INTO tipo (id_tipo, chave, nome) VALUES
     (18, 'fairy', 'Fada')
 ON DUPLICATE KEY UPDATE chave = VALUES(chave), nome = VALUES(nome);
 
--- golpes deste tipo causam o dobro de dano nestes
+-- Define as combinacoes em que o tipo do golpe causa dano dobrado.
 INSERT IGNORE INTO eficaz_tipo (id_tipo, id_tipo_eficaz) VALUES
 (2,1), (2,6), (2,9), (2,15), (2,17), (3,2), (3,7), (3,12), (4,12), (4,18), (5,4), (5,6), (5,9), (5,10), (5,13), (6,3), (6,7), (6,10), (6,15), (7,12), (7,14), (7,17), (8,8), (8,14), (9,6), (9,15), (9,18), (10,7), (10,9), (10,12), (10,15), (11,5), (11,6), (11,10), (12,5), (12,6), (12,11), (13,3), (13,11), (14,2), (14,4), (15,3), (15,5), (15,12), (15,16), (16,16), (17,8), (17,14), (18,2), (18,16), (18,17);
 
--- este tipo leva o dobro de dano destes
+-- Define os tipos de golpe que causam dano dobrado a cada tipo defensor.
 INSERT IGNORE INTO fraqueza_tipo (id_tipo, id_tipo_fraqueza) VALUES
 (1,2), (2,3), (2,14), (2,18), (3,6), (3,13), (3,15), (4,5), (4,14), (5,11), (5,12), (5,15), (6,2), (6,5), (6,9), (6,11), (6,12), (7,3), (7,6), (7,10), (8,8), (8,17), (9,2), (9,5), (9,10), (10,5), (10,6), (10,11), (11,12), (11,13), (12,3), (12,4), (12,7), (12,10), (12,15), (13,5), (14,7), (14,8), (14,17), (15,2), (15,6), (15,9), (15,10), (16,15), (16,16), (16,18), (17,2), (17,7), (17,18), (18,4), (18,9);
 
--- este tipo leva metade do dano destes
+-- Define os tipos de golpe que causam metade do dano a cada tipo defensor.
 INSERT IGNORE INTO resiste_tipo (id_tipo, id_tipo_resiste) VALUES
 (2,6), (2,7), (2,17), (3,2), (3,7), (3,12), (4,2), (4,4), (4,7), (4,12), (4,18), (5,4), (5,6), (6,1), (6,3), (6,4), (6,10), (7,2), (7,5), (7,12), (8,4), (8,7), (9,1), (9,3), (9,6), (9,7), (9,9), (9,12), (9,14), (9,15), (9,16), (9,18), (10,7), (10,9), (10,10), (10,12), (10,15), (10,18), (11,9), (11,10), (11,11), (11,15), (12,5), (12,11), (12,12), (12,13), (13,3), (13,9), (13,13), (14,2), (14,14), (15,15), (16,10), (16,11), (16,12), (16,13), (17,8), (17,17), (18,2), (18,7), (18,17);
 
--- este tipo nao leva dano nenhum destes
+-- Define os tipos de golpe anulados por cada tipo defensor.
 INSERT IGNORE INTO imune_tipo (id_tipo, id_tipo_imune) VALUES
 (1,8), (3,5), (5,13), (8,1), (8,2), (9,4), (17,14), (18,16);
 
--- pokemons: os 30 basicos e as evolucoes deles. O id e o numero na PokeAPI (stats base de la)
+-- Insere os monstros disponiveis e seus atributos base; IDs e estatisticas seguem a PokeAPI.
 INSERT INTO monstro (id_monstro, nome, vida_base, ataque_base, defesa_base, ataque_esp_base, defesa_esp_base, velocidade_base) VALUES
     (1, 'Bulbasaur', 45, 49, 49, 65, 65, 45),
     (2, 'Ivysaur', 60, 62, 63, 80, 80, 60),
@@ -833,18 +747,24 @@ INSERT INTO monstro (id_monstro, nome, vida_base, ataque_base, defesa_base, ataq
     (134, 'Vaporeon', 130, 65, 60, 110, 95, 65),
     (147, 'Dratini', 41, 64, 45, 50, 50, 50),
     (148, 'Dragonair', 61, 84, 65, 70, 70, 70),
-    (149, 'Dragonite', 91, 134, 95, 100, 100, 80)
+    (149, 'Dragonite', 91, 134, 95, 100, 100, 80),
+    (144, 'Articuno', 90, 85, 100, 95, 125, 85),
+    (145, 'Zapdos', 90, 90, 85, 125, 90, 100),
+    (146, 'Moltres', 90, 100, 90, 125, 85, 90),
+    (150, 'Mewtwo', 106, 110, 90, 154, 90, 130),
+    (151, 'Mew', 100, 100, 100, 100, 100, 100)
 ON DUPLICATE KEY UPDATE nome = VALUES(nome), vida_base = VALUES(vida_base), ataque_base = VALUES(ataque_base),
     defesa_base = VALUES(defesa_base), ataque_esp_base = VALUES(ataque_esp_base), defesa_esp_base = VALUES(defesa_esp_base),
     velocidade_base = VALUES(velocidade_base);
 
+-- Associa cada monstro aos tipos principal e secundario, atualizando a ordem se ja existir.
 INSERT INTO tipo_monstro (id_monstro, id_tipo, ordem) VALUES
-(1,12,1), (1,4,2), (2,12,1), (2,4,2), (3,12,1), (3,4,2), (4,10,1), (5,10,1), (6,10,1), (6,3,2), (7,11,1), (8,11,1), (9,11,1), (16,1,1), (16,3,2), (17,1,1), (17,3,2), (18,1,1), (18,3,2), (19,1,1), (20,1,1), (23,4,1), (24,4,1), (25,13,1), (26,13,1), (27,5,1), (28,5,1), (35,18,1), (36,18,1), (37,10,1), (38,10,1), (39,1,1), (39,18,2), (40,1,1), (40,18,2), (43,12,1), (43,4,2), (44,12,1), (44,4,2), (45,12,1), (45,4,2), (52,1,1), (53,1,1), (54,11,1), (55,11,1), (56,2,1), (57,2,1), (58,10,1), (59,10,1), (60,11,1), (61,11,1), (62,11,1), (62,2,2), (63,14,1), (64,14,1), (65,14,1), (66,2,1), (67,2,1), (68,2,1), (69,12,1), (69,4,2), (70,12,1), (70,4,2), (71,12,1), (71,4,2), (72,11,1), (72,4,2), (73,11,1), (73,4,2), (74,6,1), (74,5,2), (75,6,1), (75,5,2), (76,6,1), (76,5,2), (77,10,1), (78,10,1), (79,11,1), (79,14,2), (80,11,1), (80,14,2), (81,13,1), (81,9,2), (82,13,1), (82,9,2), (92,8,1), (92,4,2), (93,8,1), (93,4,2), (94,8,1), (94,4,2), (104,5,1), (105,5,1), (116,11,1), (117,11,1), (133,1,1), (134,11,1), (147,16,1), (148,16,1), (149,16,1), (149,3,2)
+(1,12,1), (1,4,2), (2,12,1), (2,4,2), (3,12,1), (3,4,2), (4,10,1), (5,10,1), (6,10,1), (6,3,2), (7,11,1), (8,11,1), (9,11,1), (16,1,1), (16,3,2), (17,1,1), (17,3,2), (18,1,1), (18,3,2), (19,1,1), (20,1,1), (23,4,1), (24,4,1), (25,13,1), (26,13,1), (27,5,1), (28,5,1), (35,18,1), (36,18,1), (37,10,1), (38,10,1), (39,1,1), (39,18,2), (40,1,1), (40,18,2), (43,12,1), (43,4,2), (44,12,1), (44,4,2), (45,12,1), (45,4,2), (52,1,1), (53,1,1), (54,11,1), (55,11,1), (56,2,1), (57,2,1), (58,10,1), (59,10,1), (60,11,1), (61,11,1), (62,11,1), (62,2,2), (63,14,1), (64,14,1), (65,14,1), (66,2,1), (67,2,1), (68,2,1), (69,12,1), (69,4,2), (70,12,1), (70,4,2), (71,12,1), (71,4,2), (72,11,1), (72,4,2), (73,11,1), (73,4,2), (74,6,1), (74,5,2), (75,6,1), (75,5,2), (76,6,1), (76,5,2), (77,10,1), (78,10,1), (79,11,1), (79,14,2), (80,11,1), (80,14,2), (81,13,1), (81,9,2), (82,13,1), (82,9,2), (92,8,1), (92,4,2), (93,8,1), (93,4,2), (94,8,1), (94,4,2), (104,5,1), (105,5,1), (116,11,1), (117,11,1), (133,1,1), (134,11,1), (147,16,1), (148,16,1), (149,16,1), (149,3,2), (144,15,1), (144,3,2), (145,13,1), (145,3,2), (146,10,1), (146,3,2), (150,14,1), (151,14,1)
 ON DUPLICATE KEY UPDATE ordem = VALUES(ordem);
 
--- quem evolui para quem (comprando a Pedra Evolutiva na loja)
+-- Define as evolucoes que podem ser ativadas com a Pedra Evolutiva.
 INSERT IGNORE INTO evolucao_monstro (id_monstro, id_evolucao) VALUES
 (1,2), (2,3), (4,5), (5,6), (7,8), (8,9), (16,17), (17,18), (19,20), (23,24), (25,26), (27,28), (35,36), (37,38), (39,40), (43,44), (44,45), (52,53), (54,55), (56,57), (58,59), (60,61), (61,62), (63,64), (64,65), (66,67), (67,68), (69,70), (70,71), (72,73), (74,75), (75,76), (77,78), (79,80), (81,82), (92,93), (93,94), (104,105), (116,117), (133,134), (147,148), (148,149);
 
--- as imagens vem da PokeAPI. Se uma versao anterior deste arquivo guardou caminhos de imagem, limpa
+-- Remove caminhos antigos porque o jogo carrega as imagens diretamente da PokeAPI.
 DELETE FROM imagem_monstro;

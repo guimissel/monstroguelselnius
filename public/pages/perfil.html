@@ -27,9 +27,15 @@
     <span><b>Ranking:</b> <span id="posicao"></span></span>
   </div>
   <div class="acoes">
+    <button class="botao" id="exportarProgresso" type="button" disabled>Baixar progresso (JSON)</button>
+    <label class="arquivo-progresso">Restaurar arquivo JSON
+      <input id="arquivoProgresso" type="file" accept=".json,application/json">
+    </label>
+    <button class="botao claro" id="importarProgresso" type="button" disabled>Importar e substituir progresso</button>
     <button class="botao claro" id="trocar">Trocar de perfil</button>
     <button class="botao perigo" id="excluir">Excluir conta</button>
   </div>
+  <p class="nota">A importação substitui saldo, equipe, coleção, inventário e histórico desta conta. Nome e senha permanecem iguais.</p>
   <p class="mensagem" id="mensagem"></p>
 </div>
 
@@ -70,6 +76,6 @@
   <p class="mensagem" id="mensagemForm"></p>
 </div>
 
-<script src="public/javascript/perfil.js?v=2"></script>
+<script src="public/javascript/perfil.js?v=4"></script>
 </body>
 </html>

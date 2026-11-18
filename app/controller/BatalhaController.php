@@ -28,7 +28,9 @@ class BatalhaController
             echo json_encode([
                 "status" => 200,
                 "id" => $dados["id"],
-                "robo" => $dados["robo"]
+                "robo" => $dados["robo"],
+                "chefe" => $dados["chefe"],
+                "nivel" => $dados["nivel"]
             ]);
             return;
         }

@@ -61,6 +61,7 @@ const ROTULOS = { vitoria: "Vitória", derrota: "Derrota", fuga: "Fuga", em_anda
 
 function desenhar(d) {
     meuId = d.treinador.id;
+    document.getElementById("exportarProgresso").disabled = false;
     document.getElementById("nome").textContent = d.treinador.nome;
     document.getElementById("dinheiro").textContent = d.treinador.pokedolares;
     document.getElementById("posicao").textContent = d.placar.batalhas > 0 ? `${d.posicao}º lugar` : "ainda sem batalhas";
@@ -141,6 +142,79 @@ async function carregar() {
 document.getElementById("trocar").addEventListener("click", async () => {
     await fetch("/monstroguelselnius/api/usuario/sair", { method: "POST" });
     window.location.href = URL_LOGIN;
+});
+
+document.getElementById("exportarProgresso").addEventListener("click", async (evento) => {
+    const botao = evento.currentTarget;
+    botao.disabled = true;
+
+    try {
+        const resposta = await fetch("/monstroguelselnius/api/progresso/exportar");
+        if (resposta.status === 401) {
+            window.location.href = URL_LOGIN;
+            return;
+        }
+
+        if (!resposta.ok) {
+            const erro = await resposta.json();
+            throw new Error(erro.mensagem || "Não consegui exportar o progresso.");
+        }
+
+        const arquivo = await resposta.blob();
+        const url = URL.createObjectURL(arquivo);
+        const link = document.createElement("a");
+        link.href = url;
+        link.download = `progresso-${meuId ?? "jogador"}.json`;
+        document.body.appendChild(link);
+        link.click();
+        link.remove();
+        setTimeout(() => URL.revokeObjectURL(url), 1000);
+        mostrar(mensagemEl, "Progresso baixado em JSON.", "ok");
+    } catch (erro) {
+        console.error(erro);
+        mostrar(mensagemEl, erro.message || "Não consegui exportar o progresso.", "erro");
+    } finally {
+        botao.disabled = false;
+    }
+});
+
+const arquivoProgressoEl = document.getElementById("arquivoProgresso");
+const importarProgressoEl = document.getElementById("importarProgresso");
+arquivoProgressoEl.addEventListener("change", () => {
+    importarProgressoEl.disabled = !arquivoProgressoEl.files.length;
+});
+
+importarProgressoEl.addEventListener("click", async () => {
+    const arquivo = arquivoProgressoEl.files[0];
+    if (!arquivo) return;
+    if (!confirm("Isso substituirá todo o progresso atual desta conta pelo conteúdo do arquivo. Nome e senha serão mantidos. Continuar?")) return;
+
+    importarProgressoEl.disabled = true;
+    mostrar(mensagemEl, "Validando e importando o progresso...");
+    try {
+        const dados = new FormData();
+        dados.append("arquivo", arquivo);
+        const resposta = await fetch("/monstroguelselnius/api/progresso/importar", {
+            method: "POST",
+            body: dados
+        });
+        if (resposta.status === 401) {
+            window.location.href = URL_LOGIN;
+            return;
+        }
+
+        const resultado = await resposta.json();
+        if (!resposta.ok) throw new Error(resultado.mensagem || "Não consegui importar o progresso.");
+
+        arquivoProgressoEl.value = "";
+        mostrar(mensagemEl, resultado.mensagem, "ok");
+        await carregar();
+    } catch (erro) {
+        console.error(erro);
+        mostrar(mensagemEl, erro.message || "Não consegui importar o progresso.", "erro");
+    } finally {
+        importarProgressoEl.disabled = !arquivoProgressoEl.files.length;
+    }
 });
 
 document.getElementById("excluir").addEventListener("click", async () => {

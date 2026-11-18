@@ -225,6 +225,7 @@ CREATE TABLE batalha (
     turno_atual INT DEFAULT 1 NOT NULL,
     cooldown_troca_1 INT DEFAULT 0 NOT NULL,
     cooldown_troca_2 INT DEFAULT 0 NOT NULL,
+    is_boss BOOLEAN DEFAULT FALSE NOT NULL,
 
     FOREIGN KEY (id_usuario) REFERENCES usuario(id_usuario)
         ON DELETE RESTRICT

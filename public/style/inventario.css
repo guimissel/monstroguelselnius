@@ -64,6 +64,22 @@ button.slot:hover { filter: brightness(1.08); transform: translateY(-2px); }
 .detalhes h2 { margin: 8px 0; color: #354d62; font-size: 21px; font-weight: 600; }
 .detalhes p { margin: 8px 0; color: #514733; font: 15px/1.5 "Segoe UI", sans-serif; }
 .detalhes .vazio { color: #6f624d; }
+.abrir-pokebola { width: 100%; margin-top: 12px; }
+.abertura-pokebola {
+    width: min(92vw, 430px); padding: 28px; color: var(--tinta); text-align: center;
+    background: linear-gradient(150deg, #fff9e9, #f0d99f); border: 3px solid #c5a35b;
+    border-bottom-width: 7px; border-radius: 16px; box-shadow: 0 12px 36px #0005;
+}
+.abertura-pokebola::backdrop { background: rgba(25, 30, 40, .78); }
+.abertura-animacao img { width: 112px; height: 112px; object-fit: contain; image-rendering: pixelated; animation: sacudir .55s ease-in-out infinite alternate; }
+.abertura-animacao p, .resultado-captura p { margin: 12px 0; color: #514733; font: 16px/1.5 "Segoe UI", sans-serif; }
+.resultado-captura { padding: 12px; background: linear-gradient(150deg, #fff9e9, #ead7ac); border: 2px solid #bcae91; border-radius: 12px; }
+.resultado-captura.lendario { background: radial-gradient(circle, #fff4bb, #f3c64e 68%, #bd861e); border-color: #9c6a12; box-shadow: 0 0 24px #e6b941aa; }
+.resultado-captura img { display: block; width: 160px; height: 160px; margin: 0 auto; object-fit: contain; image-rendering: pixelated; }
+.resultado-captura h2 { color: #354d62; }
+.resultado-captura.lendario h2, .resultado-captura.lendario p { color: #69440c; }
+.resultado-captura .botao { margin-top: 8px; }
+@keyframes sacudir { from { transform: rotate(-18deg) translateX(-6px); } to { transform: rotate(18deg) translateX(6px); } }
 :focus-visible { outline: 3px solid #d69528; outline-offset: 4px; }
 @media (max-width: 1000px) { .inventario { grid-template-columns: repeat(4, minmax(0, 1fr)); } }
 @media (max-width: 760px) {

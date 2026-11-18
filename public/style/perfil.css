@@ -39,6 +39,8 @@ h2 { margin: 0 0 16px; color: #315875; font-size: 23px; font-weight: 600; }
 .resumo > span { flex: 1 1 200px; padding: 13px 15px; background: #f3ead4; border: 1px solid var(--linha); border-radius: 9px; font-size: 16px; overflow-wrap: anywhere; }
 .resumo b { display: block; margin-bottom: 4px; color: #6b5938; font-size: 13px; font-weight: 500; text-transform: uppercase; letter-spacing: .04em; }
 .acoes { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 14px; }
+.arquivo-progresso { display: grid; align-content: center; gap: 4px; color: #405066; font-size: 13px; }
+.arquivo-progresso input { min-height: 36px; max-width: 290px; padding: 5px; font-size: 13px; }
 .mensagem { min-height: 0; margin: 12px 0 0; font-size: 15px; }
 .mensagem:not(:empty) { padding: 10px 14px; background: #fff; border: 1px solid var(--linha); border-left: 5px solid var(--azul); border-radius: 8px; }
 .mensagem.erro { color: #8f2822; border-left-color: var(--vermelho); }

@@ -32,9 +32,11 @@ class EquipeDAO
     // pokemons que o jogador tem: os 3 primeiros + os que ganhou do robo
     public function colecao(int $idUsuario): array
     {
-        $sql = "SELECT pu.id_pokemon, m.nome
+        $sql = "SELECT pu.id_pokemon, m.nome, e.id_evolucao, evoluido.nome AS nome_evolucao
                 FROM pokemon_usuario pu
                 LEFT JOIN monstro m ON m.id_monstro = pu.id_pokemon
+                LEFT JOIN evolucao_monstro e ON e.id_monstro = pu.id_pokemon
+                LEFT JOIN monstro evoluido ON evoluido.id_monstro = e.id_evolucao
                 WHERE pu.id_usuario = :id
                 ORDER BY pu.id_pokemon";
         $prepare = $this->pdo->prepare($sql);
@@ -43,7 +45,17 @@ class EquipeDAO
         $lista = [];
         foreach ($prepare->fetchAll() as $linha) {
             $id = (int) $linha["id_pokemon"];
-            $lista[] = ["id" => $id, "nome" => $linha["nome"] ?? "#" . $id];
+            $evolucao = $linha["id_evolucao"] === null
+                ? null
+                : [
+                    "id" => (int) $linha["id_evolucao"],
+                    "nome" => $linha["nome_evolucao"]
+                ];
+            $lista[] = [
+                "id" => $id,
+                "nome" => $linha["nome"] ?? "#" . $id,
+                "evolucao" => $evolucao
+            ];
         }
         return $lista;
     }

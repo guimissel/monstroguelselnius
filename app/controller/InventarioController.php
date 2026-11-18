@@ -70,6 +70,17 @@ class InventarioController
         {
             $inventarioDAO = new InventarioDAO(Conexao::getConexao());
 
+            if ($chave === "pokebola") {
+                $resultado = $inventarioDAO->abrirPokebola((int) $meuId);
+                echo json_encode([
+                    "status" => 200,
+                    "mensagem" => "Pokebola aberta",
+                    "pokemon" => $resultado["pokemon"],
+                    "quantidade" => $resultado["quantidade"]
+                ], JSON_UNESCAPED_UNICODE);
+                return;
+            }
+
             if (!$inventarioDAO->usar((int) $meuId, $chave))
             {
                 http_response_code(409);
@@ -84,6 +95,16 @@ class InventarioController
                 "status" => 200,
                 "mensagem" => "item usado"
             ]);
+            return;
+        }
+
+        catch (DomainException $e)
+        {
+            http_response_code($e->getCode());
+            echo json_encode([
+                "status" => $e->getCode(),
+                "mensagem" => $e->getMessage()
+            ], JSON_UNESCAPED_UNICODE);
             return;
         }
 

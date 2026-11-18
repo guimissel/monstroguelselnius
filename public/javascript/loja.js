@@ -7,7 +7,8 @@ const pokedolaresEl = document.getElementById("pokedolares");
 const NOMES_CATEGORIAS = {
     pocao_hp: "Poções de HP",
     pocao_condicao: "Poções de condição",
-    evolucao: "Evolução"
+    evolucao: "Evolução",
+    pokebola: "Pokébolas"
 };
 
 const MAXIMO_POR_COMPRA = 99;   // o servidor tambem confere
