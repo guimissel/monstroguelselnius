@@ -3,6 +3,7 @@ const gradeEl = document.getElementById("inventario");
 const detalhesEl = document.getElementById("detalhes");
 const mensagemEl = document.getElementById("mensagem");
 const pokedolaresEl = document.getElementById("pokedolares");
+const abrirTodasPokebolasEl = document.getElementById("abrirTodasPokebolas");
 const aberturaEl = document.getElementById("aberturaPokebola");
 const aberturaAnimacaoEl = document.getElementById("aberturaAnimacao");
 const resultadoCapturaEl = document.getElementById("resultadoCaptura");
@@ -23,6 +24,8 @@ let itens = [];
 let filtro = "todos";
 let selecionado = null;   // chave do item aberto nos detalhes
 let abrindoPokebola = false;
+let aberturaEmLote = false;
+let cancelarAberturaEmLote = false;
 
 const caminhoImg = (arquivo) => "public/img/" + encodeURI(arquivo);
 
@@ -125,6 +128,7 @@ function desenharDetalhes() {
     const item = itens.find((i) => i.chave === selecionado);
 
     if (!item) {
+        abrirTodasPokebolasEl.hidden = true;
         const p = document.createElement("p");
         p.className = "vazio";
         p.textContent = "Clique em um item para ver os detalhes.";
@@ -158,6 +162,14 @@ function desenharDetalhes() {
         abrir.disabled = abrindoPokebola || item.quantidade < 1;
         abrir.addEventListener("click", abrirPokebola);
         detalhesEl.appendChild(abrir);
+
+        abrirTodasPokebolasEl.hidden = false;
+        abrirTodasPokebolasEl.textContent = abrindoPokebola
+            ? "Abrindo todas..."
+            : `Abrir todas (${item.quantidade})`;
+        abrirTodasPokebolasEl.disabled = abrindoPokebola || item.quantidade < 1;
+    } else {
+        abrirTodasPokebolasEl.hidden = true;
     }
 }
 
@@ -176,10 +188,43 @@ function esperar(ms) {
 
 async function abrirPokebola() {
     if (abrindoPokebola) return;
+    await abrirUmaPokebola(false);
+}
+
+function esperarSom(som) {
+    return new Promise((resolve) => {
+        let terminou = false;
+        const finalizar = () => {
+            if (terminou) return;
+            terminou = true;
+            som.removeEventListener("ended", finalizar);
+            som.removeEventListener("error", finalizar);
+            resolve();
+        };
+        som.addEventListener("ended", finalizar, { once: true });
+        som.addEventListener("error", finalizar, { once: true });
+    });
+}
+
+async function contarAteAProximaAbertura() {
+    const textoInicial = resultadoTipoEl.textContent;
+    for (let segundos = 3; segundos > 0 && !cancelarAberturaEmLote; segundos--) {
+        resultadoTipoEl.textContent = `Próxima abertura em ${segundos}s...`;
+        await esperar(1000);
+    }
+    if (!cancelarAberturaEmLote) resultadoTipoEl.textContent = textoInicial;
+}
+
+async function abrirUmaPokebola(emLote) {
     abrindoPokebola = true;
     aberturaAnimacaoEl.hidden = false;
     resultadoCapturaEl.hidden = true;
     aberturaEl.showModal();
+    if (emLote) {
+        fecharAberturaEl.textContent = "Cancelar abertura em lote";
+    } else {
+        fecharAberturaEl.textContent = "Continuar";
+    }
     desenharDetalhes();
 
     const inicioAbertura = performance.now();
@@ -210,25 +255,83 @@ async function abrirPokebola() {
             ? "Você já tinha este Pokémon."
             : resultado.pokemon.lendario ? "Pokémon lendário!" : "Pokémon encontrado!";
         const somPego = new Audio("public/audio/pego.mp3");
-        somPego.play().catch((erro) => console.warn("Não foi possível tocar o som de captura:", erro));
+        const somPegoTerminou = esperarSom(somPego);
+        
+        if (resultado.pokemon.lendario) {
+            const trovao = new Audio(
+                Math.random() < 0.5
+                    ? "public/audio/trovao1.mp3"
+                    : "public/audio/trovao2.mp3"
+            );
+            trovao.play().catch((erro) => {
+                console.warn("Não foi possível tocar o som de trovão:", erro);
+            });
+        }
+
+        else {
+            somPego.play().catch((erro) => {
+                console.warn("Não foi possível tocar o som de captura:", erro);
+                somPego.dispatchEvent(new Event("error"));
+            });
+        }
 
         selecionado = "pokebola";
         await carregar();
         if (resultado.pokemon.jaTinha) {
             mostrarMensagem(`Você encontrou ${resultado.pokemon.nome}, mas já tinha esse Pokémon na coleção.`);
         }
+
+        await somPegoTerminou;
+        return resultado.quantidade;
     } catch (erro) {
         console.error(erro);
         somAbertura.pause();
         aberturaEl.close();
         mostrarMensagem(erro.message || "Não foi possível abrir a Pokébola.", true);
+        return 0;
     } finally {
-        abrindoPokebola = false;
+        if (!emLote) abrindoPokebola = false;
         desenharDetalhes();
     }
 }
 
-fecharAberturaEl.addEventListener("click", () => aberturaEl.close());
+async function abrirTodasPokebolas() {
+    if (abrindoPokebola) return;
+
+    const item = itens.find((i) => i.chave === "pokebola");
+    if (!item || item.quantidade < 1) return;
+
+    aberturaEmLote = true;
+    cancelarAberturaEmLote = false;
+    let quantidade = item.quantidade;
+
+    while (quantidade > 0 && !cancelarAberturaEmLote) {
+        const restante = await abrirUmaPokebola(true);
+        if (cancelarAberturaEmLote) break;
+        quantidade = typeof restante === "number" ? restante : quantidade - 1;
+
+        if (quantidade > 0 && !cancelarAberturaEmLote) {
+            await contarAteAProximaAbertura();
+        }
+    }
+
+    aberturaEmLote = false;
+    cancelarAberturaEmLote = false;
+    fecharAberturaEl.textContent = "Continuar";
+    abrindoPokebola = false;
+    desenharDetalhes();
+    if (aberturaEl.open) aberturaEl.close();
+}
+
+fecharAberturaEl.addEventListener("click", () => {
+    if (aberturaEmLote) {
+        cancelarAberturaEmLote = true;
+        aberturaEmLote = false;
+        abrindoPokebola = false;
+    }
+    aberturaEl.close();
+});
+abrirTodasPokebolasEl.addEventListener("click", abrirTodasPokebolas);
 aberturaEl.addEventListener("click", (evento) => {
     if (evento.target === aberturaEl && !abrindoPokebola) aberturaEl.close();
 });

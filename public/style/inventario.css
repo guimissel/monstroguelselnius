@@ -33,6 +33,7 @@ h1 { margin: 0; color: #254e70; font-size: clamp(28px, 4vw, 38px); font-weight: 
 .botao:hover:not(:disabled) { filter: brightness(1.1); transform: translateY(-1px); }
 .botao:active:not(:disabled) { transform: translateY(2px); border-bottom-width: 2px; }
 .botao:disabled { opacity: .55; filter: grayscale(.7); cursor: not-allowed; }
+.botao[hidden] { display: none; }
 .botao.claro { color: #4a3720; background: #fff2ce; border-color: #d3b87c; border-bottom-color: #9c7c40; }
 .botao.claro.ativo { color: #fff; background: #455f79; border-color: #7892ab; border-bottom-color: #25394e; }
 .abas { margin-bottom: 18px; }
