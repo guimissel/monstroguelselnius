@@ -2,16 +2,9 @@
 
 require_once __DIR__ . "/../model/ItemInventario.php";
 
-class InventarioDAO
+class InventarioDAO extends DAO
 {
     private const IDS_LENDARIOS = [144, 145, 146, 150];
-
-    private PDO $pdo;
-
-    public function __construct(PDO $pdo)
-    {
-        $this->pdo = $pdo;
-    }
 
     // itens que o jogador tem (quantidade maior que zero)
     public function listar(int $idUsuario): array

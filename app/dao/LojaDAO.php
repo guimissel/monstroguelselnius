@@ -2,15 +2,9 @@
 
 require_once __DIR__ . "/../model/ItemInventario.php";
 
-class LojaDAO
+class LojaDAO extends DAO
 {
-    private PDO $pdo;
-
-    public function __construct(PDO $pdo)
-    {
-        $this->pdo = $pdo;
-    }
-
+    
     // todos os itens a venda, com a quantidade que o jogador ja tem (pode ser 0)
     public function listar(int $idUsuario): array
     {

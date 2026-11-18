@@ -8,14 +8,8 @@ enum TipoBusca: int{
     case NOME = 1;
 };
 
-class UsuarioDAO
+class UsuarioDAO extends DAO
 {
-    private PDO $pdo;
-
-    public function __construct(PDO $pdo) 
-    {
-        $this->pdo = $pdo;
-    }
 
     public function criar(Usuario $usuario): Usuario
     {

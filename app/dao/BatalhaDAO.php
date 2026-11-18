@@ -1,6 +1,6 @@
 <?php
 
-class BatalhaDAO
+class BatalhaDAO extends DAO
 {
     // uma batalha de verdade dura mais que isso (so contando as mensagens do log)
     private const SEGUNDOS_MINIMOS = 10;
@@ -11,13 +11,6 @@ class BatalhaDAO
     // nivel dos pokemons (quanto menor, mais fracos). O chefe e um pouco mais forte
     public const NIVEL_NORMAL = 10;
     public const NIVEL_CHEFE = 10;
-
-    private PDO $pdo;
-
-    public function __construct(PDO $pdo)
-    {
-        $this->pdo = $pdo;
-    }
 
     // a tabela batalha numera sozinha (AUTO_INCREMENT)? o app/database/schema.sql configura isso
     private function numeraSozinha(): bool

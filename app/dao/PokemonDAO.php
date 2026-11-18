@@ -1,14 +1,8 @@
 <?php
 
 // Le os pokemons do banco (view vw_pokedex) e devolve objetos Pokemon.
-class PokemonDAO
+class PokemonDAO extends DAO
 {
-    private PDO $pdo;
-
-    public function __construct(PDO $pdo)
-    {
-        $this->pdo = $pdo;
-    }
 
     // todos os pokemons, ordenados pelo numero
     public function todos(): array

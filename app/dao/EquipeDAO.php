@@ -1,16 +1,9 @@
 <?php
 
-class EquipeDAO
+class EquipeDAO extends DAO
 {
     private const TAMANHO_EQUIPE = 3;
     private const PEDRA = "pedra-evolutiva";   // chave do item na loja
-
-    private PDO $pdo;
-
-    public function __construct(PDO $pdo)
-    {
-        $this->pdo = $pdo;
-    }
 
     // pokemons que o jogador pode escolher (nivel basico)
     public function basicos(): array

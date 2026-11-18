@@ -1,14 +1,8 @@
 <?php
 
 // Consultas da tela de perfil. A maior parte usa as views do banco (vw_*).
-class PerfilDAO
+class PerfilDAO extends DAO
 {
-    private PDO $pdo;
-
-    public function __construct(PDO $pdo)
-    {
-        $this->pdo = $pdo;
-    }
 
     // jogador montado como Treinador (carteira, colecao e equipe)
     public function treinador(int $idUsuario): ?Treinador
