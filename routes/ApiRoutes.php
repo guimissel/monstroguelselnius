@@ -6,38 +6,31 @@
 define("ROTAS_API_NEEDAUTH", [
     "GET" => [
         "api/usuario/eu" => function () {
-            $controlador = new UsuarioController();
-            $controlador->eu();
+            (UsuarioController::NovaInstancia())->eu();
         },
 
         "api/inventario" => function () {
-            $controlador = new InventarioController();
-            $controlador->listar();
+            (InventarioController::NovaInstancia())->listar();
         },
 
         "api/loja" => function () {
-            $controlador = new LojaController();
-            $controlador->listar();
+            (LojaController::NovaInstancia())->listar();
         },
 
         "api/equipe" => function () {
-            $controlador = new EquipeController();
-            $controlador->listar();
+            (EquipeController::NovaInstancia())->listar();
         },
 
         "api/pokemon" => function () {
-            $controlador = new PokemonController();
-            $controlador->listar();
+            (PokemonController::NovaInstancia())->listar();
         },
 
         "api/perfil" => function () {
-            $controlador = new PerfilController();
-            $controlador->ver();
+            (PerfilController::NovaInstancia())->ver();
         },
 
         "api/progresso/exportar" => function () {
-            $controlador = new ProgressoController();
-            $controlador->exportar();
+            (ProgressoController::NovaInstancia())->exportar();
         },
 
         "api/montarSeed" => function () {
@@ -52,48 +45,39 @@ define("ROTAS_API_NEEDAUTH", [
 
     "POST" => [
         "api/usuario/sair" => function () {
-            $controlador = new UsuarioController();
-            $controlador->sair();
+            (UsuarioController::NovaInstancia())->sair();
         },
 
         "api/inventario/{chave}/usar" => function ($chave) {
-            $controlador = new InventarioController();
-            $controlador->usar($chave);
+            (InventarioController::NovaInstancia())->usar($chave);
         },
 
         "api/loja/{chave}/comprar" => function ($chave) {
-            $controlador = new LojaController();
-            $controlador->comprar($chave);
+            (LojaController::NovaInstancia())->comprar($chave);
         },
 
         "api/equipe" => function () {
-            $controlador = new EquipeController();
-            $controlador->salvar();
+            (EquipeController::NovaInstancia())->salvar();
         },
 
         "api/equipe/evoluir" => function () {
-            $controlador = new EquipeController();
-            $controlador->evoluir();
+            (EquipeController::NovaInstancia())->evoluir();
         },
 
         "api/progresso/importar" => function () {
-            $controlador = new ProgressoController();
-            $controlador->importar();
+            (ProgressoController::NovaInstancia())->importar();
         },
 
         "api/usuario/atualizar" => function () {
-            $controlador = new UsuarioController();
-            $controlador->atualizar();
+            (UsuarioController::NovaInstancia())->atualizar();
         },
 
         "api/batalha/iniciar" => function () {
-            $controlador = new BatalhaController();
-            $controlador->iniciar();
+            (BatalhaController::NovaInstancia())->iniciar();
         },
 
         "api/batalha/{id}/finalizar" => function ($id) {
-            $controlador = new BatalhaController();
-            $controlador->finalizar($id);
+            (BatalhaController::NovaInstancia())->finalizar($id);
         }
     ],
 
@@ -105,8 +89,7 @@ define("ROTAS_API_NEEDAUTH", [
 
     "DELETE" => [
         "api/usuario/{id}/excluir" => function ($id) {
-            $controlador = new UsuarioController();
-            $controlador->excluir($id);
+            (UsuarioController::NovaInstancia())->excluir($id);
         }
     ],
 
@@ -120,13 +103,11 @@ define("ROTAS_API_NOAUTH", [
         "api/usuario/criar" => function () {
             // pode trocar se souber um jeito melhor 
             // foi um mais rapido que pensei ;)
-            $controlador = new UsuarioController();
-            $controlador->criar();
+            (UsuarioController::NovaInstancia())->criar();
         },
 
         "api/usuario/entrar" => function () {
-            $controlador = new UsuarioController();
-            $controlador->entrar();
+            (UsuarioController::NovaInstancia())->entrar();
         },
     ],
 ]);

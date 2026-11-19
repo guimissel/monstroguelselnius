@@ -1,6 +1,6 @@
 <?php
 
-class LojaController
+class LojaController extends Controller
 {
     // maximo de unidades de um item por compra
     private const MAXIMO_POR_COMPRA = 99;

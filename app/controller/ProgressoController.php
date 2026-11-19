@@ -1,6 +1,6 @@
 <?php
 
-class ProgressoController
+class ProgressoController extends Controller
 {
     private const TAMANHO_MAXIMO_ARQUIVO = 10485760;
 

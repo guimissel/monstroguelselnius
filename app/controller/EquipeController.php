@@ -1,6 +1,6 @@
 <?php
 
-class EquipeController
+class EquipeController extends Controller
 {
     // GET api/equipe: a equipe salva, de onde escolher ("disponiveis") e a lista de basicos
     // "inicial" = true quando o jogador ainda nao tem pokemons (primeira escolha)

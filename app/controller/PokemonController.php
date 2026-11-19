@@ -1,6 +1,6 @@
 <?php
 
-class PokemonController
+class PokemonController extends Controller
 {
     // GET api/pokemon: todos os pokemons (stats, tipos, fraquezas e evolucao)
     public function listar(): void

@@ -1,7 +1,7 @@
 <?php
 
 
-class BatalhaController
+class BatalhaController extends Controller
 {
     // POST api/batalha/iniciar: abre uma batalha e devolve o id e o time do robo (ids da PokeAPI)
     public function iniciar(): void

@@ -8,7 +8,7 @@ enum Acesso: string
     case ADMIN = "admin";
 }
 
-class AutenticacaoController
+class AutenticacaoController extends Controller
 {
     private array $restricaoAcesso;
     private string $rota;

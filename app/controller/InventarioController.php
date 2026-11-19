@@ -1,5 +1,5 @@
 <?php
-class InventarioController
+class InventarioController extends Controller
 {
     // GET api/inventario: itens do jogador logado + dinheiro
     public function listar(): void

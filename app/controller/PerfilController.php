@@ -1,6 +1,6 @@
 <?php
 
-class PerfilController
+class PerfilController extends Controller
 {
     // GET api/perfil: tudo da tela de perfil do jogador logado
     public function ver(): void

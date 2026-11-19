@@ -1,6 +1,6 @@
 <?php
 
-class UsuarioController 
+class UsuarioController extends Controller
 {
     public function criar () :void
     {
