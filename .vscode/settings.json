@@ -1,0 +1,8 @@
+{
+    "editor.inlineSuggest.enabled": false,
+    "github.copilot.enable": {
+        "*": true,
+        "php": false
+    },
+    "github.copilot.nextEditSuggestions.enabled": false
+}

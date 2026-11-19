@@ -13,9 +13,10 @@ abstract class Pokemon implements Combatente
         "dark" => "Sombrio", "fairy" => "Fada"
     ];
 
-    // atributos (encapsulados: so se mexe por metodo)
-    private int $id;
-    private string $nome;
+    // traits
+    use Id;
+    use Nome;
+
     private int $hpMaximo;
     private int $hpAtual;
     private int $ataque;
@@ -29,8 +30,10 @@ abstract class Pokemon implements Combatente
     // $dados e uma linha da view vw_pokedex
     public function __construct(array $dados)
     {
-        $this->id = (int) $dados["id_pokemon"];
-        $this->nome = $dados["nome"];
+        // seta usando os traits
+        $this->setId($dados["id_pokemon"]);
+        $this->setNome($dados["nome"]);
+
         $this->hpMaximo = (int) $dados["vida_base"];
         $this->hpAtual = $this->hpMaximo;
         $this->ataque = (int) $dados["ataque_base"];
@@ -45,8 +48,6 @@ abstract class Pokemon implements Combatente
     // cada classe de tipo diz quais sao os tipos dela, ex: ["water", "poison"]
     abstract public function tipos(): array;
 
-    public function getId(): int { return $this->id; }
-    public function getNome(): string { return $this->nome; }
     public function getHpMaximo(): int { return $this->hpMaximo; }
     public function getHpAtual(): int { return $this->hpAtual; }
     public function getAtaque(): int { return $this->ataque; }

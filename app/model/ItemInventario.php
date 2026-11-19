@@ -3,9 +3,11 @@
 // um item do catalogo (item_loja) junto com a quantidade que o jogador tem
 class ItemInventario
 {
-    private int $id;
+    // usa os traits
+    use Id;
+    use Nome;
+
     private string $chave;
-    private string $nome;
     private string $descricao;
     private string $categoria;
     private int $preco;
@@ -28,9 +30,11 @@ class ItemInventario
         bool $reviver,
         int $quantidade
     ) {
-        $this->id = $id;
+        // usa os metodos dos traits
+        $this->setId($id);
+        $this->setNome($nome);
+
         $this->chave = $chave;
-        $this->nome = $nome;
         $this->descricao = $descricao;
         $this->categoria = $categoria;
         $this->preco = $preco;
@@ -63,9 +67,9 @@ class ItemInventario
         }
 
         return [
-            "id" => $this->id,
+            "id" => $this->getId(),
             "chave" => $this->chave,
-            "nome" => $this->nome,
+            "nome" => $this->getNome(),
             "descricao" => $this->descricao,
             "categoria" => $this->categoria,
             "preco" => $this->preco,

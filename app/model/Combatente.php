@@ -4,8 +4,6 @@
 // Pokemon implementa esta interface (e o robo/treinador poderia implementar tambem).
 interface Combatente
 {
-    public function getNome(): string;
-
     public function getVelocidade(): int;
 
     public function estaDesmaiado(): bool;

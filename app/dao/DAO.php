@@ -7,4 +7,9 @@ class DAO {
     {
         $this->pdo = $pdo;
     }
+
+    public static function novaInstancia ()
+    {
+        return new static (Conexao::getConexao());
+    } 
 }

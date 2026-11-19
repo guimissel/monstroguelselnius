@@ -39,7 +39,7 @@ $roteador->get(
     function () use ($caminhoBase) {
         // sem equipe nao tem batalha: manda escolher a equipe primeiro
         try {
-            $equipe = (new EquipeDAO(Conexao::getConexao()))->listar((int) ($_SESSION["id"] ?? 0));
+            $equipe = (EquipeDAO::novaInstancia())->listar((int) ($_SESSION["id"] ?? 0));
 
             if (count($equipe) !== 3) {
                 header("Location: $caminhoBase/equipe");

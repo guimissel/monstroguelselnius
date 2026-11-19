@@ -17,7 +17,7 @@ class UsuarioDAO extends DAO
             // inicia uma transaction
             $this->pdo->beginTransaction();
 
-            $nome = $usuario->getUsuario();
+            $nome = $usuario->getNome();
             $senha = $usuario->getSenhaHash();
 
             // o login procura pelo nome, entao nome repetido nao pode
@@ -38,7 +38,7 @@ class UsuarioDAO extends DAO
             // toda conta nova ganha o kit inicial de itens
             // se falhar (ex: o app/database/schema.sql ainda nao foi executado) a conta e criada do mesmo jeito
             try {
-                (new InventarioDAO($this->pdo))->darKitInicial($id);
+                (InventarioDAO::novaInstancia())->darKitInicial($id);
             } catch (PDOException $erroKit) {
                 error_log("kit inicial nao entregue: " . $erroKit->getMessage());
             }

@@ -21,7 +21,7 @@ class ProgressoController
 
         try
         {
-            $dao = new PerfilDAO(Conexao::getConexao());
+            $dao = PerfilDAO::novaInstancia();
             $treinador = $dao->treinador($idUsuario);
             if ($treinador === null)
             {
@@ -108,7 +108,7 @@ class ProgressoController
         try {
             $dados = json_decode($conteudo, true, 512, JSON_THROW_ON_ERROR);
             $progresso = $this->validarArquivo($dados);
-            $dao = new PerfilDAO(Conexao::getConexao());
+            $dao = PerfilDAO::novaInstancia();
             $dao->importarProgresso((int) $idUsuario, ...$progresso);
 
             echo json_encode([

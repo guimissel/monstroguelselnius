@@ -2,25 +2,18 @@
 
 class Usuario 
 {
-    private ?int $id;
+    use Id;
+    use Nome;
+
     private string $usuario;
     private ?string $senhaHash;
 
-    public function __construct(?int $id, string $usuario, ?string $senhaHash) 
+    public function __construct(int $id, string $nome, ?string $senhaHash) 
     {
-        $this->id = $id;
-        $this->usuario = $usuario;
+        $this->setId($id);
+        $this->setNome($nome);
+
         $this->senhaHash = $senhaHash;
-    }
-
-    public function getId (): int 
-    {
-        return $this->id;
-    }
-
-    public function getUsuario(): string
-    {
-        return $this->usuario;
     }
 
     public function getSenhaHash(): string

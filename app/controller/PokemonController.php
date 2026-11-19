@@ -9,7 +9,7 @@ class PokemonController
 
         try
         {
-            $pokemons = (new PokemonDAO(Conexao::getConexao()))->todos();
+            $pokemons = (PokemonDAO::novaInstancia())->todos();
 
             echo json_encode([
                 "status" => 200,

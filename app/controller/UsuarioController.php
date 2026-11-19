@@ -54,13 +54,13 @@ class UsuarioController
 
             // uma nova instancia de usuario
             $usuario = new Usuario(
-                null,
+                -1,
                 $nome,
                 $senhaHash
             );
 
             // cria uma instancia DAO para utilizar o banco de dados
-            $usuarioDAO = new UsuarioDAO($conexao);
+            $usuarioDAO = UsuarioDAO::novaInstancia();
 
             // cria o usuario
             $usuario = $usuarioDAO->criar($usuario);
@@ -155,7 +155,7 @@ class UsuarioController
             $nome = $_POST["usuario"];
             $senha = $_POST["senha"];
 
-            $usuarioDAO = new UsuarioDAO($conexao);
+            $usuarioDAO = UsuarioDAO::novaInstancia();
             $usuario = $usuarioDAO->buscar(TipoBusca::NOME, $nome);
 
             // caso não exista o usuario
@@ -232,13 +232,13 @@ class UsuarioController
             return;
         }
 
-        $usuarioDAO = new UsuarioDAO($conexao);
+        $usuarioDAO = UsuarioDAO::novaInstancia();
         $meuUsuario = $usuarioDAO->buscar(TipoBusca::ID, $meuId);
         $role = $_SESSION["role"];
 
         echo json_encode([
             "id"=>$meuUsuario->getId(),
-            "nome"=>$meuUsuario->getUsuario(),
+            "nome"=>$meuUsuario->getNome(),
             "role"=>$role
         ]);
         return;
@@ -299,7 +299,7 @@ class UsuarioController
 
         try
         {
-            $usuarioDAO = new UsuarioDAO(Conexao::getConexao());
+            $usuarioDAO = UsuarioDAO::novaInstancia();
             $usuario = $usuarioDAO->buscar(TipoBusca::ID, (int) $meuId);
 
             if ($usuario === null || !password_verify($senhaAtual, $usuario->getSenhaHash()))
@@ -321,7 +321,7 @@ class UsuarioController
             echo json_encode([
                 "status" => 200,
                 "mensagem" => "perfil atualizado",
-                "nome" => $nome !== "" ? $nome : $usuario->getUsuario()
+                "nome" => $nome !== "" ? $nome : $usuario->getNome()
             ]);
             return;
         }
@@ -367,7 +367,7 @@ class UsuarioController
             return;
         }
 
-        $usuarioDAO = new UsuarioDAO(Conexao::getConexao());
+        $usuarioDAO = UsuarioDAO::novaInstancia();
         $usuarioExclusao = $usuarioDAO->buscar(TipoBusca::ID, $id);
 
         if (!isset($usuarioExclusao))

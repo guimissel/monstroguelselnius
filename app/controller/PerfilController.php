@@ -20,7 +20,7 @@ class PerfilController
 
         try
         {
-            $dao = new PerfilDAO(Conexao::getConexao());
+            $dao = PerfilDAO::novaInstancia();
             $treinador = $dao->treinador((int) $meuId);
 
             if ($treinador === null)

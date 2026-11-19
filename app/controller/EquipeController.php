@@ -22,7 +22,7 @@ class EquipeController
 
         try
         {
-            $dao = new EquipeDAO(Conexao::getConexao());
+            $dao = EquipeDAO::novaInstancia();
             $opcoes = $dao->disponiveis((int) $meuId);
 
             echo json_encode([
@@ -79,7 +79,7 @@ class EquipeController
 
         try
         {
-            $dao = new EquipeDAO(Conexao::getConexao());
+            $dao = EquipeDAO::novaInstancia();
             $resultado = $dao->evoluir((int) $meuId, $idPokemon);
 
             echo json_encode([
@@ -152,7 +152,7 @@ class EquipeController
 
         try
         {
-            $dao = new EquipeDAO(Conexao::getConexao());
+            $dao = EquipeDAO::novaInstancia();
             $dao->salvar((int) $meuId, $ids);
 
             echo json_encode([

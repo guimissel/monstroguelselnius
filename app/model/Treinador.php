@@ -6,22 +6,24 @@
 //   ASSOCIACAO: o treinador conhece os pokemons da colecao dele (e eles nao sabem dele).
 class Treinador
 {
-    private int $id;
-    private string $nome;
+    // usar traits
+    use Id;
+    use Nome;
+
     private Carteira $carteira;
     private Equipe $equipe;
     private array $colecao = [];
 
     public function __construct(int $id, string $nome, int $pokedolares)
     {
-        $this->id = $id;
-        $this->nome = $nome;
+        // usa metodos dos traits
+        $this->setId($id);
+        $this->setNome($nome);
+
         $this->carteira = new Carteira($pokedolares);
         $this->equipe = new Equipe();
     }
 
-    public function getId(): int { return $this->id; }
-    public function getNome(): string { return $this->nome; }
     public function getCarteira(): Carteira { return $this->carteira; }
     public function getEquipe(): Equipe { return $this->equipe; }
     public function getColecao(): array { return $this->colecao; }

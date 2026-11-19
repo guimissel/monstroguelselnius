@@ -20,7 +20,7 @@ class InventarioController
 
         try
         {
-            $inventarioDAO = new InventarioDAO(Conexao::getConexao());
+            $inventarioDAO = InventarioDAO::novaInstancia();
 
             $itens = [];
             foreach ($inventarioDAO->listar((int) $meuId) as $item) {
@@ -68,7 +68,7 @@ class InventarioController
 
         try
         {
-            $inventarioDAO = new InventarioDAO(Conexao::getConexao());
+            $inventarioDAO = InventarioDAO::novaInstancia();
 
             if ($chave === "pokebola") {
                 $resultado = $inventarioDAO->abrirPokebola((int) $meuId);
