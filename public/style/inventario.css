@@ -72,7 +72,97 @@ button.slot:hover { filter: brightness(1.08); transform: translateY(-2px); }
     border-bottom-width: 7px; border-radius: 16px; box-shadow: 0 12px 36px #0005;
 }
 .abertura-pokebola::backdrop { background: rgba(25, 30, 40, .78); }
-.abertura-animacao img { width: 112px; height: 112px; object-fit: contain; image-rendering: pixelated; animation: sacudir .55s ease-in-out infinite alternate; }
+.abertura-animacao { position: relative; }
+.efeito-pokebola {
+    position: relative;
+    width: 260px;
+    height: 260px;
+    display: grid;
+    place-items: center;
+    margin: 0 auto;
+    isolation: isolate;
+}
+.efeito-pokebola::before {
+    content: "";
+    position: absolute;
+    z-index: -2;
+    width: 250px;
+    height: 250px;
+    background: repeating-conic-gradient(
+        from 0deg,
+        rgba(255, 222, 92, .95) 0deg 8deg,
+        transparent 8deg 22deg
+    );
+    border-radius: 50%;
+    clip-path: circle(48%);
+    filter: blur(12px) saturate(1.35);
+    opacity: .75;
+    animation: girar-holofote 1.8s steps(16) infinite;
+}
+.raio-pixelado {
+    position: absolute;
+    z-index: -1;
+    width: 72px;
+    height: 160px;
+    background: #fff4a1;
+    border: 3px solid #e5b52a;
+    clip-path: polygon(58% 0, 88% 0, 62% 34%, 92% 34%, 24% 100%, 42% 58%, 8% 58%);
+    opacity: .9;
+    filter: drop-shadow(0 0 8px #ffd84f);
+    animation: raio-girando 1.8s steps(12) infinite;
+}
+.pokebola-pixelada {
+    position: relative;
+    z-index: 2;
+    width: 112px;
+    height: 112px;
+    image-rendering: pixelated;
+    image-rendering: crisp-edges;
+}
+.efeito-pokebola.abrindo {
+    animation: pulsar-pokebola 1s steps(8) 1;
+}
+.metade-pokebola {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 112px;
+    height: 112px;
+    background: url("../img/pokebola.svg") no-repeat center / 112px 112px;
+    image-rendering: pixelated;
+    image-rendering: crisp-edges;
+    will-change: transform, opacity;
+}
+.metade-cima {
+    clip-path: inset(0 0 56px 0);
+    z-index: 999;
+}
+.metade-baixo {
+    clip-path: inset(56px 0 0 0);
+    z-index: 998;
+}
+.pokebola-pixelada::after {
+    content: "";
+    position: absolute;
+    z-index: 3;
+    left: 43px;
+    top: 43px;
+    width: 26px;
+    height: 26px;
+    background: #f6fbff;
+    border: 8px solid #263248;
+    border-radius: 50%;
+    box-shadow: 0 0 0 3px #fff, 0 0 18px #fff4a1;
+}
+.efeito-pokebola.abrindo .metade-cima {
+    animation: abrir-metade-cima 1s steps(8) 1 forwards;
+}
+.efeito-pokebola.abrindo .metade-baixo {
+    animation: abrir-metade-baixo 1s steps(8) 1 forwards;
+}
+.efeito-pokebola.abrindo .pokebola-pixelada::after {
+    animation: apagar-botao-pokebola 1s steps(8) 1 forwards;
+}
 .abertura-animacao p, .resultado-captura p { margin: 12px 0; color: #514733; font: 16px/1.5 "Segoe UI", sans-serif; }
 .resultado-captura { padding: 12px; background: linear-gradient(150deg, #fff9e9, #ead7ac); border: 2px solid #bcae91; border-radius: 12px; }
 .resultado-captura.lendario { background: radial-gradient(circle, #fff4bb, #f3c64e 68%, #bd861e); border-color: #9c6a12; box-shadow: 0 0 24px #e6b941aa; }
@@ -80,7 +170,31 @@ button.slot:hover { filter: brightness(1.08); transform: translateY(-2px); }
 .resultado-captura h2 { color: #354d62; }
 .resultado-captura.lendario h2, .resultado-captura.lendario p { color: #69440c; }
 .resultado-captura .botao { margin-top: 8px; }
-@keyframes sacudir { from { transform: rotate(-18deg) translateX(-6px); } to { transform: rotate(18deg) translateX(6px); } }
+@keyframes pulsar-pokebola {
+    0%, 35% { transform: scale(.96); filter: brightness(.95); }
+    55%, 75% { transform: scale(1.08); filter: brightness(1.5); }
+    100% { transform: scale(1); filter: brightness(1); }
+}
+@keyframes abrir-metade-cima {
+    0% { transform: translate(0, 0) rotate(0); opacity: 1; }
+    100% { transform: translate(-34px, -18px) rotate(-18deg); opacity: 0; }
+}
+@keyframes abrir-metade-baixo {
+    0% { transform: translate(0, 0) rotate(0); opacity: 1; }
+    100% { transform: translate(34px, 18px) rotate(18deg); opacity: 0; }
+}
+@keyframes apagar-botao-pokebola {
+    0% { opacity: 1; transform: scale(1); }
+    100% { opacity: 0; transform: scale(1.8); }
+}
+@keyframes girar-holofote {
+    to { transform: rotate(360deg); }
+}
+@keyframes raio-girando {
+    0% { transform: rotate(-35deg) scale(.9); opacity: .55; }
+    50% { transform: rotate(145deg) scale(1.08); opacity: 1; }
+    100% { transform: rotate(325deg) scale(.9); opacity: .55; }
+}
 :focus-visible { outline: 3px solid #d69528; outline-offset: 4px; }
 @media (max-width: 1000px) { .inventario { grid-template-columns: repeat(4, minmax(0, 1fr)); } }
 @media (max-width: 760px) {

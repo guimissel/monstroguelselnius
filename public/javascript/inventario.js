@@ -223,9 +223,11 @@ async function contarAteAProximaAbertura() {
 }
 
 async function abrirUmaPokebola(emLote) {
+    const efeitoPokebolaEl = aberturaAnimacaoEl.querySelector(".efeito-pokebola");
     abrindoPokebola = true;
     aberturaAnimacaoEl.hidden = false;
     resultadoCapturaEl.hidden = true;
+    efeitoPokebolaEl.classList.remove("abrindo");
     aberturaEl.showModal();
     if (emLote) {
         fecharAberturaEl.textContent = "Cancelar abertura em lote";
@@ -234,11 +236,12 @@ async function abrirUmaPokebola(emLote) {
     }
     desenharDetalhes();
 
-    const inicioAbertura = performance.now();
     const somAbertura = new Audio("public/audio/abrindo.wav");
     somAbertura.currentTime = 0;
+    const somAberturaTerminou = esperarSom(somAbertura);
     somAbertura.play().catch((erro) => {
         if (erro.name !== "AbortError") console.warn("Não foi possível tocar o som de abertura:", erro);
+        somAbertura.dispatchEvent(new Event("error"));
     });
 
     try {
@@ -250,7 +253,9 @@ async function abrirUmaPokebola(emLote) {
         }
         if (!resposta.ok) throw new Error(resultado.mensagem || "Não foi possível abrir a Pokébola.");
 
-        await esperar(Math.max(0, 6400 - (performance.now() - inicioAbertura)));
+        await somAberturaTerminou;
+        efeitoPokebolaEl.classList.add("abrindo");
+        await esperar(1000);
         somAbertura.pause();
         aberturaAnimacaoEl.hidden = true;
         resultadoCapturaEl.hidden = false;

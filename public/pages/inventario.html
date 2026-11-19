@@ -41,7 +41,13 @@
 
 <dialog class="abertura-pokebola" id="aberturaPokebola" aria-labelledby="resultadoNome">
   <div class="abertura-animacao" id="aberturaAnimacao" aria-live="polite">
-    <img src="public/img/pokebola.svg" alt="">
+    <div class="efeito-pokebola">
+      <span class="raio-pixelado" aria-hidden="true"></span>
+      <div class="pokebola-pixelada" aria-label="Pokébola sendo aberta">
+        <span class="metade-pokebola metade-cima"></span>
+        <span class="metade-pokebola metade-baixo"></span>
+      </div>
+    </div>
     <p>A Pokébola está abrindo...</p>
   </div>
   <section class="resultado-captura" id="resultadoCaptura" hidden>
