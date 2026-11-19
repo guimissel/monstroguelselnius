@@ -9,7 +9,7 @@ class PokemonController extends Controller
 
         try
         {
-            $pokemons = (PokemonDAO::novaInstancia())->todos();
+            $pokemons = (PokemonDAO::NovaInstancia())->todos();
 
             echo json_encode([
                 "status" => 200,

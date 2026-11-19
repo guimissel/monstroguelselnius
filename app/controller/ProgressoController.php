@@ -21,7 +21,7 @@ class ProgressoController extends Controller
 
         try
         {
-            $dao = PerfilDAO::novaInstancia();
+            $dao = PerfilDAO::NovaInstancia();
             $treinador = $dao->treinador($idUsuario);
             if ($treinador === null)
             {
@@ -108,7 +108,7 @@ class ProgressoController extends Controller
         try {
             $dados = json_decode($conteudo, true, 512, JSON_THROW_ON_ERROR);
             $progresso = $this->validarArquivo($dados);
-            $dao = PerfilDAO::novaInstancia();
+            $dao = PerfilDAO::NovaInstancia();
             $dao->importarProgresso((int) $idUsuario, ...$progresso);
 
             echo json_encode([

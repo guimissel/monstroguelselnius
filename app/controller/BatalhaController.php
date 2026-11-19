@@ -22,7 +22,7 @@ class BatalhaController extends Controller
 
         try
         {
-            $batalhaDAO = BatalhaDAO::novaInstancia();
+            $batalhaDAO = BatalhaDAO::NovaInstancia();
             $dados = $batalhaDAO->iniciar((int) $meuId);
 
             echo json_encode([
@@ -102,7 +102,7 @@ class BatalhaController extends Controller
         try
         {
             // finaliza a batalha e calcula a recompensa
-            $batalhaDAO = BatalhaDAO::novaInstancia();
+            $batalhaDAO = BatalhaDAO::NovaInstancia();
             $dadosBatalha = $batalhaDAO->finalizar($idBatalha, (int) $meuId, $resultado, $vivos);
 
             echo json_encode([

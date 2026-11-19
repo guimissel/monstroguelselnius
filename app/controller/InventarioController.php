@@ -20,7 +20,7 @@ class InventarioController extends Controller
 
         try
         {
-            $inventarioDAO = InventarioDAO::novaInstancia();
+            $inventarioDAO = InventarioDAO::NovaInstancia();
 
             $itens = [];
             foreach ($inventarioDAO->listar((int) $meuId) as $item) {
@@ -68,7 +68,7 @@ class InventarioController extends Controller
 
         try
         {
-            $inventarioDAO = InventarioDAO::novaInstancia();
+            $inventarioDAO = InventarioDAO::NovaInstancia();
 
             if ($chave === "pokebola") {
                 $resultado = $inventarioDAO->abrirPokebola((int) $meuId);

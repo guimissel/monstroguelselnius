@@ -16,7 +16,7 @@ class PerfilDAO extends DAO
 
         $treinador = new Treinador((int) $linha["id_usuario"], $linha["nome"], (int) $linha["pokedolares"]);
 
-        $pokemonDAO = new PokemonDAO($this->pdo);
+        $pokemonDAO = PokemonDAO::NovaInstancia(["pdo" => $this->pdo]);
         foreach ($pokemonDAO->daColecao($idUsuario) as $pokemon) {
             $treinador->adicionarNaColecao($pokemon);
         }

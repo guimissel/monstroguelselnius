@@ -1,7 +1,9 @@
 <?php
 
-class DAO {
-    
+class DAO
+{
+    use NovaInstancia;
+
     protected PDO $pdo;
 
     public function __construct(PDO $pdo)
@@ -9,8 +11,4 @@ class DAO {
         $this->pdo = $pdo;
     }
 
-    public static function novaInstancia (): static
-    {
-        return new static (Conexao::getConexao());
-    } 
 }

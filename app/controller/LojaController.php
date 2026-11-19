@@ -29,7 +29,7 @@ class LojaController extends Controller
             $conexao = Conexao::getConexao();
 
             // pega todos os itens da loja (com a quantidade que o jogador ja tem)
-            $lojaDAO = LojaDAO::novaInstancia();
+            $lojaDAO = LojaDAO::NovaInstancia();
             $itens = [];
 
             // percorre todos os itens da loja e transforma em array para JSON
@@ -38,7 +38,7 @@ class LojaController extends Controller
             }
 
             // pega a quantidade de pokedolares do jogador
-            $inventarioDAO = InventarioDAO::novaInstancia();
+            $inventarioDAO = InventarioDAO::NovaInstancia();
             $pokedolares = $inventarioDAO->pokedolares((int) $meuId);
 
             // retorna o resultado em JSON
@@ -102,7 +102,7 @@ class LojaController extends Controller
 
         try
         {
-            $lojaDAO = LojaDAO::novaInstancia();
+            $lojaDAO = LojaDAO::NovaInstancia();
             $resultado = $lojaDAO->comprar((int) $meuId, $chave, $quantidade);
 
             echo json_encode([

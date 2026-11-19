@@ -38,7 +38,7 @@ class UsuarioDAO extends DAO
             // toda conta nova ganha o kit inicial de itens
             // se falhar (ex: o app/database/schema.sql ainda nao foi executado) a conta e criada do mesmo jeito
             try {
-                (InventarioDAO::novaInstancia())->darKitInicial($id);
+                (InventarioDAO::NovaInstancia())->darKitInicial($id);
             } catch (PDOException $erroKit) {
                 error_log("kit inicial nao entregue: " . $erroKit->getMessage());
             }

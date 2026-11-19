@@ -5,6 +5,8 @@ require_once __DIR__ . "/../app/controller/AutenticacaoController.php";         
 
 class Roteador
 {
+    use NovaInstancia;
+
     // array das rotas
     private array $rotas = [];
 
@@ -12,60 +14,29 @@ class Roteador
     private array $redirecionamentos = [];
     private array $rolesPermitidos = [];
 
-    // adiciona uma rota do tipo GET
-    public function get(
-        string $caminho, 
-        callable $funcao, 
-        array $rolesPermitidos, 
-        string $redirecionamento = "/monstroguelselnius/login"): void
+    // adiciona uma rota
+    public function NovaRota(array $Argumentos): void
     {
-        // adiciona ao array associativo
-        $this->rotas["GET"][$caminho] = $funcao;
-        $this->redirecionamentos["GET"][$caminho] = $redirecionamento;
-        $this->rolesPermitidos["GET"][$caminho] = $rolesPermitidos;
-    }
+        // resgata valores do array de argumentos
+        $tipoDeRota = $Argumentos["tipo"];
+        $rota = $Argumentos["rota"];
+        $funcaoDaRota = $Argumentos["funcao"];
+        $redirecionamentoDaRota = $Argumentos["redirecionamento"];
+        $rolesDaRota = $Argumentos["roles"];
 
-    // adiciona uma rota do tipo POST
-    public function post(
-        string $caminho, 
-        callable $funcao, 
-        array $rolesPermitidos,
-        string $redirecionamento = "/monstroguelselnius/login"): void
-    {
-        // adiciona ao array associativo
-        $this->rotas["POST"][$caminho] = $funcao;
-        $this->redirecionamentos["POST"][$caminho] = $redirecionamento;
-        $this->rolesPermitidos["POST"][$caminho] = $rolesPermitidos;
-    }
+        // implementa a rota em um array associativo
+        // definindo a função da rota
+        $this->rotas[$tipoDeRota][$rota] = $funcaoDaRota;
 
-    // adiciona uma rota do tipo DELETE
-    public function delete(
-        string $caminho, 
-        callable $funcao, 
-        array $rolesPermitidos,
-        string $redirecionamento = "/monstroguelselnius/login"): void
-    {
-        // adiciona ao array associativo
-        $this->rotas["DELETE"][$caminho] = $funcao;
-        $this->redirecionamentos["DELETE"][$caminho] = $redirecionamento;
-        $this->rolesPermitidos["DELETE"][$caminho] = $rolesPermitidos;
-    }
+        // cargos permitidos para acessar a rota
+        $this->rolesPermitidos[$tipoDeRota][$rota] = $rolesDaRota;
 
-    // adiciona uma rota do tipo PATCH
-    public function patch(
-        string $caminho, 
-        callable $funcao, 
-        array $rolesPermitidos,
-        string $redirecionamento = "/monstroguelselnius/login"): void
-    {
-        // adiciona ao array associativo
-        $this->rotas["PATCH"][$caminho] = $funcao;
-        $this->redirecionamentos["PATCH"][$caminho] = $redirecionamento;
-        $this->rolesPermitidos["PATCH"][$caminho] = $rolesPermitidos;
+        // definindo o redirecionamento caso a role não seja permitida
+        $this->redirecionamentos[$tipoDeRota][$rota] = $redirecionamentoDaRota;
     }
 
     // despachar para uma rota
-    public function despacharRota(): void
+    public function DespacharRota(): void
     {
         // metodo da requisição
         $metodo = $_SERVER["REQUEST_METHOD"];
@@ -100,8 +71,7 @@ class Roteador
         
         // rota não encontrada 404
         if ($rotaEncontrada === null) {
-            http_response_code(404);
-            view("404");
+            Roteador::View("404", 404);
             return;
         }
 
@@ -109,7 +79,12 @@ class Roteador
         $rolesPermitidos = $this->rolesPermitidos[$metodo][$rotaEncontrada] ?? [];
 
         // instancia de autenticacao
-        $autenticacao = new AutenticacaoController($rolesPermitidos, $caminho, $redirecionamento);
+        $autenticacao = AutenticacaoController::NovaInstancia([
+            "restricaoAcesso" => $rolesPermitidos,
+            "rota" => $caminho,
+            "redirecionar" => $redirecionamento
+        ]);
+        
         $retornoAutenticacao = json_decode($autenticacao->acessar(), true);
         
         if ($retornoAutenticacao["status"] != 200) {
@@ -121,19 +96,20 @@ class Roteador
         // executa a função
         call_user_func_array($funcaoDaRota, $parametros);
     }
-}
 
-// função para arquivos html
-function view(string $nome): void
-{    
-    // caminho do arquivo
-    $caminho = __DIR__ . "/../public/pages/" . $nome . ".html";
-
-    if(!file_exists($caminho)) {
-        http_response_code(404);
-        echo "View não foi encontrada: " . $caminho;
-        return;
+    // função para arquivos html
+    public static function View(string $nome, int $httpCode = 200): void
+    {    
+        // caminho do arquivo
+        $caminho = __DIR__ . "/../public/pages/" . $nome . ".html";
+        
+        if(!file_exists($caminho)) {
+            echo "View não foi encontrada: " . $caminho;
+            return;
+        }
+            
+        http_response_code($httpCode);
+        readfile($caminho);
     }
 
-    readfile($caminho);
 }

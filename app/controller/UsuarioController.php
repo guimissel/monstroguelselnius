@@ -60,7 +60,7 @@ class UsuarioController extends Controller
             );
 
             // cria uma instancia DAO para utilizar o banco de dados
-            $usuarioDAO = UsuarioDAO::novaInstancia();
+            $usuarioDAO = UsuarioDAO::NovaInstancia();
 
             // cria o usuario
             $usuario = $usuarioDAO->criar($usuario);
@@ -155,7 +155,7 @@ class UsuarioController extends Controller
             $nome = $_POST["usuario"];
             $senha = $_POST["senha"];
 
-            $usuarioDAO = UsuarioDAO::novaInstancia();
+            $usuarioDAO = UsuarioDAO::NovaInstancia();
             $usuario = $usuarioDAO->buscar(TipoBusca::NOME, $nome);
 
             // caso não exista o usuario
@@ -232,7 +232,7 @@ class UsuarioController extends Controller
             return;
         }
 
-        $usuarioDAO = UsuarioDAO::novaInstancia();
+        $usuarioDAO = UsuarioDAO::NovaInstancia();
         $meuUsuario = $usuarioDAO->buscar(TipoBusca::ID, $meuId);
         $role = $_SESSION["role"];
 
@@ -299,7 +299,7 @@ class UsuarioController extends Controller
 
         try
         {
-            $usuarioDAO = UsuarioDAO::novaInstancia();
+            $usuarioDAO = UsuarioDAO::NovaInstancia();
             $usuario = $usuarioDAO->buscar(TipoBusca::ID, (int) $meuId);
 
             if ($usuario === null || !password_verify($senhaAtual, $usuario->getSenhaHash()))
@@ -367,7 +367,7 @@ class UsuarioController extends Controller
             return;
         }
 
-        $usuarioDAO = UsuarioDAO::novaInstancia();
+        $usuarioDAO = UsuarioDAO::NovaInstancia();
         $usuarioExclusao = $usuarioDAO->buscar(TipoBusca::ID, $id);
 
         if (!isset($usuarioExclusao))

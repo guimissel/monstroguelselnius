@@ -20,7 +20,7 @@ class PerfilController extends Controller
 
         try
         {
-            $dao = PerfilDAO::novaInstancia();
+            $dao = PerfilDAO::NovaInstancia();
             $treinador = $dao->treinador((int) $meuId);
 
             if ($treinador === null)

@@ -13,33 +13,32 @@ $caminhoBase = "/monstroguelselnius";
 $caminhoApi = "/monstroguelselnius/";
 
 // instancia um roteador
-$roteador = new Roteador();
+$roteador = Roteador::NovaInstancia();
 
 // adicionar rota /login
-$roteador->get(
-    "$caminhoBase/login", 
-    function () {
-        view("login");
-    },
-    [Acesso::VISITANTE], 
-    "$caminhoBase/home"
-);
+$roteador->NovaRota([
+    "tipo" => "GET",
+    "rota" => "$caminhoBase/login",
+    "funcao" => function () { Roteador::View("login"); },
+    "roles" =>  [Acesso::VISITANTE],
+    "redirecionamento" => "$caminhoBase/home"
+]);
 
-$roteador->get(
-    "$caminhoBase/signup", 
-    function () {
-        view("signup");
-    },
-    [Acesso::VISITANTE],
-    "$caminhoBase/home"
-);
+$roteador->NovaRota([
+    "tipo" => "GET",
+    "rota" => "$caminhoBase/signup",
+    "funcao" => function () { Roteador::View("signup"); },
+    "roles" => [Acesso::VISITANTE],
+    "redirecionamento" => "$caminhoBase/home"
+]);
 
-$roteador->get(
-    "$caminhoBase/jogo",
-    function () use ($caminhoBase) {
+$roteador->NovaRota([
+    "tipo" => "GET",
+    "rota" => "$caminhoBase/jogo",
+    "funcao" => function () use ($caminhoBase) {
         // sem equipe nao tem batalha: manda escolher a equipe primeiro
         try {
-            $equipe = (EquipeDAO::novaInstancia())->listar((int) ($_SESSION["id"] ?? 0));
+            $equipe = (EquipeDAO::NovaInstancia())->listar((int) ($_SESSION["id"] ?? 0));
 
             if (count($equipe) !== 3) {
                 header("Location: $caminhoBase/equipe");
@@ -50,65 +49,61 @@ $roteador->get(
             error_log("rota jogo: " . $e->getMessage());
         }
 
-        view("jogo");
+        Roteador::View("jogo");
     },
-    [Acesso::USUARIO, Acesso::ADMIN],
-    "$caminhoBase/login"
+    "roles" => [Acesso::USUARIO, Acesso::ADMIN],
+    "redirecionamento" => "$caminhoBase/login"
+]);
+
+$roteador->NovaRota([
+    "tipo" => "GET",
+    "rota" => "$caminhoBase/inventario",
+    "funcao" => function () { Roteador::View("inventario"); },
+    "roles" => [Acesso::USUARIO, Acesso::ADMIN],
+    "redirecionamento" => "$caminhoBase/login"
+]);
+
+$roteador->NovaRota([
+    "tipo" => "GET",
+    "rota" => "$caminhoBase/equipe",
+    "funcao" => function () { Roteador::View("equipe"); },
+    "roles" => [Acesso::USUARIO, Acesso::ADMIN],
+    "redirecionamento" => "$caminhoBase/login"
+]);
+
+$roteador->NovaRota([
+    "tipo" => "GET",
+    "rota" => "$caminhoBase/perfil",
+    "funcao" => function () { Roteador::View("perfil"); },
+    "roles" => [Acesso::USUARIO, Acesso::ADMIN],
+    "redirecionamento" => "$caminhoBase/login"
+]);
+
+$roteador->NovaRota([
+    "tipo" => "GET",
+    "rota" => "$caminhoBase/loja",
+    "funcao" => function () { Roteador::View("loja"); },
+    "roles" => [Acesso::USUARIO, Acesso::ADMIN],
+    "redirecionamento" => "$caminhoBase/login"
+]);
+
+$roteador->NovaRota(
+    [
+        "tipo" => "GET",
+        "rota" => "$caminhoBase/home",
+        "funcao" => function () { Roteador::View("home"); },
+        "roles" =>  [Acesso::USUARIO, Acesso::ADMIN],
+        "redirecionamento" => "$caminhoBase/login"
+    ]
 );
 
-$roteador->get(
-    "$caminhoBase/inventario",
-    function () {
-        view("inventario");
-    },
-    [Acesso::USUARIO, Acesso::ADMIN],
-    "$caminhoBase/login"
-);
-
-$roteador->get(
-    "$caminhoBase/equipe",
-    function () {
-        view("equipe");
-    },
-    [Acesso::USUARIO, Acesso::ADMIN],
-    "$caminhoBase/login"
-);
-
-$roteador->get(
-    "$caminhoBase/perfil",
-    function () {
-        view("perfil");
-    },
-    [Acesso::USUARIO, Acesso::ADMIN],
-    "$caminhoBase/login"
-);
-
-$roteador->get(
-    "$caminhoBase/loja",
-    function () {
-        view("loja");
-    },
-    [Acesso::USUARIO, Acesso::ADMIN],
-    "$caminhoBase/login"
-);
-
-$roteador->get(
-    "$caminhoBase/home",
-    function () {
-        view("home");
-    },
-    [Acesso::USUARIO, Acesso::ADMIN],
-    "$caminhoBase/login"
-);
-
-$roteador->get(
-    "$caminhoBase/",
-    function () use ($caminhoBase) {
-        header("location: " . $caminhoBase . "/home");
-    },
-    [Acesso::USUARIO, Acesso::ADMIN],
-    "$caminhoBase/login"
-);
+$roteador->NovaRota([
+    "tipo" => "GET",
+    "rota" => "$caminhoBase/",
+    "funcao" => function () use ($caminhoBase) { header("location: " . $caminhoBase . "/home"); },
+    "roles" => [Acesso::USUARIO, Acesso::ADMIN],
+    "redirecionamento" => "$caminhoBase/login"
+]);
 
 // criar rotas api que são livres
 // numero de tipos de requisição (index)
@@ -121,13 +116,6 @@ for ($i = 0; $i < $contagemTiposRequisicao; $i++)
     // resgata a chave da requisição
     $tipoRequisicao = array_keys(ROTAS_API_NOAUTH)[$i];
 
-    // verifica se o metodo existe antes de continuar
-    if (!method_exists($roteador, $tipoRequisicao)) 
-    {
-        // pula para o próximo tipo de requisição
-        continue;
-    }
-
     // numero de rotas da requisição
     $contagemRotas = count(ROTAS_API_NOAUTH[$tipoRequisicao]);
 
@@ -138,11 +126,13 @@ for ($i = 0; $i < $contagemTiposRequisicao; $i++)
         $rota = array_keys(ROTAS_API_NOAUTH[$tipoRequisicao])[$j];
 
         // cria uma nova rota
-        $roteador->$tipoRequisicao(
-            $caminhoApi . $rota, 
-            ROTAS_API_NOAUTH[$tipoRequisicao][$rota], 
-            [Acesso::VISITANTE, Acesso::USUARIO, Acesso::ADMIN]
-        );
+        $roteador->NovaRota([
+            "tipo" => $tipoRequisicao,
+            "rota" => $caminhoApi . $rota,
+            "funcao" => ROTAS_API_NOAUTH[$tipoRequisicao][$rota],
+            "roles" => [Acesso::VISITANTE, Acesso::USUARIO, Acesso::ADMIN],
+            "redirecionamento" => "$caminhoBase/login"
+        ]);
     }
 }
 
@@ -156,13 +146,6 @@ for ($i = 0; $i < $contagemTiposRequisicao; $i++)
     // resgata a chave da requisição
     $tipoRequisicao = array_keys(ROTAS_API_NEEDAUTH)[$i];
 
-    // verifica se o metodo existe antes de continuar
-    if (!method_exists($roteador, $tipoRequisicao)) 
-    {
-        // pula para o próximo tipo de requisição
-        continue;
-    }
-
     // numero de rotas da requisição
     $contagemRotas = count(ROTAS_API_NEEDAUTH[$tipoRequisicao]);
 
@@ -173,13 +156,15 @@ for ($i = 0; $i < $contagemTiposRequisicao; $i++)
         $rota = array_keys(ROTAS_API_NEEDAUTH[$tipoRequisicao])[$j];
 
         // cria uma nova rota
-        $roteador->$tipoRequisicao(
-            $caminhoApi . $rota, 
-            ROTAS_API_NEEDAUTH[$tipoRequisicao][$rota], 
-            [Acesso::USUARIO, Acesso::ADMIN]
-        );
+        $roteador->NovaRota([
+            "tipo" => $tipoRequisicao,
+            "rota" => $caminhoApi . $rota,
+            "funcao" => ROTAS_API_NEEDAUTH[$tipoRequisicao][$rota],
+            "roles" => [Acesso::USUARIO, Acesso::ADMIN],
+            "redirecionamento" => "$caminhoBase/login"
+        ]);
     }
 }
 
 // despachar usuario para a rota
-$roteador->despacharRota();
+$roteador->DespacharRota();
