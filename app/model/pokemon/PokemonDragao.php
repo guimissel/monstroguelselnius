@@ -5,9 +5,4 @@
 class PokemonDragao extends Pokemon
 {
     use TipoDragao;
-
-    public function tipos(): array
-    {
-        return ['dragon'];
-    }
 }

@@ -6,7 +6,6 @@
 //   ASSOCIACAO: o treinador conhece os pokemons da colecao dele (e eles nao sabem dele).
 class Treinador
 {
-    // usar traits
     use Id;
     use Nome;
 
@@ -16,7 +15,6 @@ class Treinador
 
     public function __construct(int $id, string $nome, int $pokedolares)
     {
-        // usa metodos dos traits
         $this->setId($id);
         $this->setNome($nome);
 
@@ -30,6 +28,7 @@ class Treinador
 
     public function adicionarNaColecao(Pokemon $pokemon): void
     {
+        //  Armazena $pokemon na posição $this->colecao[$pokemon->getId()].
         $this->colecao[$pokemon->getId()] = $pokemon;
     }
 

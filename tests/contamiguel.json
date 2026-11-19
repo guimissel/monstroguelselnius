@@ -1,0 +1,1174 @@
+{
+    "formato": "monstroguelselnius-progresso",
+    "versao": 1,
+    "exportadoEm": "2026-11-18T21:46:19+01:00",
+    "treinador": {
+        "id": 1,
+        "nome": "miguel",
+        "pokedolares": 100,
+        "equipe": {
+            "pokemons": [
+                {
+                    "id": 3,
+                    "nome": "Venusaur",
+                    "tipos": [
+                        "grass",
+                        "poison"
+                    ],
+                    "stats": {
+                        "hp": 80,
+                        "ataque": 82,
+                        "defesa": 83,
+                        "ataqueEspecial": 100,
+                        "defesaEspecial": 100,
+                        "velocidade": 80
+                    },
+                    "poder": 525,
+                    "fraquezas": [
+                        "flying",
+                        "fire",
+                        "psychic",
+                        "ice"
+                    ],
+                    "resistencias": [
+                        "fighting",
+                        "water",
+                        "grass",
+                        "electric",
+                        "fairy"
+                    ],
+                    "imunidades": [],
+                    "evolucao": null
+                },
+                {
+                    "id": 146,
+                    "nome": "Moltres",
+                    "tipos": [
+                        "fire",
+                        "flying"
+                    ],
+                    "stats": {
+                        "hp": 90,
+                        "ataque": 100,
+                        "defesa": 90,
+                        "ataqueEspecial": 125,
+                        "defesaEspecial": 85,
+                        "velocidade": 90
+                    },
+                    "poder": 580,
+                    "fraquezas": [
+                        "rock",
+                        "water",
+                        "electric"
+                    ],
+                    "resistencias": [
+                        "fighting",
+                        "bug",
+                        "steel",
+                        "fire",
+                        "grass",
+                        "fairy"
+                    ],
+                    "imunidades": [
+                        "ground"
+                    ],
+                    "evolucao": null
+                },
+                {
+                    "id": 150,
+                    "nome": "Mewtwo",
+                    "tipos": [
+                        "psychic"
+                    ],
+                    "stats": {
+                        "hp": 106,
+                        "ataque": 110,
+                        "defesa": 90,
+                        "ataqueEspecial": 154,
+                        "defesaEspecial": 90,
+                        "velocidade": 130
+                    },
+                    "poder": 680,
+                    "fraquezas": [
+                        "bug",
+                        "ghost",
+                        "dark"
+                    ],
+                    "resistencias": [
+                        "fighting",
+                        "psychic"
+                    ],
+                    "imunidades": [],
+                    "evolucao": null
+                }
+            ],
+            "poderTotal": 1785,
+            "maisRapido": "Mewtwo",
+            "fraquezasEmComum": []
+        },
+        "colecao": 150
+    },
+    "placar": {
+        "batalhas": 14,
+        "vitorias": 12,
+        "derrotas": 0,
+        "fugas": 2,
+        "totalGanho": 1175
+    },
+    "colecao": [
+        {
+            "id": 3,
+            "nome": "Venusaur",
+            "naEquipe": true,
+            "conquistadoEm": "2026-11-17 17:30:32"
+        },
+        {
+            "id": 146,
+            "nome": "Moltres",
+            "naEquipe": true,
+            "conquistadoEm": "2026-11-17 19:56:20"
+        },
+        {
+            "id": 150,
+            "nome": "Mewtwo",
+            "naEquipe": true,
+            "conquistadoEm": "2026-11-18 16:04:27"
+        },
+        {
+            "id": 1,
+            "nome": "Bulbasaur",
+            "naEquipe": false,
+            "conquistadoEm": "2026-11-17 19:53:45"
+        },
+        {
+            "id": 2,
+            "nome": "Ivysaur",
+            "naEquipe": false,
+            "conquistadoEm": "2026-11-18 15:25:46"
+        },
+        {
+            "id": 4,
+            "nome": "Charmander",
+            "naEquipe": false,
+            "conquistadoEm": "2026-11-17 17:30:32"
+        },
+        {
+            "id": 5,
+            "nome": "Charmeleon",
+            "naEquipe": false,
+            "conquistadoEm": "2026-11-17 19:53:16"
+        },
+        {
+            "id": 6,
+            "nome": "Charizard",
+            "naEquipe": false,
+            "conquistadoEm": "2026-11-17 18:48:25"
+        },
+        {
+            "id": 7,
+            "nome": "Squirtle",
+            "naEquipe": false,
+            "conquistadoEm": "2026-11-17 19:53:26"
+        },
+        {
+            "id": 8,
+            "nome": "Wartortle",
+            "naEquipe": false,
+            "conquistadoEm": "2026-11-17 17:30:32"
+        },
+        {
+            "id": 9,
+            "nome": "Blastoise",
+            "naEquipe": false,
+            "conquistadoEm": "2026-11-18 14:46:04"
+        },
+        {
+            "id": 10,
+            "nome": "caterpie",
+            "naEquipe": false,
+            "conquistadoEm": "2026-11-18 15:41:26"
+        },
+        {
+            "id": 11,
+            "nome": "metapod",
+            "naEquipe": false,
+            "conquistadoEm": "2026-11-18 15:44:18"
+        },
+        {
+            "id": 12,
+            "nome": "butterfree",
+            "naEquipe": false,
+            "conquistadoEm": "2026-11-18 15:39:20"
+        },
+        {
+            "id": 13,
+            "nome": "weedle",
+            "naEquipe": false,
+            "conquistadoEm": "2026-11-18 15:48:18"
+        },
+        {
+            "id": 14,
+            "nome": "kakuna",
+            "naEquipe": false,
+            "conquistadoEm": "2026-11-18 15:38:12"
+        },
+        {
+            "id": 15,
+            "nome": "beedrill",
+            "naEquipe": false,
+            "conquistadoEm": "2026-11-18 15:24:21"
+        },
+        {
+            "id": 16,
+            "nome": "Pidgey",
+            "naEquipe": false,
+            "conquistadoEm": "2026-11-17 20:01:28"
+        },
+        {
+            "id": 17,
+            "nome": "Pidgeotto",
+            "naEquipe": false,
+            "conquistadoEm": "2026-11-18 14:45:54"
+        },
+        {
+            "id": 18,
+            "nome": "Pidgeot",
+            "naEquipe": false,
+            "conquistadoEm": "2026-11-18 15:38:00"
+        },
+        {
+            "id": 19,
+            "nome": "Rattata",
+            "naEquipe": false,
+            "conquistadoEm": "2026-11-17 20:11:43"
+        },
+        {
+            "id": 20,
+            "nome": "Raticate",
+            "naEquipe": false,
+            "conquistadoEm": "2026-11-17 19:57:20"
+        },
+        {
+            "id": 21,
+            "nome": "spearow",
+            "naEquipe": false,
+            "conquistadoEm": "2026-11-18 15:47:33"
+        },
+        {
+            "id": 22,
+            "nome": "fearow",
+            "naEquipe": false,
+            "conquistadoEm": "2026-11-18 15:40:29"
+        },
+        {
+            "id": 23,
+            "nome": "Ekans",
+            "naEquipe": false,
+            "conquistadoEm": "2026-11-17 20:00:11"
+        },
+        {
+            "id": 24,
+            "nome": "Arbok",
+            "naEquipe": false,
+            "conquistadoEm": "2026-11-17 19:54:45"
+        },
+        {
+            "id": 25,
+            "nome": "Pikachu",
+            "naEquipe": false,
+            "conquistadoEm": "2026-11-17 20:12:54"
+        },
+        {
+            "id": 26,
+            "nome": "Raichu",
+            "naEquipe": false,
+            "conquistadoEm": "2026-11-17 19:50:32"
+        },
+        {
+            "id": 27,
+            "nome": "Sandshrew",
+            "naEquipe": false,
+            "conquistadoEm": "2026-11-17 18:42:45"
+        },
+        {
+            "id": 28,
+            "nome": "Sandslash",
+            "naEquipe": false,
+            "conquistadoEm": "2026-11-18 15:47:44"
+        },
+        {
+            "id": 29,
+            "nome": "nidoran-f",
+            "naEquipe": false,
+            "conquistadoEm": "2026-11-18 15:50:24"
+        },
+        {
+            "id": 30,
+            "nome": "nidorina",
+            "naEquipe": false,
+            "conquistadoEm": "2026-11-18 15:41:03"
+        },
+        {
+            "id": 31,
+            "nome": "nidoqueen",
+            "naEquipe": false,
+            "conquistadoEm": "2026-11-18 15:44:29"
+        },
+        {
+            "id": 32,
+            "nome": "nidoran-m",
+            "naEquipe": false,
+            "conquistadoEm": "2026-11-18 15:24:10"
+        },
+        {
+            "id": 33,
+            "nome": "nidorino",
+            "naEquipe": false,
+            "conquistadoEm": "2026-11-18 15:47:56"
+        },
+        {
+            "id": 34,
+            "nome": "nidoking",
+            "naEquipe": false,
+            "conquistadoEm": "2026-11-18 15:25:09"
+        },
+        {
+            "id": 35,
+            "nome": "Clefairy",
+            "naEquipe": false,
+            "conquistadoEm": "2026-11-18 15:34:20"
+        },
+        {
+            "id": 36,
+            "nome": "Clefable",
+            "naEquipe": false,
+            "conquistadoEm": "2026-11-18 15:50:13"
+        },
+        {
+            "id": 37,
+            "nome": "Vulpix",
+            "naEquipe": false,
+            "conquistadoEm": "2026-11-17 18:51:10"
+        },
+        {
+            "id": 38,
+            "nome": "Ninetales",
+            "naEquipe": false,
+            "conquistadoEm": "2026-11-18 15:38:23"
+        },
+        {
+            "id": 39,
+            "nome": "Jigglypuff",
+            "naEquipe": false,
+            "conquistadoEm": "2026-11-17 18:45:17"
+        },
+        {
+            "id": 40,
+            "nome": "Wigglytuff",
+            "naEquipe": false,
+            "conquistadoEm": "2026-11-18 14:22:15"
+        },
+        {
+            "id": 41,
+            "nome": "zubat",
+            "naEquipe": false,
+            "conquistadoEm": "2026-11-18 15:34:31"
+        },
+        {
+            "id": 42,
+            "nome": "golbat",
+            "naEquipe": false,
+            "conquistadoEm": "2026-11-18 15:31:10"
+        },
+        {
+            "id": 43,
+            "nome": "Oddish",
+            "naEquipe": false,
+            "conquistadoEm": "2026-11-17 18:45:17"
+        },
+        {
+            "id": 44,
+            "nome": "Gloom",
+            "naEquipe": false,
+            "conquistadoEm": "2026-11-18 14:22:53"
+        },
+        {
+            "id": 45,
+            "nome": "Vileplume",
+            "naEquipe": false,
+            "conquistadoEm": "2026-11-18 15:47:10"
+        },
+        {
+            "id": 46,
+            "nome": "paras",
+            "naEquipe": false,
+            "conquistadoEm": "2026-11-18 15:43:09"
+        },
+        {
+            "id": 47,
+            "nome": "parasect",
+            "naEquipe": false,
+            "conquistadoEm": "2026-11-18 15:42:12"
+        },
+        {
+            "id": 48,
+            "nome": "venonat",
+            "naEquipe": false,
+            "conquistadoEm": "2026-11-18 15:39:09"
+        },
+        {
+            "id": 49,
+            "nome": "venomoth",
+            "naEquipe": false,
+            "conquistadoEm": "2026-11-18 15:48:30"
+        },
+        {
+            "id": 50,
+            "nome": "diglett",
+            "naEquipe": false,
+            "conquistadoEm": "2026-11-18 15:42:01"
+        },
+        {
+            "id": 51,
+            "nome": "dugtrio",
+            "naEquipe": false,
+            "conquistadoEm": "2026-11-18 15:46:47"
+        },
+        {
+            "id": 52,
+            "nome": "Meowth",
+            "naEquipe": false,
+            "conquistadoEm": "2026-11-17 18:39:15"
+        },
+        {
+            "id": 53,
+            "nome": "Persian",
+            "naEquipe": false,
+            "conquistadoEm": "2026-11-18 14:22:24"
+        },
+        {
+            "id": 54,
+            "nome": "Psyduck",
+            "naEquipe": false,
+            "conquistadoEm": "2026-11-17 19:57:30"
+        },
+        {
+            "id": 55,
+            "nome": "Golduck",
+            "naEquipe": false,
+            "conquistadoEm": "2026-11-18 15:46:35"
+        },
+        {
+            "id": 56,
+            "nome": "Mankey",
+            "naEquipe": false,
+            "conquistadoEm": "2026-11-17 18:46:11"
+        },
+        {
+            "id": 57,
+            "nome": "Primeape",
+            "naEquipe": false,
+            "conquistadoEm": "2026-11-18 15:49:38"
+        },
+        {
+            "id": 58,
+            "nome": "Growlithe",
+            "naEquipe": false,
+            "conquistadoEm": "2026-11-18 15:24:40"
+        },
+        {
+            "id": 59,
+            "nome": "Arcanine",
+            "naEquipe": false,
+            "conquistadoEm": "2026-11-17 20:01:09"
+        },
+        {
+            "id": 60,
+            "nome": "Poliwag",
+            "naEquipe": false,
+            "conquistadoEm": "2026-11-18 15:38:46"
+        },
+        {
+            "id": 61,
+            "nome": "Poliwhirl",
+            "naEquipe": false,
+            "conquistadoEm": "2026-11-18 15:40:06"
+        },
+        {
+            "id": 62,
+            "nome": "Poliwrath",
+            "naEquipe": false,
+            "conquistadoEm": "2026-11-18 15:12:44"
+        },
+        {
+            "id": 63,
+            "nome": "Abra",
+            "naEquipe": false,
+            "conquistadoEm": "2026-11-18 14:50:30"
+        },
+        {
+            "id": 64,
+            "nome": "Kadabra",
+            "naEquipe": false,
+            "conquistadoEm": "2026-11-17 19:55:07"
+        },
+        {
+            "id": 65,
+            "nome": "Alakazam",
+            "naEquipe": false,
+            "conquistadoEm": "2026-11-18 15:44:41"
+        },
+        {
+            "id": 66,
+            "nome": "Machop",
+            "naEquipe": false,
+            "conquistadoEm": "2026-11-17 18:51:10"
+        },
+        {
+            "id": 67,
+            "nome": "Machoke",
+            "naEquipe": false,
+            "conquistadoEm": "2026-11-18 15:45:50"
+        },
+        {
+            "id": 68,
+            "nome": "Machamp",
+            "naEquipe": false,
+            "conquistadoEm": "2026-11-18 14:49:50"
+        },
+        {
+            "id": 69,
+            "nome": "Bellsprout",
+            "naEquipe": false,
+            "conquistadoEm": "2026-11-17 18:47:16"
+        },
+        {
+            "id": 70,
+            "nome": "Weepinbell",
+            "naEquipe": false,
+            "conquistadoEm": "2026-11-17 19:49:23"
+        },
+        {
+            "id": 71,
+            "nome": "Victreebel",
+            "naEquipe": false,
+            "conquistadoEm": "2026-11-18 15:39:32"
+        },
+        {
+            "id": 72,
+            "nome": "Tentacool",
+            "naEquipe": false,
+            "conquistadoEm": "2026-11-17 18:39:15"
+        },
+        {
+            "id": 73,
+            "nome": "Tentacruel",
+            "naEquipe": false,
+            "conquistadoEm": "2026-11-17 19:54:55"
+        },
+        {
+            "id": 74,
+            "nome": "Geodude",
+            "naEquipe": false,
+            "conquistadoEm": "2026-11-17 18:39:15"
+        },
+        {
+            "id": 75,
+            "nome": "Graveler",
+            "naEquipe": false,
+            "conquistadoEm": "2026-11-17 20:00:59"
+        },
+        {
+            "id": 76,
+            "nome": "Golem",
+            "naEquipe": false,
+            "conquistadoEm": "2026-11-18 15:24:30"
+        },
+        {
+            "id": 77,
+            "nome": "Ponyta",
+            "naEquipe": false,
+            "conquistadoEm": "2026-11-17 18:45:17"
+        },
+        {
+            "id": 78,
+            "nome": "Rapidash",
+            "naEquipe": false,
+            "conquistadoEm": "2026-11-17 19:57:07"
+        },
+        {
+            "id": 79,
+            "nome": "Slowpoke",
+            "naEquipe": false,
+            "conquistadoEm": "2026-11-18 14:23:04"
+        },
+        {
+            "id": 80,
+            "nome": "Slowbro",
+            "naEquipe": false,
+            "conquistadoEm": "2026-11-17 19:58:07"
+        },
+        {
+            "id": 81,
+            "nome": "Magnemite",
+            "naEquipe": false,
+            "conquistadoEm": "2026-11-17 20:12:54"
+        },
+        {
+            "id": 82,
+            "nome": "Magneton",
+            "naEquipe": false,
+            "conquistadoEm": "2026-11-17 19:57:39"
+        },
+        {
+            "id": 83,
+            "nome": "farfetchd",
+            "naEquipe": false,
+            "conquistadoEm": "2026-11-18 15:33:57"
+        },
+        {
+            "id": 84,
+            "nome": "doduo",
+            "naEquipe": false,
+            "conquistadoEm": "2026-11-18 15:42:35"
+        },
+        {
+            "id": 85,
+            "nome": "dodrio",
+            "naEquipe": false,
+            "conquistadoEm": "2026-11-18 15:38:58"
+        },
+        {
+            "id": 86,
+            "nome": "seel",
+            "naEquipe": false,
+            "conquistadoEm": "2026-11-18 15:44:52"
+        },
+        {
+            "id": 87,
+            "nome": "dewgong",
+            "naEquipe": false,
+            "conquistadoEm": "2026-11-18 15:25:19"
+        },
+        {
+            "id": 88,
+            "nome": "grimer",
+            "naEquipe": false,
+            "conquistadoEm": "2026-11-18 15:49:16"
+        },
+        {
+            "id": 89,
+            "nome": "muk",
+            "naEquipe": false,
+            "conquistadoEm": "2026-11-18 15:45:04"
+        },
+        {
+            "id": 90,
+            "nome": "shellder",
+            "naEquipe": false,
+            "conquistadoEm": "2026-11-18 15:43:21"
+        },
+        {
+            "id": 91,
+            "nome": "cloyster",
+            "naEquipe": false,
+            "conquistadoEm": "2026-11-18 15:24:59"
+        },
+        {
+            "id": 92,
+            "nome": "Gastly",
+            "naEquipe": false,
+            "conquistadoEm": "2026-11-18 15:35:17"
+        },
+        {
+            "id": 93,
+            "nome": "Haunter",
+            "naEquipe": false,
+            "conquistadoEm": "2026-11-18 14:50:51"
+        },
+        {
+            "id": 94,
+            "nome": "Gengar",
+            "naEquipe": false,
+            "conquistadoEm": "2026-11-17 19:55:18"
+        },
+        {
+            "id": 95,
+            "nome": "onix",
+            "naEquipe": false,
+            "conquistadoEm": "2026-11-18 15:50:47"
+        },
+        {
+            "id": 96,
+            "nome": "drowzee",
+            "naEquipe": false,
+            "conquistadoEm": "2026-11-18 15:40:40"
+        },
+        {
+            "id": 97,
+            "nome": "hypno",
+            "naEquipe": false,
+            "conquistadoEm": "2026-11-18 15:47:21"
+        },
+        {
+            "id": 98,
+            "nome": "krabby",
+            "naEquipe": false,
+            "conquistadoEm": "2026-11-18 15:50:36"
+        },
+        {
+            "id": 99,
+            "nome": "kingler",
+            "naEquipe": false,
+            "conquistadoEm": "2026-11-18 15:39:55"
+        },
+        {
+            "id": 100,
+            "nome": "voltorb",
+            "naEquipe": false,
+            "conquistadoEm": "2026-11-18 15:45:27"
+        },
+        {
+            "id": 101,
+            "nome": "electrode",
+            "naEquipe": false,
+            "conquistadoEm": "2026-11-18 15:39:43"
+        },
+        {
+            "id": 102,
+            "nome": "exeggcute",
+            "naEquipe": false,
+            "conquistadoEm": "2026-11-18 15:34:54"
+        },
+        {
+            "id": 103,
+            "nome": "exeggutor",
+            "naEquipe": false,
+            "conquistadoEm": "2026-11-18 15:45:15"
+        },
+        {
+            "id": 104,
+            "nome": "Cubone",
+            "naEquipe": false,
+            "conquistadoEm": "2026-11-17 20:00:47"
+        },
+        {
+            "id": 105,
+            "nome": "Marowak",
+            "naEquipe": false,
+            "conquistadoEm": "2026-11-18 14:50:41"
+        },
+        {
+            "id": 106,
+            "nome": "hitmonlee",
+            "naEquipe": false,
+            "conquistadoEm": "2026-11-18 15:44:07"
+        },
+        {
+            "id": 107,
+            "nome": "hitmonchan",
+            "naEquipe": false,
+            "conquistadoEm": "2026-11-18 15:42:47"
+        },
+        {
+            "id": 108,
+            "nome": "lickitung",
+            "naEquipe": false,
+            "conquistadoEm": "2026-11-18 15:43:44"
+        },
+        {
+            "id": 109,
+            "nome": "koffing",
+            "naEquipe": false,
+            "conquistadoEm": "2026-11-18 15:50:59"
+        },
+        {
+            "id": 110,
+            "nome": "weezing",
+            "naEquipe": false,
+            "conquistadoEm": "2026-11-18 15:34:09"
+        },
+        {
+            "id": 111,
+            "nome": "rhyhorn",
+            "naEquipe": false,
+            "conquistadoEm": "2026-11-18 15:49:27"
+        },
+        {
+            "id": 112,
+            "nome": "rhydon",
+            "naEquipe": false,
+            "conquistadoEm": "2026-11-18 15:48:53"
+        },
+        {
+            "id": 113,
+            "nome": "chansey",
+            "naEquipe": false,
+            "conquistadoEm": "2026-11-18 15:46:01"
+        },
+        {
+            "id": 114,
+            "nome": "tangela",
+            "naEquipe": false,
+            "conquistadoEm": "2026-11-18 15:41:15"
+        },
+        {
+            "id": 115,
+            "nome": "kangaskhan",
+            "naEquipe": false,
+            "conquistadoEm": "2026-11-18 15:45:38"
+        },
+        {
+            "id": 116,
+            "nome": "Horsea",
+            "naEquipe": false,
+            "conquistadoEm": "2026-11-17 18:47:16"
+        },
+        {
+            "id": 117,
+            "nome": "Seadra",
+            "naEquipe": false,
+            "conquistadoEm": "2026-11-18 15:42:58"
+        },
+        {
+            "id": 118,
+            "nome": "goldeen",
+            "naEquipe": false,
+            "conquistadoEm": "2026-11-18 15:43:55"
+        },
+        {
+            "id": 119,
+            "nome": "seaking",
+            "naEquipe": false,
+            "conquistadoEm": "2026-11-18 15:40:52"
+        },
+        {
+            "id": 120,
+            "nome": "staryu",
+            "naEquipe": false,
+            "conquistadoEm": "2026-11-18 15:41:49"
+        },
+        {
+            "id": 121,
+            "nome": "starmie",
+            "naEquipe": false,
+            "conquistadoEm": "2026-11-18 15:51:10"
+        },
+        {
+            "id": 122,
+            "nome": "mr-mime",
+            "naEquipe": false,
+            "conquistadoEm": "2026-11-18 15:48:07"
+        },
+        {
+            "id": 123,
+            "nome": "scyther",
+            "naEquipe": false,
+            "conquistadoEm": "2026-11-18 15:40:18"
+        },
+        {
+            "id": 124,
+            "nome": "jynx",
+            "naEquipe": false,
+            "conquistadoEm": "2026-11-18 15:49:50"
+        },
+        {
+            "id": 125,
+            "nome": "electabuzz",
+            "naEquipe": false,
+            "conquistadoEm": "2026-11-18 15:25:28"
+        },
+        {
+            "id": 126,
+            "nome": "magmar",
+            "naEquipe": false,
+            "conquistadoEm": "2026-11-18 15:50:01"
+        },
+        {
+            "id": 127,
+            "nome": "pinsir",
+            "naEquipe": false,
+            "conquistadoEm": "2026-11-18 15:24:50"
+        },
+        {
+            "id": 128,
+            "nome": "tauros",
+            "naEquipe": false,
+            "conquistadoEm": "2026-11-18 15:34:43"
+        },
+        {
+            "id": 129,
+            "nome": "magikarp",
+            "naEquipe": false,
+            "conquistadoEm": "2026-11-18 15:49:04"
+        },
+        {
+            "id": 130,
+            "nome": "gyarados",
+            "naEquipe": false,
+            "conquistadoEm": "2026-11-18 15:35:06"
+        },
+        {
+            "id": 131,
+            "nome": "lapras",
+            "naEquipe": false,
+            "conquistadoEm": "2026-11-18 15:46:58"
+        },
+        {
+            "id": 132,
+            "nome": "ditto",
+            "naEquipe": false,
+            "conquistadoEm": "2026-11-18 15:41:38"
+        },
+        {
+            "id": 133,
+            "nome": "Eevee",
+            "naEquipe": false,
+            "conquistadoEm": "2026-11-17 18:46:11"
+        },
+        {
+            "id": 134,
+            "nome": "Vaporeon",
+            "naEquipe": false,
+            "conquistadoEm": "2026-11-18 15:33:13"
+        },
+        {
+            "id": 135,
+            "nome": "jolteon",
+            "naEquipe": false,
+            "conquistadoEm": "2026-11-18 15:46:12"
+        },
+        {
+            "id": 136,
+            "nome": "flareon",
+            "naEquipe": false,
+            "conquistadoEm": "2026-11-18 15:46:24"
+        },
+        {
+            "id": 137,
+            "nome": "porygon",
+            "naEquipe": false,
+            "conquistadoEm": "2026-11-18 15:51:22"
+        },
+        {
+            "id": 138,
+            "nome": "omanyte",
+            "naEquipe": false,
+            "conquistadoEm": "2026-11-18 15:25:37"
+        },
+        {
+            "id": 139,
+            "nome": "omastar",
+            "naEquipe": false,
+            "conquistadoEm": "2026-11-18 15:38:35"
+        },
+        {
+            "id": 140,
+            "nome": "kabuto",
+            "naEquipe": false,
+            "conquistadoEm": "2026-11-18 15:48:41"
+        },
+        {
+            "id": 141,
+            "nome": "kabutops",
+            "naEquipe": false,
+            "conquistadoEm": "2026-11-18 15:42:24"
+        },
+        {
+            "id": 142,
+            "nome": "aerodactyl",
+            "naEquipe": false,
+            "conquistadoEm": "2026-11-18 15:33:00"
+        },
+        {
+            "id": 143,
+            "nome": "snorlax",
+            "naEquipe": false,
+            "conquistadoEm": "2026-11-18 15:43:32"
+        },
+        {
+            "id": 145,
+            "nome": "Zapdos",
+            "naEquipe": false,
+            "conquistadoEm": "2026-11-18 14:39:57"
+        },
+        {
+            "id": 147,
+            "nome": "Dratini",
+            "naEquipe": false,
+            "conquistadoEm": "2026-11-17 18:42:45"
+        },
+        {
+            "id": 148,
+            "nome": "Dragonair",
+            "naEquipe": false,
+            "conquistadoEm": "2026-11-17 19:49:50"
+        },
+        {
+            "id": 149,
+            "nome": "Dragonite",
+            "naEquipe": false,
+            "conquistadoEm": "2026-11-17 19:54:16"
+        },
+        {
+            "id": 151,
+            "nome": "Mew",
+            "naEquipe": false,
+            "conquistadoEm": "2026-11-17 20:01:19"
+        }
+    ],
+    "itens": [
+        {
+            "chave": "potion",
+            "nome": "Poção",
+            "quantidade": 3
+        },
+        {
+            "chave": "pokebola",
+            "nome": "Pokébola Surpresa",
+            "quantidade": 163
+        }
+    ],
+    "historico": [
+        {
+            "id": 23,
+            "adversario": "Robô",
+            "status": "vitoria",
+            "recompensa": 100,
+            "iniciadaEm": "2026-11-18 16:08:33",
+            "finalizadaEm": "2026-11-18 16:09:40",
+            "duracao": 67,
+            "chefe": false
+        },
+        {
+            "id": 22,
+            "adversario": "Robô",
+            "status": "vitoria",
+            "recompensa": 100,
+            "iniciadaEm": "2026-11-17 20:42:25",
+            "finalizadaEm": "2026-11-17 20:44:02",
+            "duracao": 97,
+            "chefe": false
+        },
+        {
+            "id": 21,
+            "adversario": "Robô",
+            "status": "vitoria",
+            "recompensa": 100,
+            "iniciadaEm": "2026-11-17 20:11:51",
+            "finalizadaEm": "2026-11-17 20:12:54",
+            "duracao": 63,
+            "chefe": false
+        },
+        {
+            "id": 20,
+            "adversario": "Robô",
+            "status": "vitoria",
+            "recompensa": 100,
+            "iniciadaEm": "2026-11-17 20:10:32",
+            "finalizadaEm": "2026-11-17 20:11:43",
+            "duracao": 71,
+            "chefe": false
+        },
+        {
+            "id": 19,
+            "adversario": "Robô",
+            "status": "vitoria",
+            "recompensa": 100,
+            "iniciadaEm": "2026-11-17 19:58:31",
+            "finalizadaEm": "2026-11-17 20:00:11",
+            "duracao": 100,
+            "chefe": false
+        },
+        {
+            "id": 18,
+            "adversario": "Robô",
+            "status": "vitoria",
+            "recompensa": 100,
+            "iniciadaEm": "2026-11-17 18:50:00",
+            "finalizadaEm": "2026-11-17 18:51:10",
+            "duracao": 70,
+            "chefe": false
+        },
+        {
+            "id": 17,
+            "adversario": "Robô",
+            "status": "vitoria",
+            "recompensa": 100,
+            "iniciadaEm": "2026-11-17 18:47:22",
+            "finalizadaEm": "2026-11-17 18:48:25",
+            "duracao": 63,
+            "chefe": true
+        },
+        {
+            "id": 16,
+            "adversario": "Robô",
+            "status": "vitoria",
+            "recompensa": 100,
+            "iniciadaEm": "2026-11-17 18:46:18",
+            "finalizadaEm": "2026-11-17 18:47:16",
+            "duracao": 58,
+            "chefe": false
+        },
+        {
+            "id": 15,
+            "adversario": "Robô",
+            "status": "vitoria",
+            "recompensa": 100,
+            "iniciadaEm": "2026-11-17 18:45:23",
+            "finalizadaEm": "2026-11-17 18:46:11",
+            "duracao": 48,
+            "chefe": false
+        },
+        {
+            "id": 14,
+            "adversario": "Robô",
+            "status": "vitoria",
+            "recompensa": 75,
+            "iniciadaEm": "2026-11-17 18:43:01",
+            "finalizadaEm": "2026-11-17 18:45:17",
+            "duracao": 136,
+            "chefe": false
+        },
+        {
+            "id": 13,
+            "adversario": "Robô",
+            "status": "vitoria",
+            "recompensa": 100,
+            "iniciadaEm": "2026-11-17 18:41:46",
+            "finalizadaEm": "2026-11-17 18:42:45",
+            "duracao": 59,
+            "chefe": false
+        },
+        {
+            "id": 12,
+            "adversario": "Robô",
+            "status": "vitoria",
+            "recompensa": 100,
+            "iniciadaEm": "2026-11-17 18:38:41",
+            "finalizadaEm": "2026-11-17 18:39:15",
+            "duracao": 34,
+            "chefe": false
+        },
+        {
+            "id": 11,
+            "adversario": "Robô",
+            "status": "fuga",
+            "recompensa": 0,
+            "iniciadaEm": "2026-11-17 17:43:30",
+            "finalizadaEm": "2026-11-17 18:38:41",
+            "duracao": 3311,
+            "chefe": false
+        },
+        {
+            "id": 10,
+            "adversario": "Robô",
+            "status": "fuga",
+            "recompensa": 0,
+            "iniciadaEm": "2026-11-17 17:43:26",
+            "finalizadaEm": "2026-11-17 17:43:30",
+            "duracao": 4,
+            "chefe": false
+        }
+    ]
+}

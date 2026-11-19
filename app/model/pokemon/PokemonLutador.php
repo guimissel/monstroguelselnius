@@ -5,9 +5,4 @@
 class PokemonLutador extends Pokemon
 {
     use TipoLutador;
-
-    public function tipos(): array
-    {
-        return ['fighting'];
-    }
 }

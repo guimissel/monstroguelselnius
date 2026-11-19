@@ -5,9 +5,4 @@
 class PokemonNormalFada extends Pokemon
 {
     use TipoNormal, TipoFada;
-
-    public function tipos(): array
-    {
-        return ['normal', 'fairy'];
-    }
 }

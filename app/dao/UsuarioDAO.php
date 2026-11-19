@@ -11,10 +11,10 @@ enum TipoBusca: int{
 class UsuarioDAO extends DAO
 {
 
+    // Cria a conta e tenta entregar o kit inicial sem deixar uma falha de kit cancelar o cadastro.
     public function criar(Usuario $usuario): Usuario
     {
         try {
-            // inicia uma transaction
             $this->pdo->beginTransaction();
 
             $nome = $usuario->getNome();
@@ -43,7 +43,6 @@ class UsuarioDAO extends DAO
                 error_log("kit inicial nao entregue: " . $erroKit->getMessage());
             }
 
-            // finaliza a transaction
             $this->pdo->commit();
 
             return new Usuario($id, $nome, null);
@@ -58,8 +57,10 @@ class UsuarioDAO extends DAO
         }
     }
 
+    // Usa a coluna indicada pelo enum para buscar sem concatenar valores do usuário no SQL.
     public function buscar (TipoBusca $tipoBusca, mixed $chaveBusca): ?Usuario
     {
+        //  Seleciona um ramo de execução com base em ($tipoBusca.
         switch ($tipoBusca) {
             case TipoBusca::ID:
                 $sql = "SELECT * FROM usuario WHERE id_usuario = :id";
@@ -70,6 +71,7 @@ class UsuarioDAO extends DAO
             break;
             
             case TipoBusca::NOME:
+            //  Define o ramo usado quando nenhum caso do switch corresponde.
             default:
                 $sql = "SELECT * FROM usuario WHERE nome = :nome";
                 $prepare = $this->pdo->prepare($sql);
@@ -107,6 +109,7 @@ class UsuarioDAO extends DAO
         $prepare->execute(["nome" => $nome, "senha" => $senhaHash, "id" => $id]);
     }
 
+    // Remove dados dependentes e a conta na mesma transação para preservar as referências.
     public function excluir (Usuario $usuario): void
     {
         // inicia a transação
@@ -119,7 +122,6 @@ class UsuarioDAO extends DAO
             $apagarBatalhas = $this->pdo->prepare("DELETE FROM batalha WHERE id_usuario = :id OR id_usuario_2 = :id2");
             $apagarBatalhas->execute(["id" => $id, "id2" => $id]);
 
-            // prepara a query
             $prepare = $this->pdo->prepare("DELETE FROM usuario WHERE id_usuario = :id");
             $prepare->execute([
                 "id"=> $id

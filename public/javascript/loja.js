@@ -21,11 +21,13 @@ const quantidades = {};           // chave do item -> quantidade escolhida
 
 const caminhoImg = (arquivo) => "public/img/" + encodeURI(arquivo);
 
+// Apresenta o resultado de uma compra ou uma mensagem de validação.
 function mostrarMensagem(texto, tipo = "") {
     mensagemEl.textContent = texto;
     mensagemEl.className = "mensagem" + (tipo ? " " + tipo : "");
 }
 
+// Atualiza o saldo mostrado usando os dados atuais do jogador.
 function atualizarSaldo() {
     pokedolaresEl.textContent = saldo;
 }
@@ -56,6 +58,7 @@ async function carregar() {
     }
 }
 
+// Cria os filtros de categoria para navegar pelo catálogo da loja.
 function desenharAbas() {
     abasEl.innerHTML = "";
 
@@ -74,6 +77,7 @@ function desenharAbas() {
     }
 }
 
+// Monta o cartão de um item com preço e controles de compra.
 function criarProduto(item) {
     const quantidade = quantidades[item.chave] || 1;
     const total = item.preco * quantidade;
@@ -135,6 +139,7 @@ function criarProduto(item) {
     return caixa;
 }
 
+// Renderiza os produtos pertencentes à categoria selecionada.
 function desenharVitrine() {
     vitrineEl.innerHTML = "";
     itens
@@ -142,6 +147,7 @@ function desenharVitrine() {
         .forEach((item) => vitrineEl.appendChild(criarProduto(item)));
 }
 
+// Atualiza a vitrine, o saldo e os demais elementos da loja.
 function desenhar() {
     desenharAbas();
     desenharVitrine();

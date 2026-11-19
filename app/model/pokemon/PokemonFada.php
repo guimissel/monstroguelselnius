@@ -5,9 +5,4 @@
 class PokemonFada extends Pokemon
 {
     use TipoFada;
-
-    public function tipos(): array
-    {
-        return ['fairy'];
-    }
 }

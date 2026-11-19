@@ -1,13 +1,13 @@
 <?php
 class InventarioController extends Controller
 {
-    // GET api/inventario: itens do jogador logado + dinheiro
+    // Lista os itens e o saldo do jogador.
     public function listar(): void
     {
-        // define que a resposta será JSON
         header("Content-Type: application/json");
 
         $meuId = $_SESSION["id"] ?? null;
+        // Não consulta nem expõe o inventário de uma sessão sem jogador autenticado.
         if (!isset($meuId))
         {
             http_response_code(401);
@@ -23,6 +23,7 @@ class InventarioController extends Controller
             $inventarioDAO = InventarioDAO::NovaInstancia();
 
             $itens = [];
+            // Serializa cada item mantendo o formato usado pelas telas do inventário.
             foreach ($inventarioDAO->listar((int) $meuId) as $item) {
                 $itens[] = $item->paraArray();
             }
@@ -37,7 +38,7 @@ class InventarioController extends Controller
 
         catch (Exception $e)
         {
-            // o motivo real fica no log do apache (xampp/apache/logs/error.log)
+            // Mantém o detalhe operacional no log e uma mensagem segura para o cliente.
             error_log("InventarioController::listar: " . $e->getMessage());
 
             http_response_code(500);
@@ -49,13 +50,13 @@ class InventarioController extends Controller
         }
     }
 
-    // POST api/inventario/{chave}/usar: gasta 1 unidade do item
+    // Usa ou abre o item solicitado.
     public function usar(string $chave): void
     {
-        // define que a resposta será JSON
         header("Content-Type: application/json");
 
         $meuId = $_SESSION["id"] ?? null;
+        // O consumo de itens altera recursos do jogador e exige uma sessão identificada.
         if (!isset($meuId))
         {
             http_response_code(401);
@@ -70,6 +71,7 @@ class InventarioController extends Controller
         {
             $inventarioDAO = InventarioDAO::NovaInstancia();
 
+            // Pokébolas concedem um Pokémon, portanto seguem o fluxo específico de abertura.
             if ($chave === "pokebola") {
                 $resultado = $inventarioDAO->abrirPokebola((int) $meuId);
                 echo json_encode([
@@ -81,6 +83,7 @@ class InventarioController extends Controller
                 return;
             }
 
+            // O DAO informa se o jogador não possui o item solicitado.
             if (!$inventarioDAO->usar((int) $meuId, $chave))
             {
                 http_response_code(409);
@@ -100,6 +103,7 @@ class InventarioController extends Controller
 
         catch (DomainException $e)
         {
+            // Retorna erros esperados de uso do item com o status indicado pela regra.
             http_response_code($e->getCode());
             echo json_encode([
                 "status" => $e->getCode(),
@@ -110,7 +114,7 @@ class InventarioController extends Controller
 
         catch (Exception $e)
         {
-            // o motivo real fica no log do apache (xampp/apache/logs/error.log)
+            // Evita expor detalhes internos em falhas inesperadas do inventário.
             error_log("InventarioController::usar: " . $e->getMessage());
 
             http_response_code(500);

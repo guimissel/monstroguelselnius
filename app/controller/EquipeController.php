@@ -1,15 +1,13 @@
 <?php
-
 class EquipeController extends Controller
 {
-    // GET api/equipe: a equipe salva, de onde escolher ("disponiveis") e a lista de basicos
-    // "inicial" = true quando o jogador ainda nao tem pokemons (primeira escolha)
+    // Lista a equipe, a colecao disponivel e as opcoes iniciais.
     public function listar(): void
     {
-        // define que a resposta será JSON
         header("Content-Type: application/json");
 
         $meuId = $_SESSION["id"] ?? null;
+        // Sem a identidade da sessão, não há como limitar as consultas à coleção correta.
         if (!isset($meuId))
         {
             http_response_code(401);
@@ -22,6 +20,7 @@ class EquipeController extends Controller
 
         try
         {
+            // Reúne em uma única resposta o time atual e as opções disponíveis para edição.
             $dao = EquipeDAO::NovaInstancia();
             $opcoes = $dao->disponiveis((int) $meuId);
 
@@ -38,7 +37,7 @@ class EquipeController extends Controller
 
         catch (Exception $e)
         {
-            // o motivo real fica no log do apache (xampp/apache/logs/error.log)
+            // Registra detalhes apenas no servidor e mantém a mensagem pública estável.
             error_log("EquipeController::listar: " . $e->getMessage());
 
             http_response_code(500);
@@ -50,12 +49,13 @@ class EquipeController extends Controller
         }
     }
 
-    // POST api/equipe/evoluir (campo "pokemon" no form): gasta 1 Pedra Evolutiva e evolui o pokemon
+    // Evolui um Pokemon da colecao.
     public function evoluir(): void
     {
         header("Content-Type: application/json");
 
         $meuId = $_SESSION["id"] ?? null;
+        // A evolução altera dados persistidos e só pode ocorrer para um jogador autenticado.
         if (!isset($meuId))
         {
             http_response_code(401);
@@ -67,6 +67,7 @@ class EquipeController extends Controller
         }
 
         $idPokemon = filter_var($_POST["pokemon"] ?? null, FILTER_VALIDATE_INT);
+        // Rejeita IDs ausentes, não inteiros ou fora do domínio antes de chamar o DAO.
         if ($idPokemon === false || $idPokemon < 1)
         {
             http_response_code(400);
@@ -79,6 +80,7 @@ class EquipeController extends Controller
 
         try
         {
+            // O DAO aplica os requisitos de evolução e devolve as duas formas do Pokémon.
             $dao = EquipeDAO::NovaInstancia();
             $resultado = $dao->evoluir((int) $meuId, $idPokemon);
 
@@ -94,7 +96,7 @@ class EquipeController extends Controller
 
         catch (DomainException $e)
         {
-            // erro esperado (sem pedra, sem evolucao, ja tem a evolucao...)
+            // Regras de jogo já possuem status e mensagem apropriados para a resposta HTTP.
             http_response_code($e->getCode());
             echo json_encode([
                 "status" => $e->getCode(),
@@ -105,6 +107,7 @@ class EquipeController extends Controller
 
         catch (Exception $e)
         {
+            // Falhas inesperadas não devem expor detalhes internos ao cliente.
             error_log("EquipeController::evoluir: " . $e->getMessage());
 
             http_response_code(500);
@@ -116,13 +119,13 @@ class EquipeController extends Controller
         }
     }
 
-    // POST api/equipe (campo "pokemons" no form, ex: "4,7,25")
+    // Salva a equipe selecionada pelo jogador.
     public function salvar(): void
     {
-        // define que a resposta será JSON
         header("Content-Type: application/json");
 
         $meuId = $_SESSION["id"] ?? null;
+        // A equipe sempre pertence ao jogador da sessão, nunca a um ID recebido pelo cliente.
         if (!isset($meuId))
         {
             http_response_code(401);
@@ -133,8 +136,8 @@ class EquipeController extends Controller
             return;
         }
 
-        // "4,7,25" -> [4, 7, 25] (qualquer coisa que nao seja numero inteiro vira erro)
         $ids = [];
+        // Converte a lista textual e interrompe o salvamento se algum identificador for inválido.
         foreach (explode(",", (string) ($_POST["pokemons"] ?? "")) as $texto)
         {
             $id = filter_var(trim($texto), FILTER_VALIDATE_INT);
@@ -152,6 +155,7 @@ class EquipeController extends Controller
 
         try
         {
+            // A validação de limites, propriedade e duplicidade permanece centralizada no DAO.
             $dao = EquipeDAO::NovaInstancia();
             $dao->salvar((int) $meuId, $ids);
 
@@ -165,7 +169,7 @@ class EquipeController extends Controller
 
         catch (DomainException $e)
         {
-            // erro esperado (menos de 3, repetidos, pokemon que o jogador nao tem...)
+            // Preserva o status HTTP definido pela regra de negócio.
             http_response_code($e->getCode());
             echo json_encode([
                 "status" => $e->getCode(),
@@ -176,6 +180,7 @@ class EquipeController extends Controller
 
         catch (Exception $e)
         {
+            // Detalhes técnicos ficam no log; a API retorna uma mensagem genérica.
             error_log("EquipeController::salvar: " . $e->getMessage());
 
             http_response_code(500);

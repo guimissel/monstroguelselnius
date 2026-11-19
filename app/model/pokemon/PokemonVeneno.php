@@ -5,9 +5,4 @@
 class PokemonVeneno extends Pokemon
 {
     use TipoVeneno;
-
-    public function tipos(): array
-    {
-        return ['poison'];
-    }
 }

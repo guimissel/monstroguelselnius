@@ -8,6 +8,7 @@ class Equipe implements IteratorAggregate, Countable
 
     private array $pokemons = [];
 
+    // Permite montar uma equipe inicial pelos mesmos limites aplicados ao adicionar depois.
     public function __construct(Pokemon ...$pokemons)
     {
         foreach ($pokemons as $pokemon) {
@@ -24,7 +25,9 @@ class Equipe implements IteratorAggregate, Countable
     {
         $primeiro = $argumentos[0] ?? null;
 
+        // Emula as duas assinaturas de adicionar sem alterar a interface pública já usada pelo jogo.
         if ($metodo === "adicionar") {
+            // Objetos prontos são incluídos diretamente; linhas do banco passam pela fábrica.
             if ($primeiro instanceof Pokemon) {
                 return $this->colocar($primeiro);
             }
@@ -34,6 +37,7 @@ class Equipe implements IteratorAggregate, Countable
             throw new InvalidArgumentException("adicionar() espera um Pokemon ou uma linha do banco");
         }
 
+        // A busca aceita ID ou nome e percorre apenas os membros da equipe atual.
         if ($metodo === "buscar") {
             foreach ($this->pokemons as $pokemon) {
                 if (is_int($primeiro) && $pokemon->getId() === $primeiro) {
@@ -49,6 +53,7 @@ class Equipe implements IteratorAggregate, Countable
         throw new BadMethodCallException("Metodo " . $metodo . "() nao existe na Equipe");
     }
 
+    // Aplica o limite máximo antes de incluir um Pokémon na equipe.
     private function colocar(Pokemon $pokemon): static
     {
         if (count($this->pokemons) >= self::TAMANHO) {
@@ -73,6 +78,7 @@ class Equipe implements IteratorAggregate, Countable
         return count($this->pokemons);
     }
 
+    // Soma os atributos agregados para comparar a força conjunta do time.
     public function poderTotal(): int
     {
         return array_sum(array_map(fn (Pokemon $p) => $p->poder(), $this->pokemons));
@@ -96,6 +102,7 @@ class Equipe implements IteratorAggregate, Countable
         $contagem = [];
         foreach ($this->pokemons as $pokemon) {
             foreach ($pokemon->fraquezas() as $tipo) {
+                //  Armazena ($contagem[$tipo] ?? 0) + 1 na posição $contagem[$tipo].
                 $contagem[$tipo] = ($contagem[$tipo] ?? 0) + 1;
             }
         }

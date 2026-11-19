@@ -13,9 +13,9 @@ abstract class Pokemon implements Combatente
         "dark" => "Sombrio", "fairy" => "Fada"
     ];
 
-    // traits
     use Id;
     use Nome;
+    use TipoPokemon;
 
     private int $hpMaximo;
     private int $hpAtual;
@@ -30,7 +30,6 @@ abstract class Pokemon implements Combatente
     // $dados e uma linha da view vw_pokedex
     public function __construct(array $dados)
     {
-        // seta usando os traits
         $this->setId($dados["id_pokemon"]);
         $this->setNome($dados["nome"]);
 
@@ -45,9 +44,6 @@ abstract class Pokemon implements Combatente
         $this->nomeEvolucao = $dados["evolucao_nome"] ?? null;
     }
 
-    // cada classe de tipo diz quais sao os tipos dela, ex: ["water", "poison"]
-    abstract public function tipos(): array;
-
     public function getHpMaximo(): int { return $this->hpMaximo; }
     public function getHpAtual(): int { return $this->hpAtual; }
     public function getAtaque(): int { return $this->ataque; }
@@ -58,6 +54,7 @@ abstract class Pokemon implements Combatente
     public function getIdEvolucao(): ?int { return $this->idEvolucao; }
     public function getNomeEvolucao(): ?string { return $this->nomeEvolucao; }
 
+    // A presença de uma espécie evoluída indica se existe um próximo estágio disponível.
     public function podeEvoluir(): bool
     {
         return $this->idEvolucao !== null;
@@ -67,14 +64,17 @@ abstract class Pokemon implements Combatente
     public function poder(): int
     {
         return $this->hpMaximo + $this->ataque + $this->defesa
+            //  Soma $this->ataqueEspecial + $this->defesaEspecial + $this->velocidade ao cálculo iniciado nas linhas anteriores.
             + $this->ataqueEspecial + $this->defesaEspecial + $this->velocidade;
     }
 
+    // Considera desmaiado o Pokémon cuja vida chegou a zero após receber dano.
     public function estaDesmaiado(): bool
     {
         return $this->hpAtual <= 0;
     }
 
+    // Limita o dano à vida restante e devolve quanto foi efetivamente removido.
     public function receberDano(int $dano): int
     {
         $tirado = min(max($dano, 0), $this->hpAtual);
@@ -82,6 +82,7 @@ abstract class Pokemon implements Combatente
         return $tirado;
     }
 
+    // Cura sem ultrapassar o máximo e informa o total realmente recuperado.
     public function curar(int $quantidade): int
     {
         $antes = $this->hpAtual;
@@ -102,8 +103,11 @@ abstract class Pokemon implements Combatente
                 return 0.0;
             }
             if (in_array($tipoDoGolpe, $this->{"fraquezas" . $sufixo}(), true)) {
+                //  Multiplica o valor atual de $multiplicador por 2.
                 $multiplicador *= 2;
+            //  Verifica a condição alternativa in_array($tipoDoGolpe, $this->{"resistencias" . $sufixo}(), true) quando os ramos anteriores não se aplicam.
             } elseif (in_array($tipoDoGolpe, $this->{"resistencias" . $sufixo}(), true)) {
+                //  Divide o valor atual de $multiplicador por 2.
                 $multiplicador /= 2;
             }
         }
@@ -129,6 +133,7 @@ abstract class Pokemon implements Combatente
         return $this->tiposCom(fn (float $m) => $m === 0.0);
     }
 
+    // Filtra os tipos de golpe pelo multiplicador calculado para cada combinação defensiva.
     private function tiposCom(callable $condicao): array
     {
         $lista = [];

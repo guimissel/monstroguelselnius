@@ -7,25 +7,21 @@ class Roteador
 {
     use NovaInstancia;
 
-    // array das rotas
     private array $rotas = [];
 
     // array dos redirecionamento (são efetuados caso ocorra um 403 - forbidden)
     private array $redirecionamentos = [];
     private array $rolesPermitidos = [];
 
-    // adiciona uma rota
     public function NovaRota(array $Argumentos): void
     {
-        // resgata valores do array de argumentos
         $tipoDeRota = $Argumentos["tipo"];
         $rota = $Argumentos["rota"];
         $funcaoDaRota = $Argumentos["funcao"];
         $redirecionamentoDaRota = $Argumentos["redirecionamento"];
         $rolesDaRota = $Argumentos["roles"];
 
-        // implementa a rota em um array associativo
-        // definindo a função da rota
+        // Indexa o callback pelo método HTTP e pelo caminho para localizar a rota ao despachar.
         $this->rotas[$tipoDeRota][$rota] = $funcaoDaRota;
 
         // cargos permitidos para acessar a rota
@@ -38,10 +34,8 @@ class Roteador
     // despachar para uma rota
     public function DespacharRota(): void
     {
-        // metodo da requisição
         $metodo = $_SERVER["REQUEST_METHOD"];
 
-        // caminho da requisição
         $caminho = parse_url($_SERVER["REQUEST_URI"], PHP_URL_PATH);
 
         $funcaoDaRota = null;
@@ -78,7 +72,6 @@ class Roteador
         $redirecionamento = $this->redirecionamentos[$metodo][$rotaEncontrada] ?? null;
         $rolesPermitidos = $this->rolesPermitidos[$metodo][$rotaEncontrada] ?? [];
 
-        // instancia de autenticacao
         $autenticacao = AutenticacaoController::NovaInstancia([
             "restricaoAcesso" => $rolesPermitidos,
             "rota" => $caminho,
@@ -93,14 +86,12 @@ class Roteador
             return;
         };
 
-        // executa a função
         call_user_func_array($funcaoDaRota, $parametros);
     }
 
     // função para arquivos html
     public static function View(string $nome, int $httpCode = 200): void
     {    
-        // caminho do arquivo
         $caminho = __DIR__ . "/../public/pages/" . $nome . ".html";
         
         if(!file_exists($caminho)) {

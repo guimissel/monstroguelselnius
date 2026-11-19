@@ -1,13 +1,13 @@
 <?php
-
 class ProgressoController extends Controller
 {
     private const TAMANHO_MAXIMO_ARQUIVO = 10485760;
 
-    // GET api/progresso/exportar: baixa os dados de progresso da conta autenticada.
+    // Exporta o progresso da conta autenticada.
     public function exportar(): void
     {
         $idUsuario = ($_SESSION["id"] ?? null);
+        // A exportação nunca deve aceitar um identificador de conta vindo do formulário.
         if (!isset($idUsuario))
         {
             http_response_code(401);
@@ -23,6 +23,7 @@ class ProgressoController extends Controller
         {
             $dao = PerfilDAO::NovaInstancia();
             $treinador = $dao->treinador($idUsuario);
+            // Sem o perfil-base, os demais dados não formam um arquivo de progresso válido.
             if ($treinador === null)
             {
                 http_response_code(404);
@@ -63,11 +64,13 @@ class ProgressoController extends Controller
         }
     }
 
+    // Importa e substitui o progresso enviado pelo jogador.
     public function importar(): void
     {
         header("Content-Type: application/json; charset=utf-8");
 
         $idUsuario = $_SESSION["id"] ?? null;
+        // Vincula a restauração à conta autenticada em vez de confiar no conteúdo do arquivo.
         if (!isset($idUsuario)) {
             http_response_code(401);
             echo json_encode(["status" => 401, "mensagem" => "Usuario nao autenticado"]);
@@ -75,6 +78,7 @@ class ProgressoController extends Controller
         }
 
         $arquivo = $_FILES["arquivo"] ?? null;
+        // Distingue tamanho excedido de outros problemas reportados pelo mecanismo de upload.
         if (!is_array($arquivo) || ($arquivo["error"] ?? UPLOAD_ERR_NO_FILE) !== UPLOAD_ERR_OK) {
             $erroUpload = is_array($arquivo) ? ($arquivo["error"] ?? UPLOAD_ERR_NO_FILE) : UPLOAD_ERR_NO_FILE;
             $status = in_array($erroUpload, [UPLOAD_ERR_INI_SIZE, UPLOAD_ERR_FORM_SIZE], true) ? 413 : 400;
@@ -88,6 +92,7 @@ class ProgressoController extends Controller
 
         $caminho = $arquivo["tmp_name"] ?? "";
         $tamanho = (int) ($arquivo["size"] ?? 0);
+        // Só lê uploads temporários válidos e limita o volume processado pela aplicação.
         if (!is_uploaded_file($caminho) || $tamanho < 1 || $tamanho > self::TAMANHO_MAXIMO_ARQUIVO) {
             $status = $tamanho > self::TAMANHO_MAXIMO_ARQUIVO ? 413 : 400;
             http_response_code($status);
@@ -98,6 +103,7 @@ class ProgressoController extends Controller
             return;
         }
 
+        // Separa falha de leitura de erro de sintaxe no JSON enviado.
         $conteudo = file_get_contents($caminho);
         if ($conteudo === false) {
             http_response_code(400);
@@ -106,6 +112,7 @@ class ProgressoController extends Controller
         }
 
         try {
+            // Valida todo o arquivo antes de delegar a substituição transacional ao DAO.
             $dados = json_decode($conteudo, true, 512, JSON_THROW_ON_ERROR);
             $progresso = $this->validarArquivo($dados);
             $dao = PerfilDAO::NovaInstancia();
@@ -116,23 +123,33 @@ class ProgressoController extends Controller
                 "mensagem" => "Progresso importado. O progresso anterior desta conta foi substituido."
             ], JSON_UNESCAPED_UNICODE);
         } catch (JsonException | InvalidArgumentException | DomainException $e) {
+            // Erros de formato ou regras de importação são devolvidos como entrada inválida.
             http_response_code(400);
             echo json_encode(["status" => 400, "mensagem" => $e->getMessage()], JSON_UNESCAPED_UNICODE);
         } catch (Throwable $e) {
+            // Falhas inesperadas ficam no log e não revelam detalhes da persistência.
             error_log("ProgressoController::importar: " . $e->getMessage());
             http_response_code(500);
             echo json_encode(["status" => 500, "mensagem" => "Nao foi possivel importar o progresso"]);
         }
     }
 
+    // Confere estrutura, limites e referências internas antes de aceitar dados importados.
     private function validarArquivo(mixed $dados): array
     {
+        // Exige o envelope e as coleções definidas pelo formato de exportação suportado.
         if (!is_array($dados)
+            //  Acrescenta à validação a condição || ($dados["formato"] ?? null) !== "monstroguelselnius-progresso".
             || ($dados["formato"] ?? null) !== "monstroguelselnius-progresso"
+            //  Acrescenta à validação a condição || ($dados["versao"] ?? null) !== 1.
             || ($dados["versao"] ?? null) !== 1
+            //  Acrescenta à validação a condição || !is_array($dados["treinador"] ?? null).
             || !is_array($dados["treinador"] ?? null)
+            //  Acrescenta à validação a condição || !is_array($dados["colecao"] ?? null).
             || !is_array($dados["colecao"] ?? null)
+            //  Acrescenta à validação a condição || !is_array($dados["itens"] ?? null).
             || !is_array($dados["itens"] ?? null)
+            //  Acrescenta à validação a condição || !is_array($dados["historico"] ?? null).
             || !is_array($dados["historico"] ?? null)
         ) {
             throw new InvalidArgumentException("Arquivo de progresso invalido ou versao nao suportada");
@@ -140,10 +157,12 @@ class ProgressoController extends Controller
 
         $treinador = $dados["treinador"];
         $saldo = $treinador["pokedolares"] ?? null;
+        // O saldo será gravado em coluna inteira, por isso precisa respeitar seu intervalo.
         if (!is_int($saldo) || $saldo < 0 || $saldo > 2147483647) {
             throw new InvalidArgumentException("Saldo de pokedolares invalido");
         }
 
+        // Limites por coleção reduzem o custo de processar arquivos excessivamente grandes.
         if (count($dados["colecao"]) > 1000 || count($dados["itens"]) > 500 || count($dados["historico"]) > 50000) {
             throw new InvalidArgumentException("O arquivo contem dados acima dos limites permitidos");
         }
@@ -151,10 +170,14 @@ class ProgressoController extends Controller
         $colecao = [];
         $idsColecao = [];
         $equipeMarcada = [];
+        // Rejeita IDs repetidos e guarda a marcação de equipe para compará-la mais adiante.
         foreach ($dados["colecao"] as $pokemon) {
             if (!is_array($pokemon)
+                //  Acrescenta à validação a condição || !is_int($pokemon["id"] ?? null).
                 || !is_int($pokemon["id"] ?? null)
+                //  Acrescenta à validação a condição || $pokemon["id"] < 1.
                 || $pokemon["id"] < 1
+                //  Acrescenta à validação a condição || !is_bool($pokemon["naEquipe"] ?? null).
                 || !is_bool($pokemon["naEquipe"] ?? null)
             ) {
                 throw new InvalidArgumentException("Dados de Pokémon invalidos");
@@ -163,6 +186,7 @@ class ProgressoController extends Controller
             if (isset($idsColecao[$id])) {
                 throw new InvalidArgumentException("A colecao contem Pokémon duplicados");
             }
+            //  Armazena true na posição $idsColecao[$id].
             $idsColecao[$id] = true;
             if ($pokemon["naEquipe"]) {
                 $equipeMarcada[] = $id;
@@ -174,6 +198,7 @@ class ProgressoController extends Controller
         }
 
         $equipeExportada = $treinador["equipe"]["pokemons"] ?? null;
+        // Aceita a equipe explícita do formato atual e mantém compatibilidade com arquivos sem ela.
         if ($equipeExportada !== null) {
             if (!is_array($equipeExportada)) {
                 throw new InvalidArgumentException("Equipe invalida no arquivo");
@@ -186,9 +211,13 @@ class ProgressoController extends Controller
                 $equipe[] = $pokemon["id"];
             }
             if (count(array_unique($equipe)) !== count($equipe)
+                //  Acrescenta à validação a condição || count($equipe) > 3.
                 || count($equipe) > 3
+                //  Acrescenta à validação a condição || array_diff($equipe, array_keys($idsColecao)).
                 || array_diff($equipe, array_keys($idsColecao))
+                //  Acrescenta à validação a condição || array_diff($equipeMarcada, $equipe).
                 || array_diff($equipeMarcada, $equipe)
+                //  Acrescenta à validação a condição || array_diff($equipe, $equipeMarcada).
                 || array_diff($equipe, $equipeMarcada)
             ) {
                 throw new InvalidArgumentException("Equipe e colecao nao correspondem");
@@ -196,16 +225,22 @@ class ProgressoController extends Controller
         } else {
             $equipe = $equipeMarcada;
         }
+        // A regra do jogo admite uma equipe vazia durante a preparação ou exatamente três Pokémon.
         if (count($equipe) !== 0 && count($equipe) !== 3) {
             throw new InvalidArgumentException("A equipe precisa estar vazia ou conter exatamente 3 Pokémon");
         }
 
         $itens = [];
+        // Normaliza chaves e nomes sem aceitar quantidades ou identificadores fora dos limites.
         foreach ($dados["itens"] as $item) {
             if (!is_array($item)
+                //  Acrescenta à validação a condição || !is_int($item["quantidade"] ?? null).
                 || !is_int($item["quantidade"] ?? null)
+                //  Acrescenta à validação a condição || $item["quantidade"] < 0.
                 || $item["quantidade"] < 0
+                //  Acrescenta à validação a condição || $item["quantidade"] > 1000000.
                 || $item["quantidade"] > 1000000
+                //  Acrescenta à validação a condição || (!is_string($item["chave"] ?? null) && !is_string($item["nome"] ?? null)).
                 || (!is_string($item["chave"] ?? null) && !is_string($item["nome"] ?? null))
             ) {
                 throw new InvalidArgumentException("Dados de item invalidos");
@@ -213,6 +248,7 @@ class ProgressoController extends Controller
             $chave = $item["chave"] ?? null;
             $nome = $item["nome"] ?? null;
             if (($chave !== null && ($chave === "" || strlen($chave) > 30))
+                //  Acrescenta à validação a condição || ($nome !== null && ($nome === "" || strlen($nome) > 60)).
                 || ($nome !== null && ($nome === "" || strlen($nome) > 60))
             ) {
                 throw new InvalidArgumentException("Identificador de item invalido");
@@ -221,12 +257,18 @@ class ProgressoController extends Controller
         }
 
         $historico = [];
+        // Verifica datas e recompensas para que a restauração não grave partidas incoerentes.
         foreach ($dados["historico"] as $batalha) {
             if (!is_array($batalha)
+                //  Acrescenta à validação a condição || !in_array($batalha["status"] ?? null, ["vitoria", "derrota", "fuga"], true).
                 || !in_array($batalha["status"] ?? null, ["vitoria", "derrota", "fuga"], true)
+                //  Acrescenta à validação a condição || !is_int($batalha["recompensa"] ?? null).
                 || !is_int($batalha["recompensa"] ?? null)
+                //  Acrescenta à validação a condição || $batalha["recompensa"] < 0.
                 || $batalha["recompensa"] < 0
+                //  Acrescenta à validação a condição || $batalha["recompensa"] > 2147483647.
                 || $batalha["recompensa"] > 2147483647
+                //  Acrescenta à validação a condição || !is_bool($batalha["chefe"] ?? false).
                 || !is_bool($batalha["chefe"] ?? false)
             ) {
                 throw new InvalidArgumentException("Dados de batalha invalidos");
@@ -261,6 +303,7 @@ class ProgressoController extends Controller
         return [$saldo, $colecao, $equipe, $itens, $historico];
     }
 
+    // Normaliza apenas datas no formato exportado, rejeitando valores impossíveis.
     private function dataHoraValida(mixed $valor): ?string
     {
         if ($valor === null) {
@@ -272,7 +315,9 @@ class ProgressoController extends Controller
         $data = DateTimeImmutable::createFromFormat("!Y-m-d H:i:s", $valor);
         $erros = DateTimeImmutable::getLastErrors();
         if ($data === false
+            //  Acrescenta à validação a condição || ($erros !== false && ($erros["warning_count"] > 0 || $erros["error_count"] > 0)).
             || ($erros !== false && ($erros["warning_count"] > 0 || $erros["error_count"] > 0))
+            //  Acrescenta à validação a condição || $data->format("Y-m-d H:i:s") !== $valor.
             || $data->format("Y-m-d H:i:s") !== $valor
         ) {
             throw new InvalidArgumentException("Data do arquivo invalida");

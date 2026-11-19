@@ -1,13 +1,13 @@
 <?php
-
 class PerfilController extends Controller
 {
-    // GET api/perfil: tudo da tela de perfil do jogador logado
+    // Retorna os dados e o progresso do jogador autenticado.
     public function ver(): void
     {
         header("Content-Type: application/json");
 
         $meuId = $_SESSION["id"] ?? null;
+        // Todos os dados reunidos abaixo são restritos ao jogador autenticado.
         if (!isset($meuId))
         {
             http_response_code(401);
@@ -23,6 +23,7 @@ class PerfilController extends Controller
             $dao = PerfilDAO::NovaInstancia();
             $treinador = $dao->treinador((int) $meuId);
 
+            // Um treinador ausente não pode gerar placar ou histórico coerentes.
             if ($treinador === null)
             {
                 http_response_code(404);
@@ -50,6 +51,7 @@ class PerfilController extends Controller
 
         catch (Exception $e)
         {
+            // O log preserva o diagnóstico; a resposta orienta sobre a dependência do esquema.
             error_log("PerfilController::ver: " . $e->getMessage());
 
             http_response_code(500);

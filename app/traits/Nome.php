@@ -1,5 +1,6 @@
 <?php
 
+// Compartilha o nome usado para identificar entidades na interface e nas regras de domínio.
 trait Nome {
     private string $nome;
 

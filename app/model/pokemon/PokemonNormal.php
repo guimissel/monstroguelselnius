@@ -5,9 +5,4 @@
 class PokemonNormal extends Pokemon
 {
     use TipoNormal;
-
-    public function tipos(): array
-    {
-        return ['normal'];
-    }
 }

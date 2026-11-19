@@ -5,9 +5,4 @@
 class PokemonAguaPsiquico extends Pokemon
 {
     use TipoAgua, TipoPsiquico;
-
-    public function tipos(): array
-    {
-        return ['water', 'psychic'];
-    }
 }

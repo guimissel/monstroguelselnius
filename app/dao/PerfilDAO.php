@@ -121,6 +121,7 @@ class PerfilDAO extends DAO
         ], $prepare->fetchAll());
     }
 
+    // Substitui o progresso após validar referências e manter todas as gravações atômicas.
     public function importarProgresso(
         int $idUsuario,
         int $pokedolares,
@@ -129,6 +130,7 @@ class PerfilDAO extends DAO
         array $itens,
         array $historico
     ): void {
+        // Confirma que os Pokémon do arquivo ainda fazem parte do catálogo instalado.
         $catalogoPokemon = $this->pdo->query("SELECT id_pokemon FROM vw_pokedex")
             ->fetchAll(PDO::FETCH_COLUMN);
         $idsPokemonValidos = array_fill_keys(array_map("intval", $catalogoPokemon), true);
@@ -142,12 +144,14 @@ class PerfilDAO extends DAO
         $catalogoItens = $this->pdo->query("SELECT id_item_loja, chave, nome FROM item_loja")->fetchAll();
         $itensPorChave = [];
         $itensPorNome = [];
+        // Mantém índices pelos dois identificadores aceitos em versões do arquivo de progresso.
         foreach ($catalogoItens as $item) {
             $itensPorChave[$item["chave"]] = (int) $item["id_item_loja"];
             $itensPorNome[$item["nome"]] = (int) $item["id_item_loja"];
         }
 
         $itensImportados = [];
+        // Resolve cada item contra o catálogo atual e impede duplicações no arquivo.
         foreach ($itens as $item) {
             $idItem = $item["chave"] !== null
                 ? ($itensPorChave[$item["chave"]] ?? null)
@@ -158,11 +162,13 @@ class PerfilDAO extends DAO
             if (isset($itensImportados[$idItem])) {
                 throw new DomainException("O arquivo contém itens duplicados");
             }
+            //  Armazena $item["quantidade"] na posição $itensImportados[$idItem].
             $itensImportados[$idItem] = $item["quantidade"];
         }
 
         $this->pdo->beginTransaction();
         try {
+            // Bloqueia a conta durante a troca integral do progresso para evitar gravações concorrentes.
             $prepare = $this->pdo->prepare("SELECT id_usuario FROM usuario WHERE id_usuario = :id FOR UPDATE");
             $prepare->execute(["id" => $idUsuario]);
             if (!$prepare->fetchColumn()) {
@@ -171,6 +177,7 @@ class PerfilDAO extends DAO
 
             $prepare = $this->pdo->prepare("DELETE FROM batalha WHERE id_usuario = :id");
             $prepare->execute(["id" => $idUsuario]);
+            // Remove os registros dependentes antes de reconstruí-los a partir do arquivo validado.
             foreach (["equipe_usuario", "pokemon_usuario", "item_usuario"] as $tabela) {
                 $prepare = $this->pdo->prepare("DELETE FROM {$tabela} WHERE id_usuario = :id");
                 $prepare->execute(["id" => $idUsuario]);
@@ -183,6 +190,7 @@ class PerfilDAO extends DAO
                 "INSERT INTO pokemon_usuario (id_usuario, id_pokemon, conquistado_em)
                  VALUES (:usuario, :pokemon, COALESCE(:conquistado, CURRENT_TIMESTAMP))"
             );
+            // Recria a coleção preservando as datas de aquisição aceitas na validação.
             foreach ($colecao as $pokemon) {
                 $inserirPokemon->execute([
                     "usuario" => $idUsuario,
@@ -194,6 +202,7 @@ class PerfilDAO extends DAO
             $inserirEquipe = $this->pdo->prepare(
                 "INSERT INTO equipe_usuario (id_usuario, posicao, id_pokemon) VALUES (:usuario, :posicao, :pokemon)"
             );
+            // A ordem do array define as posições da equipe restaurada.
             foreach ($equipe as $indice => $idPokemon) {
                 $inserirEquipe->execute([
                     "usuario" => $idUsuario,
@@ -205,6 +214,7 @@ class PerfilDAO extends DAO
             $inserirItem = $this->pdo->prepare(
                 "INSERT INTO item_usuario (id_usuario, id_item_loja, quantidade) VALUES (:usuario, :item, :quantidade)"
             );
+            // Não cria linhas para itens sem estoque; quantidades positivas são restauradas.
             foreach ($itensImportados as $idItem => $quantidade) {
                 if ($quantidade > 0) {
                     $inserirItem->execute([
@@ -219,6 +229,7 @@ class PerfilDAO extends DAO
                 "INSERT INTO batalha (id_usuario, is_boss, status, recompensa, iniciada_em, finalizada_em)
                  VALUES (:usuario, :chefe, :status, :recompensa, :iniciada, :finalizada)"
             );
+            // A reversão mantém a ordem cronológica quando os IDs são gerados no banco.
             foreach (array_reverse($historico) as $batalha) {
                 $inserirBatalha->execute([
                     "usuario" => $idUsuario,
@@ -232,6 +243,7 @@ class PerfilDAO extends DAO
 
             $this->pdo->commit();
         } catch (Throwable $erro) {
+            // A reversão mantém o progresso antigo intacto quando qualquer etapa de inserção falha.
             if ($this->pdo->inTransaction()) {
                 $this->pdo->rollBack();
             }

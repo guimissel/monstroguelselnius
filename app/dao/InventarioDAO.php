@@ -52,6 +52,7 @@ class InventarioDAO extends DAO
         return $prepare->rowCount() > 0;
     }
 
+    // Sorteia e concede um Pokémon usando transação para consumir a Pokébola sem corrida concorrente.
     public function abrirPokebola(int $idUsuario): array
     {
         $this->pdo->beginTransaction();
@@ -66,6 +67,7 @@ class InventarioDAO extends DAO
             );
             $prepare->execute(["usuario" => $idUsuario]);
             $item = $prepare->fetch();
+            // O bloqueio da linha impede que duas aberturas consumam a mesma unidade.
             if (!$item || (int) $item["quantidade"] < 1) {
                 throw new RegraDeJogoException("Voce nao tem uma Pokebola Surpresa", 409);
             }
@@ -79,6 +81,7 @@ class InventarioDAO extends DAO
             $prepare->execute(["usuario" => $idUsuario]);
             $lendarios = [];
             $comuns = [];
+            // Separa as categorias para aplicar a probabilidade especial dos lendários.
             foreach ($prepare->fetchAll() as $opcao) {
                 if (in_array((int) $opcao["id_pokemon"], self::IDS_LENDARIOS, true)) {
                     $lendarios[] = $opcao;
@@ -94,6 +97,7 @@ class InventarioDAO extends DAO
             $lendario = random_int(1, 100) === 1;
             $opcoes = $lendario ? $lendarios : $comuns;
             $novos = array_values(array_filter($opcoes, fn (array $opcao) => !(bool) $opcao["ja_tinha"]));
+            // Prefere recompensas ainda não possuídas quando houver opções disponíveis.
             if ($novos) {
                 $opcoes = $novos;
             }
@@ -104,6 +108,7 @@ class InventarioDAO extends DAO
                  WHERE id_usuario = :usuario AND id_item_loja = :item AND quantidade > 0"
             );
             $prepare->execute(["usuario" => $idUsuario, "item" => $item["id_item_loja"]]);
+            // Confirma que a unidade continuava disponível antes de conceder o Pokémon.
             if ($prepare->rowCount() !== 1) {
                 throw new RegraDeJogoException("Voce nao tem uma Pokebola Surpresa", 409);
             }
@@ -131,6 +136,7 @@ class InventarioDAO extends DAO
                 "quantidade" => $quantidade
             ];
         } catch (Throwable $erro) {
+            // Desfaz tanto o consumo quanto a concessão quando qualquer etapa falha.
             if ($this->pdo->inTransaction()) {
                 $this->pdo->rollBack();
             }
@@ -138,6 +144,7 @@ class InventarioDAO extends DAO
         }
     }
 
+    // Consulta o saldo corrente usado nas telas de loja e inventário.
     public function pokedolares(int $idUsuario): int
     {
         $prepare = $this->pdo->prepare("SELECT pokedolares FROM usuario WHERE id_usuario = :id");

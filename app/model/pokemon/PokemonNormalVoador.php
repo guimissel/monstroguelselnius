@@ -5,9 +5,4 @@
 class PokemonNormalVoador extends Pokemon
 {
     use TipoNormal, TipoVoador;
-
-    public function tipos(): array
-    {
-        return ['normal', 'flying'];
-    }
 }

@@ -1,6 +1,6 @@
 <?php
 
-// trait para id
+// Compartilha o identificador inteiro entre entidades do domínio.
 trait Id {
     private int $id;
 

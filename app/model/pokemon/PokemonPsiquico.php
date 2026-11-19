@@ -5,9 +5,4 @@
 class PokemonPsiquico extends Pokemon
 {
     use TipoPsiquico;
-
-    public function tipos(): array
-    {
-        return ['psychic'];
-    }
 }

@@ -106,26 +106,20 @@ $roteador->NovaRota([
 ]);
 
 // criar rotas api que são livres
-// numero de tipos de requisição (index)
 $contagemTiposRequisicao = count(ROTAS_API_NOAUTH);
 
-// percorre todos tipos de requisição
 for ($i = 0; $i < $contagemTiposRequisicao; $i++) 
 {
 
-    // resgata a chave da requisição
     $tipoRequisicao = array_keys(ROTAS_API_NOAUTH)[$i];
 
     // numero de rotas da requisição
     $contagemRotas = count(ROTAS_API_NOAUTH[$tipoRequisicao]);
 
-    // percorre todas rotas
     for ($j = 0; $j < $contagemRotas; $j++)
     {
-        // caminho que sera usado como rota na rquisição
         $rota = array_keys(ROTAS_API_NOAUTH[$tipoRequisicao])[$j];
 
-        // cria uma nova rota
         $roteador->NovaRota([
             "tipo" => $tipoRequisicao,
             "rota" => $caminhoApi . $rota,
@@ -137,25 +131,19 @@ for ($i = 0; $i < $contagemTiposRequisicao; $i++)
 }
 
 // criar rotas api que são privadas [Acesso::USUARIO, Acesso::ADMIN]
-// numero de tipos de requisição (index)
 $contagemTiposRequisicao = count(ROTAS_API_NEEDAUTH);
 
-// percorre todos tipos de requisição
 for ($i = 0; $i < $contagemTiposRequisicao; $i++) 
 {
-    // resgata a chave da requisição
     $tipoRequisicao = array_keys(ROTAS_API_NEEDAUTH)[$i];
 
     // numero de rotas da requisição
     $contagemRotas = count(ROTAS_API_NEEDAUTH[$tipoRequisicao]);
 
-    // percorre todas rotas
     for ($j = 0; $j < $contagemRotas; $j++)
     {
-        // caminho que sera usado como rota na rquisição
         $rota = array_keys(ROTAS_API_NEEDAUTH[$tipoRequisicao])[$j];
 
-        // cria uma nova rota
         $roteador->NovaRota([
             "tipo" => $tipoRequisicao,
             "rota" => $caminhoApi . $rota,

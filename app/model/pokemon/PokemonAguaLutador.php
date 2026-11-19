@@ -5,9 +5,4 @@
 class PokemonAguaLutador extends Pokemon
 {
     use TipoAgua, TipoLutador;
-
-    public function tipos(): array
-    {
-        return ['water', 'fighting'];
-    }
 }

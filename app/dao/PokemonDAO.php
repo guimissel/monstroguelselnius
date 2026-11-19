@@ -11,6 +11,7 @@ class PokemonDAO extends DAO
         return $this->montar($linhas);
     }
 
+    // Retorna a espécie solicitada ou null quando o identificador não consta na Pokédex.
     public function buscar(int $id): ?Pokemon
     {
         $prepare = $this->pdo->prepare("SELECT * FROM vw_pokedex WHERE id_pokemon = :id");

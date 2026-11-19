@@ -5,9 +5,4 @@
 class PokemonEletricoAco extends Pokemon
 {
     use TipoEletrico, TipoAco;
-
-    public function tipos(): array
-    {
-        return ['electric', 'steel'];
-    }
 }

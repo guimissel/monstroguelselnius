@@ -5,9 +5,4 @@
 class PokemonDragaoVoador extends Pokemon
 {
     use TipoDragao, TipoVoador;
-
-    public function tipos(): array
-    {
-        return ['dragon', 'flying'];
-    }
 }

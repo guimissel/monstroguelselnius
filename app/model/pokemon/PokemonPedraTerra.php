@@ -5,9 +5,4 @@
 class PokemonPedraTerra extends Pokemon
 {
     use TipoPedra, TipoTerra;
-
-    public function tipos(): array
-    {
-        return ['rock', 'ground'];
-    }
 }

@@ -1,15 +1,13 @@
 <?php
-
-
 class BatalhaController extends Controller
 {
-    // POST api/batalha/iniciar: abre uma batalha e devolve o id e o time do robo (ids da PokeAPI)
+    // Inicia uma batalha e retorna o time adversario.
     public function iniciar(): void
     {
-        // define que a resposta será JSON
         header("Content-Type: application/json");
 
         $meuId = $_SESSION["id"] ?? null;
+        // A batalha e seu estado pertencem ao jogador autenticado nesta sessão.
         if (!isset($meuId))
         {
             http_response_code(401);
@@ -22,6 +20,7 @@ class BatalhaController extends Controller
 
         try
         {
+            // A camada de domínio prepara o adversário e determina o nível do encontro.
             $batalhaDAO = BatalhaDAO::NovaInstancia();
             $dados = $batalhaDAO->iniciar((int) $meuId);
 
@@ -37,7 +36,7 @@ class BatalhaController extends Controller
 
         catch (DomainException $e)
         {
-            // erro esperado (jogador sem equipe)
+            // Regras de jogo indicam o status HTTP adequado para a recusa.
             http_response_code($e->getCode());
             echo json_encode([
                 "status" => $e->getCode(),
@@ -48,7 +47,7 @@ class BatalhaController extends Controller
 
         catch (Exception $e)
         {
-            // (xampp/apache/logs/error.log)
+            // Registra o erro técnico sem alterar a resposta pública da API.
             error_log("BatalhaController::iniciar: " . $e->getMessage());
 
             http_response_code(500);
@@ -61,14 +60,13 @@ class BatalhaController extends Controller
         }
     }
 
-    // POST api/batalha/{id}/finalizar (campos "resultado" e "vivos" no form)
-    // o servidor calcula o dinheiro e entrega os pokemons do robo, o navegador so informa como terminou
+    // Finaliza uma batalha e aplica recompensa e conquistas.
     public function finalizar(string $id): void
     {
-        // define que a resposta será JSON
         header("Content-Type: application/json");
 
         $meuId = $_SESSION["id"] ?? null;
+        // Evita finalizar batalhas em nome de um jogador não identificado.
         if (!isset($meuId))
         {
             http_response_code(401);
@@ -81,14 +79,11 @@ class BatalhaController extends Controller
 
         $resultado = $_POST["resultado"] ?? "";
 
-        // valida os dados recebidos do navegador
         $vivos = filter_var($_POST["vivos"] ?? 0, FILTER_VALIDATE_INT);
         $idBatalha = filter_var($id, FILTER_VALIDATE_INT);
 
-        // simplificando as condições de validação
         $resultadoValido = in_array($resultado, ["vitoria", "derrota", "fuga"], true);
-        
-        // caso seja inválido, retorna 400 Bad Request
+        // Confere o formato e os valores aceitos antes de registrar o resultado da partida.
         if (!$resultadoValido || $vivos === false || $idBatalha === false)
         {
             http_response_code(400);
@@ -101,7 +96,7 @@ class BatalhaController extends Controller
 
         try
         {
-            // finaliza a batalha e calcula a recompensa
+            // O DAO valida a titularidade e aplica recompensas e progresso em conjunto.
             $batalhaDAO = BatalhaDAO::NovaInstancia();
             $dadosBatalha = $batalhaDAO->finalizar($idBatalha, (int) $meuId, $resultado, $vivos);
 
@@ -116,7 +111,7 @@ class BatalhaController extends Controller
 
         catch (DomainException $e)
         {
-            // erro esperado (batalha nao existe, ja finalizada...)
+            // Devolve ao cliente a recusa de domínio sem mascarar seu status.
             http_response_code($e->getCode());
             echo json_encode([
                 "status" => $e->getCode(),
@@ -127,6 +122,7 @@ class BatalhaController extends Controller
 
         catch (Exception $e)
         {
+            // Mantém informações de diagnóstico fora da resposta normal da partida.
             error_log("BatalhaController::finalizar: " . $e->getMessage());
 
             http_response_code(500);

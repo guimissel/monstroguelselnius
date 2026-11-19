@@ -29,6 +29,7 @@ let cancelarAberturaEmLote = false;
 
 const caminhoImg = (arquivo) => "public/img/" + encodeURI(arquivo);
 
+// Apresenta o resultado de uma ação mantendo o contexto do inventário.
 function mostrarMensagem(texto, erro = false) {
     mensagemEl.textContent = texto;
     mensagemEl.classList.toggle("erro", erro);
@@ -60,6 +61,7 @@ async function carregar() {
     }
 }
 
+// Cria as opções de categoria que filtram os itens exibidos.
 function desenharAbas() {
     abasEl.innerHTML = "";
 
@@ -80,6 +82,7 @@ function desenharAbas() {
     }
 }
 
+// Renderiza os itens disponíveis na categoria selecionada.
 function desenharGrade() {
     gradeEl.innerHTML = "";
 
@@ -123,6 +126,7 @@ function desenharGrade() {
     }
 }
 
+// Mostra informações e ações do item atualmente selecionado.
 function desenharDetalhes() {
     detalhesEl.innerHTML = "";
     const item = itens.find((i) => i.chave === selecionado);
@@ -173,6 +177,7 @@ function desenharDetalhes() {
     }
 }
 
+// Atualiza abas, grade e detalhes de acordo com o estado atual da tela.
 function desenhar() {
     // se o filtro ficou sem itens volta para "todos"
     if (filtro !== "todos" && !itens.some((i) => i.categoria === filtro)) filtro = "todos";
@@ -182,6 +187,7 @@ function desenhar() {
     desenharDetalhes();
 }
 
+// Cria uma pausa assíncrona usada para sincronizar etapas visuais.
 function esperar(ms) {
     return new Promise((resolve) => setTimeout(resolve, ms));
 }
@@ -191,6 +197,7 @@ async function abrirPokebola() {
     await abrirUmaPokebola(false);
 }
 
+// Aguarda o término do áudio ou o limite de tempo para continuar a animação.
 function esperarSom(som) {
     return new Promise((resolve) => {
         let terminou = false;

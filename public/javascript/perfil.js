@@ -14,11 +14,13 @@ const mensagemFormEl = document.getElementById("mensagemForm");
 let catalogo = {};
 let meuId = null;
 
+// Atualiza o conteúdo e o estado visual de uma mensagem no perfil.
 function mostrar(el, texto, tipo = "") {
     el.textContent = texto;
     el.className = "mensagem" + (tipo ? " " + tipo : "");
 }
 
+// Cria um elemento de interface já preenchido com classe e texto opcionais.
 function criar(tag, classe, texto) {
     const el = document.createElement(tag);
     if (classe) el.className = classe;
@@ -26,6 +28,7 @@ function criar(tag, classe, texto) {
     return el;
 }
 
+// Monta o cartão visual que resume um Pokémon da coleção.
 function carta(pokemon, extra) {
     const c = criar("div", "carta");
     const img = criar("img");
@@ -41,6 +44,7 @@ function carta(pokemon, extra) {
     return c;
 }
 
+// Constrói uma tabela a partir dos cabeçalhos e das linhas fornecidos.
 function tabela(colunas, linhas) {
     const t = criar("table");
     const cab = criar("tr");
@@ -59,6 +63,7 @@ function tabela(colunas, linhas) {
 
 const ROTULOS = { vitoria: "Vitória", derrota: "Derrota", fuga: "Fuga", em_andamento: "Em andamento" };
 
+// Preenche as seções do perfil com os dados recebidos da API.
 function desenhar(d) {
     meuId = d.treinador.id;
     document.getElementById("exportarProgresso").disabled = false;

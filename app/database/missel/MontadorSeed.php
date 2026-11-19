@@ -20,6 +20,7 @@ class MontadorSeed {
   private array $geracao;
   private PDO $conexao;
 
+  // Prepara os arquivos de saída e carrega da API os metadados da primeira geração.
   public function __construct(string $diretorioSeeds) {
     $this->conexao = Conexao::getConexao();
     $this->diretorioSeeds = $diretorioSeeds;
@@ -71,11 +72,13 @@ class MontadorSeed {
     $this->geracao = $this->fazerRequisicao($this->urlBase . "generation/generation-i/");
   }
 
+  // Acrescenta uma instrução gerada ao arquivo SQL correspondente.
   private function salvarTextoNaSeed(string $nomeSeed, string $texto): void {
     $arquivo = $this->diretorioSeeds . $nomeSeed;
     file_put_contents($arquivo, $texto . ";\n", FILE_APPEND);
   }
 
+  // Consulta a API externa com intervalo entre chamadas para reduzir a carga de requisições.
   private function fazerRequisicao(string $url): array {
     $resposta = file_get_contents($url);
 
@@ -84,6 +87,7 @@ class MontadorSeed {
     return json_decode($resposta, true);
   }
 
+  // Obtém o identificador que a API publica como último segmento da URL.
   private function extrairIdUrl(string $url): int {
     $url = rtrim($url, "/");
     $partesUrl = explode("/", $url);
@@ -91,18 +95,21 @@ class MontadorSeed {
     return (int) end($partesUrl);
   }
 
+  // Completa os nomes configurados com a extensão usada pelos arquivos de seed.
   private function montaNomeSeed(): void {
     foreach ($this->arquivosSeeds as $nome => $arquivo) {
       $this->arquivosSeeds[$nome]["arquivo"] .= ".sql";
     }
   }
 
+  // Remove saídas anteriores para que a nova geração não duplique comandos antigos.
   private function removerSeeds(): void {
     foreach ($this->arquivosSeeds as $seed) {
       if (file_exists($this->diretorioSeeds . $seed["arquivo"])) unlink($this->diretorioSeeds . $seed["arquivo"]);
     }
   }
 
+  // Gera os registros de efeitos de estado disponíveis na geração consultada.
   private function seedEfeito(): void {
     $dados = $this->fazerRequisicao($this->urlBase . "move-ailment");
 
@@ -113,6 +120,7 @@ class MontadorSeed {
     }
   }
 
+  // Gera o catálogo de tipos e preserva os IDs fornecidos pela API.
   private function seedTipo(): void {
     $url = "{$this->urlBase}type/";
 
@@ -129,6 +137,7 @@ class MontadorSeed {
     }
   }
 
+  // Registra imunidades, eficácias e resistências usadas no cálculo de dano.
   private function seedRelacoesTipos(): void {
     for ($idTipo = 1; $idTipo <= 19; $idTipo++) {
       $url = "{$this->urlBase}type/{$idTipo}/";
@@ -165,6 +174,7 @@ class MontadorSeed {
     }
   }
 
+  // Monta categorias e ataques que pertencem à geração carregada.
   private function seedAtaque(): void {
     $categorias = "INSERT INTO categoria_dano(id_categoria_dano, nome) VALUES
 (1, 'Physical'),
@@ -196,6 +206,7 @@ class MontadorSeed {
     }
   }
 
+  // Cria os registros de Pokémon, sprites, tipos e golpes disponíveis.
   private function seedMonstro(): void {
     // primeiro salva os tipos de imagem
     $tiposImagem = "INSERT INTO tipo_imagem(id_tipo_imagem, nome) VALUES
@@ -268,6 +279,7 @@ class MontadorSeed {
     }
   }
 
+  // Percorre as cadeias evolutivas e inicia o processamento de cada espécie.
   private function seedEvolucao(): void {
     for ($i = 1; $i <= 78; $i++) {
       $url = "{$this->urlBase}evolution-chain/{$i}";
@@ -284,6 +296,7 @@ class MontadorSeed {
     }
   }
 
+  // Grava evoluções diretas da primeira geração e percorre recursivamente os próximos estágios.
   private function processarCadeiaEvolutiva(array $cadeia, int $nivel): void {
     $idBase = $this->extrairIdUrl($cadeia["species"]["url"]);
 
@@ -306,6 +319,7 @@ class MontadorSeed {
     }
   }
 
+  // Regenera todos os arquivos na ordem de dependência e então popula o banco.
   public function criarSeeds(): void {
     // remove os arquivos para não ficar dando append nos que já existem
     $this->removerSeeds();
@@ -322,6 +336,7 @@ class MontadorSeed {
     $this->popularBanco();
   }
 
+  // Executa os arquivos gerados em uma transação para evitar carga parcial do catálogo.
   public function popularBanco(): void {
     try {
       $this->conexao->beginTransaction();

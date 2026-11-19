@@ -1,13 +1,12 @@
 <?php
-
 class UsuarioController extends Controller
 {
+    // Cria uma nova conta.
     public function criar () :void
     {
-        // define que a resposta será JSON
         header("Content-Type: application/json");
 
-        // verifica se todos os campos estão preenchidos
+        // Impede que campos obrigatórios vazios cheguem às regras de criação da conta.
         foreach ($_POST as $chave => $valor) {
             if (trim((string) $valor) === '')
             {
@@ -20,7 +19,7 @@ class UsuarioController extends Controller
             }    
         }
 
-        // caso o campo usuario ultrapasse o tamanho
+        // Mantém os limites compatíveis com o armazenamento do nome e da senha.
         if (strlen($_POST["usuario"]) > 50)
         {
             http_response_code(400);
@@ -31,7 +30,6 @@ class UsuarioController extends Controller
             return;
         }
 
-        // caso o campo de senha ultrapasse o tamanho
         else if (strlen($_POST["senha"]) > 256)
         {
             http_response_code(400);
@@ -44,31 +42,29 @@ class UsuarioController extends Controller
 
         try 
         {
-            // criar uma nova conexao ao banco
+            // Armazena somente o hash da senha e inicia a sessão após a persistência da conta.
             $conexao = Conexao::getConexao();
 
-            // variaveis para facilitar
             $nome = $_POST["usuario"];
             $senha = $_POST["senha"];
             $senhaHash = password_hash($senha, PASSWORD_DEFAULT);
 
-            // uma nova instancia de usuario
             $usuario = new Usuario(
                 -1,
+                //  Informa o parâmetro $nome nesta assinatura ou chamada.
                 $nome,
                 $senhaHash
             );
 
-            // cria uma instancia DAO para utilizar o banco de dados
             $usuarioDAO = UsuarioDAO::NovaInstancia();
 
-            // cria o usuario
             $usuario = $usuarioDAO->criar($usuario);
             
+            //  Armazena $usuario->getId() na posição $_SESSION["id"].
             $_SESSION["id"] = $usuario->getId();
+            //  Armazena Acesso::USUARIO->value na posição $_SESSION["role"].
             $_SESSION["role"] = Acesso::USUARIO->value;
 
-            // retorna sucesso ao usuario
             echo json_encode([
                 "status" => 200,
                 "mensagem" => "usuario criado com sucesso",
@@ -79,7 +75,7 @@ class UsuarioController extends Controller
 
         catch (DomainException $e)
         {
-            // erro esperado (nome ja em uso)
+            // Problemas esperados de domínio mantêm seu status e mensagem específicos.
             http_response_code($e->getCode());
             echo json_encode([
                 "status" => $e->getCode(),
@@ -90,6 +86,7 @@ class UsuarioController extends Controller
 
         catch (PDOException $e)
         {    
+            // Erros de banco são diferenciados dos demais erros internos da aplicação.
             http_response_code(500);
             echo json_encode([
                 "status" => 500,
@@ -100,6 +97,7 @@ class UsuarioController extends Controller
 
         catch (Exception $e)
         {
+            // Não expõe detalhes de exceções inesperadas durante o cadastro.
             http_response_code(500);
             echo json_encode([
                 "status" => 500,
@@ -109,12 +107,12 @@ class UsuarioController extends Controller
         }
     }
 
+    // Autentica o jogador.
     public function entrar () :void
     {
-        // define que a resposta será JSON
         header("Content-Type: application/json");
 
-        // verifica se todos os campos estão preenchidos
+        // Exige os campos do formulário antes de consultar as credenciais.
         foreach ($_POST as $chave => $valor) {
             if (trim((string) $valor) === '')
             {
@@ -127,7 +125,7 @@ class UsuarioController extends Controller
             }    
         }
 
-        // caso o campo usuario ultrapasse o tamanho
+        // Rejeita entradas acima dos limites conhecidos pelo cadastro.
         if (strlen($_POST["usuario"]) > 50)
         {
             http_response_code(400);
@@ -138,7 +136,6 @@ class UsuarioController extends Controller
             return;
         }
 
-        // caso o campo de senha ultrapasse o tamanho
         else if (strlen($_POST["senha"]) > 256)
         {
             http_response_code(400);
@@ -151,6 +148,7 @@ class UsuarioController extends Controller
 
         try 
         {
+            // Busca pela identificação e compara a senha com o hash armazenado.
             $conexao = Conexao::getConexao();
             $nome = $_POST["usuario"];
             $senha = $_POST["senha"];
@@ -158,11 +156,10 @@ class UsuarioController extends Controller
             $usuarioDAO = UsuarioDAO::NovaInstancia();
             $usuario = $usuarioDAO->buscar(TipoBusca::NOME, $nome);
 
-            // caso não exista o usuario
+            // Usa uma resposta única para usuário inexistente e senha incorreta.
             if (!isset($usuario)) 
             {
                 http_response_code(401);
-                // retorna sucesso ao usuario
                 echo json_encode([
                     "status" => 401,
                     "mensagem" => "usuario ou senha incorretos"
@@ -170,11 +167,9 @@ class UsuarioController extends Controller
                 return;
             }
 
-            // caso senha incorreta
             else if (!password_verify($senha, $usuario->getSenhaHash()))
             {
                 http_response_code(401);
-                // retorna sucesso ao usuario
                 echo json_encode([
                     "status" => 401,
                     "mensagem" => "usuario ou senha incorretos"
@@ -182,10 +177,11 @@ class UsuarioController extends Controller
                 return;
             }
 
+            //  Armazena $usuario->getId() na posição $_SESSION["id"].
             $_SESSION["id"] = $usuario->getId();
+            //  Armazena Acesso::USUARIO->value na posição $_SESSION["role"].
             $_SESSION["role"] = Acesso::USUARIO->value;
 
-            // retorna sucesso ao usuario
             echo json_encode([
                 "status" => 200,
                 "mensagem" => "acesso liberado com sucesso",
@@ -195,6 +191,7 @@ class UsuarioController extends Controller
 
         catch (PDOException $e)
         {    
+            // Falhas de persistência não são confundidas com credenciais inválidas.
             http_response_code(500);
             echo json_encode([
                 "status" => 500,
@@ -205,6 +202,7 @@ class UsuarioController extends Controller
 
         catch (Exception $e)
         {
+            // Oculta detalhes de falhas internas da autenticação.
             http_response_code(500);
             echo json_encode([
                 "status" => 500,
@@ -214,14 +212,15 @@ class UsuarioController extends Controller
         }
     }
 
+    // Retorna o jogador autenticado.
     public function eu () :void
     {
         $conexao = Conexao::getConexao();
         $meuId = $_SESSION["id"] ?? null;
 
-        // define que a resposta será JSON
         header("Content-Type: application/json");
 
+        // Sem ID de sessão, não há identidade para consultar ou devolver.
         if (!isset($meuId))
         {
             http_response_code(401);
@@ -246,10 +245,11 @@ class UsuarioController extends Controller
 
     public function sair () :void
     {
-         // define que a resposta será JSON
         header("Content-Type: application/json");
 
+        //  Armazena null na posição $_SESSION["id"].
         $_SESSION["id"] = null;
+        //  Armazena Acesso::VISITANTE->value na posição $_SESSION["role"].
         $_SESSION["role"] = Acesso::VISITANTE->value;
         
         echo json_encode([
@@ -260,8 +260,7 @@ class UsuarioController extends Controller
         return;
     }
 
-    // POST api/usuario/atualizar: troca o nome e/ou a senha de quem esta logado.
-    // campos: senha_atual (obrigatorio), nome (opcional), senha_nova (opcional)
+    // Atualiza nome ou senha da conta autenticada.
     public function atualizar () :void
     {
         header("Content-Type: application/json");
@@ -282,6 +281,7 @@ class UsuarioController extends Controller
         $senhaAtual = (string) ($_POST["senha_atual"] ?? "");
 
         $erro = null;
+        // Acumula uma única mensagem de validação antes de iniciar qualquer atualização.
         if ($senhaAtual === "") $erro = "Digite a sua senha atual para confirmar";
         else if ($nome === "" && $senhaNova === "") $erro = "Nada para mudar";
         else if (strlen($nome) > 50) $erro = "O campo \"nome\" ultrapassa o tamanho maximo";
@@ -299,6 +299,7 @@ class UsuarioController extends Controller
 
         try
         {
+            // A senha atual confirma a titularidade antes de gravar qualquer alteração.
             $usuarioDAO = UsuarioDAO::NovaInstancia();
             $usuario = $usuarioDAO->buscar(TipoBusca::ID, (int) $meuId);
 
@@ -328,6 +329,7 @@ class UsuarioController extends Controller
 
         catch (DomainException $e)
         {
+            // Propaga recusas esperadas, como nome já utilizado, com seu status de domínio.
             http_response_code($e->getCode());
             echo json_encode([
                 "status" => $e->getCode(),
@@ -338,6 +340,7 @@ class UsuarioController extends Controller
 
         catch (Exception $e)
         {
+            // Mantém o diagnóstico no servidor e a resposta pública genérica.
             error_log("UsuarioController::atualizar: " . $e->getMessage());
 
             http_response_code(500);
@@ -349,12 +352,11 @@ class UsuarioController extends Controller
         }
     }
 
+    // Exclui a propria conta ou uma conta informada pelo administrador.
     public function excluir (int $id) :void
     {
-        // define que a resposta será JSON
         header("Content-Type: application/json");
 
-        // so da para excluir a propria conta (o admin pode excluir qualquer uma)
         $meuId = $_SESSION["id"] ?? null;
         $souAdmin = ($_SESSION["role"] ?? null) === Acesso::ADMIN->value;
         if (!isset($meuId) || (!$souAdmin && (int) $id !== (int) $meuId))

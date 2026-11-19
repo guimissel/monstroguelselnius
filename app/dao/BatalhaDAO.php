@@ -60,6 +60,7 @@ class BatalhaDAO extends DAO
         throw new RuntimeException("nao consegui gerar o numero da batalha");
     }
 
+    // Conta as batalhas normais concluídas desde o último chefe para decidir o próximo encontro.
     private function batalhasParaChefe(int $idUsuario): int
     {
         $prepare = $this->pdo->prepare(
@@ -214,7 +215,6 @@ class BatalhaDAO extends DAO
         return 0;
     }
 
-    // fecha a batalha e paga a recompensa. so funciona uma vez por batalha.
     // erros esperados saem como RegraDeJogoException (o codigo e o status http)
     public function finalizar(int $idBatalha, int $idUsuario, string $resultado, int $vivos): array
     {

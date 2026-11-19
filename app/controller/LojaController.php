@@ -1,20 +1,17 @@
 <?php
-
 class LojaController extends Controller
 {
-    // maximo de unidades de um item por compra
     private const MAXIMO_POR_COMPRA = 99;
 
-    // GET api/loja: itens a venda (com quanto o jogador ja tem) + dinheiro
+    // Lista os itens disponiveis e o saldo do jogador.
     public function listar(): void
     {
-        // define que a resposta será JSON
         header("Content-Type: application/json");
 
         $meuId = $_SESSION["id"] ?? null;
+        // A loja apresenta o saldo e o catálogo específicos da conta autenticada.
         if (!isset($meuId))
         {
-            // retorna 401 Unauthorized (usuario nao identificado)
             http_response_code(401);
             echo json_encode([
                 "status" => 401,
@@ -25,23 +22,18 @@ class LojaController extends Controller
 
         try
         {
-            // define a conexao com o banco de dados
             $conexao = Conexao::getConexao();
-
-            // pega todos os itens da loja (com a quantidade que o jogador ja tem)
             $lojaDAO = LojaDAO::NovaInstancia();
             $itens = [];
 
-            // percorre todos os itens da loja e transforma em array para JSON
+            // Converte os objetos do catálogo para estruturas que possam ser serializadas em JSON.
             foreach ($lojaDAO->listar((int) $meuId) as $item) {
                 $itens[] = $item->paraArray();
             }
 
-            // pega a quantidade de pokedolares do jogador
             $inventarioDAO = InventarioDAO::NovaInstancia();
             $pokedolares = $inventarioDAO->pokedolares((int) $meuId);
 
-            // retorna o resultado em JSON
             echo json_encode([
                 "status" => 200,
                 "pokedolares" => $pokedolares,
@@ -52,7 +44,7 @@ class LojaController extends Controller
 
         catch (Exception $e)
         {
-            // o motivo real fica no log do apache (xampp/apache/logs/error.log)
+            // O detalhe da falha fica no log para não vazar configuração ou dados internos.
             error_log("LojaController::listar: " . $e->getMessage());
 
             http_response_code(500);
@@ -64,13 +56,13 @@ class LojaController extends Controller
         }
     }
 
-    // POST api/loja/{chave}/comprar (campo "quantidade" no form)
+    // Compra uma quantidade de um item da loja.
     public function comprar(string $chave): void
     {
-        // define que a resposta será JSON
         header("Content-Type: application/json");
 
         $meuId = $_SESSION["id"] ?? null;
+        // Impede compras associadas a uma sessão sem jogador identificado.
         if (!isset($meuId))
         {
             http_response_code(401);
@@ -81,15 +73,13 @@ class LojaController extends Controller
             return;
         }
 
-        // quantidade: inteiro de 1 ate o maximo
         $quantidade = filter_var($_POST["quantidade"] ?? 1, FILTER_VALIDATE_INT);
         
-        // simplificando as condições de validação da quantidade
         $quantidadeInvalida = $quantidade > self::MAXIMO_POR_COMPRA;
         $quantidadeNegativa = $quantidade < 1;
         $quantidadeNula = $quantidade === false;
 
-        // verifica se a quantidade é inválida
+        // Limita a quantidade solicitada para manter a operação dentro das regras da loja.
         if ($quantidadeInvalida || $quantidadeNegativa || $quantidadeNula)
         {
             http_response_code(400);
@@ -102,6 +92,7 @@ class LojaController extends Controller
 
         try
         {
+            // O DAO verifica estoque e saldo e realiza a compra como uma única operação.
             $lojaDAO = LojaDAO::NovaInstancia();
             $resultado = $lojaDAO->comprar((int) $meuId, $chave, $quantidade);
 
@@ -116,7 +107,7 @@ class LojaController extends Controller
 
         catch (DomainException $e)
         {
-            // erro esperado (item inexistente, sem dinheiro...)
+            // Expõe recusas previstas, como falta de saldo, com o status correspondente.
             http_response_code($e->getCode());
             echo json_encode([
                 "status" => $e->getCode(),
@@ -127,6 +118,7 @@ class LojaController extends Controller
 
         catch (Exception $e)
         {
+            // Registra a causa técnica sem repassá-la como parte da resposta ao jogador.
             error_log("LojaController::comprar: " . $e->getMessage());
 
             http_response_code(500);

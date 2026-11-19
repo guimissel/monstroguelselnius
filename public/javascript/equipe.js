@@ -46,11 +46,13 @@ const imagemTipo = (tipo) => {
 
 const tiposDe = (id) => catalogo[id]?.tipos || [];
 
+// Exibe avisos de sucesso ou validação sem reconstruir o restante da tela.
 function mostrarMensagem(texto, tipo = "") {
     mensagemEl.textContent = texto;
     mensagemEl.className = "mensagem" + (tipo ? " " + tipo : "");
 }
 
+// Resolve o nome usado na interface a partir do identificador selecionado.
 function nomeDoPokemon(id) {
     const p = disponiveis.find((b) => b.id === id);
     return p ? p.nome : `#${id}`;
@@ -146,6 +148,7 @@ async function evoluir(id) {
     desenhar();
 }
 
+// Atualiza a seleção do Pokémon e respeita os limites da equipe.
 function alternar(id) {
     if (salvando) return;
 
@@ -162,6 +165,7 @@ function alternar(id) {
     desenhar();
 }
 
+// Renderiza a formação atual e os controles de remoção dos integrantes.
 function desenharEquipe() {
     equipeEl.innerHTML = "";
 
@@ -194,6 +198,7 @@ function desenharEquipe() {
     }
 }
 
+// Monta o marcador visual de um tipo e, quando informado, sua contagem.
 function criarBadgeTipo(tipo, quantidade = null) {
     const item = document.createElement("span");
     const nomeTipo = NOMES_TIPOS[tipo] || tipo;
@@ -217,12 +222,14 @@ function criarBadgeTipo(tipo, quantidade = null) {
     return item;
 }
 
+// Acumula no resumo os tipos encontrados entre os Pokémon selecionados.
 function adicionarResumo(lista, tipo, quantidade = null) {
     const item = document.createElement("li");
     item.appendChild(criarBadgeTipo(tipo, quantidade));
     lista.appendChild(item);
 }
 
+// Atualiza indicadores de força e fraquezas compartilhadas do time.
 function desenharAnaliseEquipe() {
     fraquezasTimeEl.innerHTML = "";
     eficazTimeEl.innerHTML = "";
@@ -290,6 +297,7 @@ function desenharAnaliseEquipe() {
     }
 }
 
+// Apresenta a coleção disponível e os controles para montar a equipe.
 function desenharLista() {
     listaEl.innerHTML = "";
     const cheio = escolhidos.length >= TAMANHO_EQUIPE;
@@ -370,6 +378,7 @@ function desenharLista() {
     }
 }
 
+// Sincroniza as partes da tela com o estado atual da equipe e da coleção.
 function desenhar() {
     desenharEquipe();
     desenharLista();

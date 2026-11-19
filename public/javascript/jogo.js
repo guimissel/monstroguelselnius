@@ -253,6 +253,7 @@ const outro = (lado) => (lado === "jogador" ? "robo" : "jogador");
 
 const esperar = (ms) => new Promise((r) => setTimeout(r, ms));
 
+// Randomiza a ordem dos elementos sem criar uma lista paralela.
 function embaralhar(lista) {
     for (let i = lista.length - 1; i > 0; i--) {
         const j = Math.floor(Math.random() * (i + 1));
@@ -261,6 +262,7 @@ function embaralhar(lista) {
     return lista;
 }
 
+// Converte nomes técnicos da API para a apresentação usada no jogo.
 function formatarNome(nome) {
     return nome.split("-").map((p) => p.charAt(0).toUpperCase() + p.slice(1)).join(" ");
 }
@@ -430,6 +432,7 @@ async function fecharBatalhaNoServidor(resultado, vivos) {
 
 const cacheApi = new Map();
 
+// Centraliza chamadas HTTP e o tratamento comum das respostas da API.
 function buscar(url) {
     if (!cacheApi.has(url)) {
         const promessa = fetch(url).then((r) => {
@@ -543,6 +546,7 @@ function sortearIds(qtd, proibidos = [], lista = null) {
     return embaralhar(candidatos.filter((id) => !proibidos.includes(id))).slice(0, qtd);
 }
 
+// Carrega uma imagem antes de usá-la para evitar atrasos durante a batalha.
 function precarregarImagem(url) {
     return new Promise((resolve) => {
         const img = new Image();
@@ -569,6 +573,7 @@ musicaFundo.volume = 0.4;
 let musicaLigada = false;       // a batalha pediu musica
 let esperandoInteracao = false;
 
+// Inicia a trilha respeitando as preferências e o estado atual do áudio.
 function tocarMusica() {
     const tocando = musicaFundo.play();
     if (!tocando) return;
@@ -659,6 +664,7 @@ somLog.preload = "auto";
 somLog.volume = 0.6;
 let timerSomLog = null;
 
+// Interrompe a reprodução associada ao registro de falas da batalha.
 function pararSomLog() {
     clearTimeout(timerSomLog);
     somLog.pause();
@@ -677,9 +683,11 @@ function tocarSomLog(duracaoMax = 0) {
     }
 }
 
+// Apresenta uma fala e aguarda sua conclusão antes de liberar o próximo passo.
 function dizer(texto, { rapido = false, pausa = 650 } = {}) {
     const p = document.createElement("p");
     logTexto.appendChild(p);
+    //  Repete o bloco enquanto (logTexto.children.length > 80) logTexto.firstChild.remove( for verdadeiro.
     while (logTexto.children.length > 80) logTexto.firstChild.remove();
 
     if (rapido) {
@@ -752,6 +760,7 @@ function ajustarSpriteAnimado(sprite, lado) {
     sprite.style.top = `calc(${base.top}% + ${base.largura * 0.7 - altura}cqw)`;
 }
 
+// Remove ajustes temporários aplicados ao sprite antes de reutilizá-lo.
 function limparAjusteSprite(sprite) {
     sprite.style.width = "";
     sprite.style.left = "";
@@ -791,6 +800,7 @@ function definirSprite(sprite, lado, mon) {
     }
 }
 
+// Revela o sprite do combatente correspondente ao lado informado.
 function mostrarPokemon(lado) {
     const mon = ativo(lado);
     const sprite = LADOS[lado].sprite;
@@ -806,6 +816,7 @@ function mostrarPokemon(lado) {
     sprite.className = "sprite";
 }
 
+// Aplica uma animação de batalha e aguarda sua duração configurada.
 function animar(lado, classe, duracao) {
     const sprite = LADOS[lado].sprite;
     sprite.classList.remove(classe);
@@ -831,10 +842,12 @@ function montarBotoes(itens) {
     });
 }
 
+// Evita novas escolhas enquanto uma ação de batalha está em andamento.
 function bloquearMenu(sim) {
     menuEl.classList.toggle("bloqueado", sim);
 }
 
+// Exibe uma opção de retorno e associa a ação fornecida pelo fluxo atual.
 function mostrarVoltar(acao) {
     voltarEl.hidden = !acao;
     voltarEl.onclick = acao || null;
@@ -861,6 +874,7 @@ function iniciarTempo(aoAcabar) {
     }, 1000);
 }
 
+// Cancela o temporizador de decisão ativo, se houver.
 function pararTempo() {
     if (estado && estado.timer) clearInterval(estado.timer);
     if (estado) estado.timer = null;
@@ -881,6 +895,7 @@ function fecharPainel() {
     painelEl.hidden = true;
 }
 
+// Monta uma opção de Pokémon com estado, ação e informação complementar.
 function criarLinhaPokemon(mon, { desabilitado, onclick, extra }) {
     const b = document.createElement("button");
     b.className = "linhaPokemon";
@@ -921,6 +936,7 @@ function abrirPainelTime({ titulo, aviso, validar, aoEscolher, aoVoltar }) {
     mostrarVoltar(aoVoltar);
 }
 
+// Verifica se os efeitos do item são compatíveis com o estado do alvo.
 function itemServe(chave, mon) {
     const item = ITENS[chave];
     if (item.reviver) return mon.hp <= 0;
@@ -932,6 +948,7 @@ function itemServe(chave, mon) {
     return curaHp || curaStatus;
 }
 
+// Apresenta os itens utilizáveis e encaminha a escolha para a batalha.
 function abrirPainelItens(resolverAcao) {
     abrirPainel("Inventário", "", true);
 
@@ -953,6 +970,7 @@ function abrirPainelItens(resolverAcao) {
     mostrarVoltar(() => { fecharPainel(); mostrarMenuPrincipal(resolverAcao); });
 }
 
+// Permite selecionar o combatente que receberá o efeito do item.
 function escolherAlvoItem(chave, resolverAcao) {
     abrirPainelTime({
         titulo: `Usar ${ITENS[chave].nome} em quem?`,
@@ -963,6 +981,7 @@ function escolherAlvoItem(chave, resolverAcao) {
     });
 }
 
+// Lista os substitutos possíveis e conduz a troca de Pokémon.
 function abrirPainelTroca(resolverAcao) {
     const bloqueado = estado.cooldownTroca > 0;
     abrirPainelTime({
@@ -997,6 +1016,7 @@ function mostrarMenuPrincipal(resolverAcao) {
     ]);
 }
 
+// Exibe os golpes disponíveis e encaminha o movimento escolhido.
 function mostrarGolpes(resolverAcao) {
     const mon = ativo("jogador");
     montarBotoes(mon.golpes.map((g, i) => ({
@@ -1338,6 +1358,7 @@ let fugaEnviada = false;
 let pilhaCriada = false;
 let voltarProtegido = false;
 
+// Informa se há uma partida cujo estado ainda precisa ser concluído.
 function batalhaEmAndamento() {
     return !!estado && !estado.fim && (!!estado.idBatalha || estado.robo.equipe.pokemons.length === 3);
 }
@@ -1494,6 +1515,7 @@ async function iniciar() {
     await dizer(`Vai, ${ativo("jogador").nome}!`);
     await dizer("Atenção: se você sair da tela de batalha, você perde a batalha!");
 
+    //  Repete o bloco enquanto (!estado.fim for verdadeiro.
     while (!estado.fim) {
         const acao = await estado.jogador.escolherAcao(estado);
         await executarRodada(acao);

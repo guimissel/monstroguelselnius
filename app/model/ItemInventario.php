@@ -3,7 +3,6 @@
 // um item do catalogo (item_loja) junto com a quantidade que o jogador tem
 class ItemInventario
 {
-    // usa os traits
     use Id;
     use Nome;
 
@@ -17,6 +16,7 @@ class ItemInventario
     private bool $reviver;
     private int $quantidade;
 
+    // Reúne os dados do catálogo com os efeitos e a quantidade pertencente ao jogador.
     public function __construct(
         int $id,
         string $chave,
@@ -30,7 +30,6 @@ class ItemInventario
         bool $reviver,
         int $quantidade
     ) {
-        // usa os metodos dos traits
         $this->setId($id);
         $this->setNome($nome);
 

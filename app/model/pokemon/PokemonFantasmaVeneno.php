@@ -5,9 +5,4 @@
 class PokemonFantasmaVeneno extends Pokemon
 {
     use TipoFantasma, TipoVeneno;
-
-    public function tipos(): array
-    {
-        return ['ghost', 'poison'];
-    }
 }

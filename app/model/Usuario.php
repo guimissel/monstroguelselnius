@@ -1,5 +1,6 @@
 <?php
 
+// Representa a identidade persistida do jogador e mantém o hash separado do nome público.
 class Usuario 
 {
     use Id;
@@ -8,6 +9,7 @@ class Usuario
     private string $usuario;
     private ?string $senhaHash;
 
+    // Aceita hash nulo para objetos usados em respostas que não precisam carregar credenciais.
     public function __construct(int $id, string $nome, ?string $senhaHash) 
     {
         $this->setId($id);
