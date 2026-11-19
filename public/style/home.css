@@ -72,14 +72,14 @@ main {
     min-height: calc(100vh - 64px);
     display: flex;
     align-items: center;
-    justify-content: center;
-    padding: clamp(20px, 6vw, 72px);
+    justify-content: flex-start;
+    padding: clamp(20px, 4vw, 48px);
 }
 
 .boasVindas {
-    width: min(100%, 600px);
-    padding: clamp(24px, 4vw, 42px);
-    background: linear-gradient(145deg, rgba(20, 49, 88, .96), var(--azul-painel));
+    width: min(100%, 480px);
+    padding: 24px 28px;
+    background: var(--azul-painel);
     border: 2px solid var(--azul-borda);
     border-radius: 18px;
     box-shadow: var(--sombra), inset 0 0 0 4px rgba(255, 255, 255, .035);
@@ -88,15 +88,15 @@ main {
 
 .saudacao { margin: 0; color: #bbd5e8; font-size: 19px; }
 h1 {
-    margin: 4px 0 16px;
+    margin: 4px 0 12px;
     color: var(--ouro);
-    font-size: clamp(34px, 6vw, 52px);
+    font-size: clamp(30px, 4vw, 44px);
     font-weight: 500;
     line-height: 1.08;
     overflow-wrap: anywhere;
     text-shadow: 3px 3px 0 #173e69;
 }
-.texto { margin: 0 0 22px; font-size: 18px; line-height: 1.55; }
+.texto { margin: 0 0 16px; font-size: 16px; line-height: 1.45; }
 
 .companheiro {
     display: flex;
@@ -116,9 +116,9 @@ h1 {
 
 .acoes { display: flex; flex-wrap: wrap; gap: 10px; }
 .botaoPrincipal, .botaoSecundario {
-    min-height: 48px;
+    min-height: 44px;
     display: inline-flex;
-    flex: 1 1 145px;
+    flex: 1 1 125px;
     align-items: center;
     justify-content: center;
     padding: 10px 16px;
@@ -135,7 +135,7 @@ h1 {
 .botaoSecundario { color: #fff; background: #24699b; border-color: #55a1c8; border-bottom-color: #153f68; }
 .botaoPrincipal:hover, .botaoSecundario:hover { filter: brightness(1.12); transform: translateY(-2px); }
 .botaoPrincipal:active, .botaoSecundario:active { transform: translateY(2px); border-bottom-width: 2px; }
-.dica { margin: 22px 0 0; color: #c5d5e5; font-size: 15px; line-height: 1.5; }
+.dica { margin: 16px 0 0; color: #c5d5e5; font-size: 14px; line-height: 1.4; }
 .dica strong { color: var(--ouro); }
 
 :focus-visible { outline: 3px solid #fff1a8; outline-offset: 3px; }
