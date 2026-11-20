@@ -4,4 +4,9 @@
 class Controller
 {
     use NovaInstancia;
+
+    public static function RespostaJson (array $json, int $codigo): void
+    {
+        return;
+    }
 }

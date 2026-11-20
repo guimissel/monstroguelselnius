@@ -1,5 +1,4 @@
 <?php
-
 /**
  * Essa classe é herdada por todos arquivos em /dao
  * 
@@ -9,6 +8,8 @@
  * @method mixed Inserir (array $info, bool $retornarUltimoId = false)
  * @method void Atualizar (array $info)
  * @method void Excluir (array $info)
+ * @method void IniciarTransaction ()
+ * @method void FinalizaTransaction ()
  */
 class DAO
 {
@@ -56,6 +57,13 @@ class DAO
             // trata a exceção
             throw new RuntimeException("Existem variaveis não declaradas na lista associativa (DAO linha 197)");
             return null;
+        }
+
+        // caso a tabela venha em lista para buscas com join
+        if(is_array($tabela))
+        {
+            // transforma em uma string
+            $tabela = implode(" ", $tabela);
         }
 
         // string para as colunas
@@ -127,6 +135,7 @@ class DAO
         // valores para serem inseridos
         $valores = $info["valores"];
         $tabela = $info["tabela"];
+        $extra = $info["extra"] ?? "";
 
         // caso alguma das variaveis necessarias não seja definida
         if (!isset($tabela, $valores, $colunas))
@@ -134,6 +143,13 @@ class DAO
             // trata a exceção
             throw new RuntimeException("Existem variaveis não declaradas na lista associativa (DAO linha 197)");
             return null;
+        }
+
+        // se extra for uma lista
+        if (is_array($extra))
+        {
+            // tranforma em uma string
+            $extra = implode(" ", $extra);
         }
 
         // string para as colunas
@@ -169,7 +185,7 @@ class DAO
         try {
 
             // sql que sera executado no banco de dados
-            $sql = "INSERT INTO $tabela ($colunasString) VALUES ($colunasValoresString)";
+            $sql = "INSERT INTO $tabela ($colunasString) VALUES ($colunasValoresString) $extra";
 
             // prepara o pdo
             $preparar = $this->pdo->prepare($sql);
@@ -335,5 +351,121 @@ class DAO
             // trata a exceção
             throw new PDOException("Não foi possivel executar a exclusão (PDOException)", 1, $e);
         }
+    }
+
+    /**
+     * Iniciar uma nova transação no banco de dados
+     * @author Miguel Granville
+     * @return bool retorna se foi um sucess
+     */
+    public function IniciarTransaction (): bool
+    {
+        // verifica se já existe uma transaction
+        if ($this->pdo->inTransaction())
+        {
+            // trata uma nova exceção
+            throw new PDOException("Não é possivel iniciar uma transaction, motivo: já existe uma transaction");
+            return false;
+        }
+
+        // tenta iniciar a transaction
+        try {
+
+            // retorna se foi um sucesso ou não
+            return $this->pdo->beginTransaction();
+        } 
+        
+        // trata a exceção
+        catch (PDOException $e) 
+        {
+            error_log(
+                "Não foi possivel executar o inicio de uma transaction " . $e->getMessage(), 
+                $e->getCode()
+            );
+            throw $e;
+        }
+
+        return false;
+    }
+
+    /**
+     * Finaliza a transaction atual
+     * @author Miguel Granville
+     * @return bool retorna se foi um sucess
+     */
+    public function FinalizarTransaction (): bool
+    {
+        // verifica se não existe uma transaction
+        if (!$this->EstaEmTransaction())
+        {
+            // trata uma nova exceção
+            throw new PDOException("Não é possivel iniciar uma transaction, motivo: não existe uma transaction");
+            return false;
+        }
+
+        // tenta finalizar a transaction
+        try {
+
+            // retorna se foi um sucesso ou não
+            return $this->pdo->commit();
+        } 
+        
+        // trata a exceção
+        catch (PDOException $e) 
+        {
+            error_log(
+                "Não foi possivel executar o inicio de uma transaction " . $e->getMessage(), 
+                $e->getCode()
+            );
+            throw $e;
+        }
+
+        return false;
+    }
+
+    /**
+     * Verifica a transaction atual
+     * @author Miguel Granville
+     * @return bool retorna se foi um sucesso
+     */
+    public function EstaEmTransaction() :bool
+    {
+        // retorna se esta
+        return $this->pdo->inTransaction();
+    }
+
+    /**
+     * Reverte a transaction atual
+     * @author Miguel Granville
+     * @return bool retorna se foi um sucess
+     */
+    public function ReverterTransaction (): bool
+    {
+        // verifica se não existe uma transaction
+        if (!$this->EstaEmTransaction())
+        {
+            // trata uma nova exceção
+            throw new PDOException("Não é possivel iniciar uma transaction, motivo: não existe uma transaction");
+            return false;
+        }
+
+        // tenta finalizar a transaction
+        try {
+
+            // retorna se foi um sucesso ou não
+            return $this->pdo->rollBack();
+        } 
+        
+        // trata a exceção
+        catch (PDOException $e) 
+        {
+            error_log(
+                "Não foi possivel executar o inicio de uma transaction " . $e->getMessage(), 
+                $e->getCode()
+            );
+            throw $e;
+        }
+
+        return false;
     }
 }
