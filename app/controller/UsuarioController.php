@@ -58,7 +58,7 @@ class UsuarioController extends Controller
 
             $usuarioDAO = UsuarioDAO::NovaInstancia();
 
-            $usuario = $usuarioDAO->criar($usuario);
+            $usuario = $usuarioDAO->criarUsuario($usuario);
             
             //  Armazena $usuario->getId() na posição $_SESSION["id"].
             $_SESSION["id"] = $usuario->getId();
@@ -154,7 +154,7 @@ class UsuarioController extends Controller
             $senha = $_POST["senha"];
 
             $usuarioDAO = UsuarioDAO::NovaInstancia();
-            $usuario = $usuarioDAO->buscar(TipoBusca::NOME, $nome);
+            $usuario = $usuarioDAO->buscarUsuario(TipoBusca::NOME, $nome);
 
             // Usa uma resposta única para usuário inexistente e senha incorreta.
             if (!isset($usuario)) 
@@ -232,7 +232,7 @@ class UsuarioController extends Controller
         }
 
         $usuarioDAO = UsuarioDAO::NovaInstancia();
-        $meuUsuario = $usuarioDAO->buscar(TipoBusca::ID, $meuId);
+        $meuUsuario = $usuarioDAO->buscarUsuario(TipoBusca::ID, $meuId);
         $role = $_SESSION["role"];
 
         echo json_encode([
@@ -301,7 +301,7 @@ class UsuarioController extends Controller
         {
             // A senha atual confirma a titularidade antes de gravar qualquer alteração.
             $usuarioDAO = UsuarioDAO::NovaInstancia();
-            $usuario = $usuarioDAO->buscar(TipoBusca::ID, (int) $meuId);
+            $usuario = $usuarioDAO->buscarUsuario(TipoBusca::ID, (int) $meuId);
 
             if ($usuario === null || !password_verify($senhaAtual, $usuario->getSenhaHash()))
             {
@@ -313,7 +313,7 @@ class UsuarioController extends Controller
                 return;
             }
 
-            $usuarioDAO->atualizar(
+            $usuarioDAO->atualizarUsuario(
                 (int) $meuId,
                 $nome !== "" ? $nome : null,
                 $senhaNova !== "" ? password_hash($senhaNova, PASSWORD_DEFAULT) : null
@@ -370,7 +370,7 @@ class UsuarioController extends Controller
         }
 
         $usuarioDAO = UsuarioDAO::NovaInstancia();
-        $usuarioExclusao = $usuarioDAO->buscar(TipoBusca::ID, $id);
+        $usuarioExclusao = $usuarioDAO->buscarUsuario(TipoBusca::ID, $id);
 
         if (!isset($usuarioExclusao))
         {
@@ -383,7 +383,7 @@ class UsuarioController extends Controller
         }
 
         try {
-            $usuarioDAO->excluir($usuarioExclusao);
+            $usuarioDAO->excluirUsuario($usuarioExclusao);
             $this->sair();
             return;
         }

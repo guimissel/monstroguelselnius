@@ -1,59 +1,111 @@
 <?php
 
-// Le os pokemons do banco (view vw_pokedex) e devolve objetos Pokemon.
+/**
+ * Le os pokemons do banco dentro da view vw_pokedex
+ * 
+ * @author Vinicius Grub / Miguel Granville
+ * @method array todos()
+ * @method ?Pokemon buscarPorId(int $id)
+ * @method array daColecao(int $idUsuario)
+ * @method Equipe daEquipe(int $idUsuario)
+ * @method array montar (array $linhas)
+ */
+
 class PokemonDAO extends DAO
 {
 
-    // todos os pokemons, ordenados pelo numero
+    /**
+     * Busca todos pokemons ordenando pelo seu numero
+     * 
+     * @author Miguel Granville
+     * @return array retorna uma lista com todos pokemons
+     */
     public function todos(): array
     {
-        $linhas = $this->pdo->query("SELECT * FROM vw_pokedex ORDER BY id_pokemon")->fetchAll();
-        return $this->montar($linhas);
+        $resultadoBusca = $this->Buscar([
+            "colunas" => "*",
+            "tabela"=>"vw_pokedex",
+            "pesquisa"=> "true ORDER BY id_pokemon",
+            "valores" => []
+        ], true);
+
+        return $this->montar($resultadoBusca);
     }
 
-    // Retorna a espécie solicitada ou null quando o identificador não consta na Pokédex.
-    public function buscar(int $id): ?Pokemon
+    /**
+     * Busca um pokemon usando o seu Id
+     * 
+     * @author Vinicius Grub
+     * @param int $id chave usada para buscar no banco de dados
+     * @return ?Pokemon retorna o pokemon buscado ou null caso não encontre
+    */
+    public function buscarPorId(int $id): ?Pokemon
     {
-        $prepare = $this->pdo->prepare("SELECT * FROM vw_pokedex WHERE id_pokemon = :id");
-        $prepare->execute(["id" => $id]);
-        $lista = $this->montar($prepare->fetchAll());
+        $resultadoBusca = $this->Buscar([
+            "colunas"=>"*",
+            "tabela"=>"vw_pokedex",
+            "pesquisa"=>"id_pokemon = :id",
+            "valores"=>[
+                "id"=>$id
+            ]
+        ], true);
 
+        $lista = $this->montar($resultadoBusca);
         return $lista[0] ?? null;
     }
 
     // a colecao do jogador (pokemons que ele tem)
     public function daColecao(int $idUsuario): array
     {
-        $prepare = $this->pdo->prepare(
-            "SELECT p.* FROM vw_pokedex p
-             JOIN pokemon_usuario pu ON pu.id_pokemon = p.id_pokemon
-             WHERE pu.id_usuario = :id
-             ORDER BY p.id_pokemon"
-        );
-        $prepare->execute(["id" => $idUsuario]);
+        $resultadoBusca = $this->Buscar([
+            "colunas"=>"p.*",
+            "tabela"=>"vw_pokedex p JOIN pokemon_usuario pu ON pu.id_pokemon = p.id_pokemon",
+            "pesquisa"=>"pu.id_usuario = :id ORDER BY p.id_pokemon",
+            "valores"=>[
+                "id"=>$idUsuario
+            ]
+        ], true);
 
-        return $this->montar($prepare->fetchAll());
+        return $this->montar($resultadoBusca);
     }
 
-    // a equipe salva do jogador, na ordem das posicoes
+    /**
+     * Resgata o valor da equipe do jogador na ordem das posições
+     * 
+     * @author Vinicius Grub
+     * @param int $idUsuario chave usada na busca pela equipe
+     * @return Equipe retorna a equipe do usuario
+     */
     public function daEquipe(int $idUsuario): Equipe
     {
-        $prepare = $this->pdo->prepare(
-            "SELECT p.* FROM vw_pokedex p
-             JOIN equipe_usuario e ON e.id_pokemon = p.id_pokemon
-             WHERE e.id_usuario = :id
-             ORDER BY e.posicao"
-        );
-        $prepare->execute(["id" => $idUsuario]);
+        $resultadoBusca = $this->Buscar([
+            "colunas"=>"*",
+            "tabela" => "vw_pokedex p JOIN equipe_usuario e ON e.id_pokemon = p.id_pokemon",
+            "pesquisa" => "e.id_usuario = :id ORDER BY e.posicao",
+            "valores" => [
+                "id" => $idUsuario
+            ]
+        ], true);
 
         $equipe = new Equipe();
-        foreach ($this->montar($prepare->fetchAll()) as $pokemon) {
+        $arrayPokemonMontado = $this->montar($resultadoBusca);
+
+        // adiciona cada pokemon a equipe do usuario
+        foreach ($arrayPokemonMontado as $pokemon) {
             $equipe->adicionar($pokemon);
         }
+
+        // retorna a equipe
         return $equipe;
     }
 
-    // linhas da view -> objetos
+    /**
+     * Monta a lista de pokemons PokemonFactory
+     * 
+     * @author Vinicius Grub
+     * @param array $linhas lista de linhas para montar o pokemon
+     * @return array retorna uma lista de pokemons gerados pela factory
+    */
     private function montar(array $linhas): array
     {
         return array_map(fn (array $linha) => PokemonFactory::criar($linha), $linhas);
