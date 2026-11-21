@@ -1,20 +1,34 @@
 <?php
+
+/**
+ * Controla as ações de conta e autenticação dos usuários
+ * 
+ * @author Miguel Granville / Vinicius Grub
+ * @method void criar()
+ * @method void entrar()
+ * @method void eu()
+ * @method void sair()
+ * @method void atualizar()
+ * @method void excluir(int $id)
+ */
 class UsuarioController extends Controller
 {
-    // Cria uma nova conta.
+    /**
+     * Cria uma nova conta.
+     * 
+     * @author Miguel Granville / Vinicius Grub
+     * @return void
+     */
     public function criar () :void
     {
-        header("Content-Type: application/json");
-
         // Impede que campos obrigatórios vazios cheguem às regras de criação da conta.
         foreach ($_POST as $chave => $valor) {
             if (trim((string) $valor) === '')
             {
-                http_response_code(400);
-                echo json_encode([
-                    "status" => 400,
-                    "mensagem" => "O campo \"" . $chave . "\" está vazio"
-                ]);
+                Controller::RespostaJson()
+                    ->status(400)
+                    ->mensagem("O campo \"" . $chave . "\" está vazio")
+                    ->enviar();
                 return;
             }    
         }
@@ -22,21 +36,18 @@ class UsuarioController extends Controller
         // Mantém os limites compatíveis com o armazenamento do nome e da senha.
         if (strlen($_POST["usuario"]) > 50)
         {
-            http_response_code(400);
-            echo json_encode([
-                "status"=>400,
-                "mensagem"=>"O campo \"usuario\" ultrapassa o tamanho maximo"
-            ]);
+            Controller::RespostaJson()
+                ->status(400)
+                ->mensagem("O campo \"usuario\" ultrapassa o tamanho maximo")
+                ->enviar();
             return;
         }
-
         else if (strlen($_POST["senha"]) > 256)
         {
-            http_response_code(400);
-            echo json_encode([
-                "status"=>400,
-                "mensagem"=>"O campo \"senha\" ultrapassa o tamanho maximo"
-            ]);
+            Controller::RespostaJson()
+                ->status(400)
+                ->mensagem("O campo \"senha\" ultrapassa o tamanho maximo")
+                ->enviar();
             return;
         }
 
@@ -65,62 +76,58 @@ class UsuarioController extends Controller
             //  Armazena Acesso::USUARIO->value na posição $_SESSION["role"].
             $_SESSION["role"] = Acesso::USUARIO->value;
 
-            echo json_encode([
-                "status" => 200,
-                "mensagem" => "usuario criado com sucesso",
-                "refresh"=>true
-            ]);
+            Controller::RespostaJson()
+                ->status(200)
+                ->mensagem("usuario criado com sucesso")
+                ->adicionar("refresh", true)
+                ->enviar();
             return;
         }
-
         catch (DomainException $e)
         {
             // Problemas esperados de domínio mantêm seu status e mensagem específicos.
-            http_response_code($e->getCode());
-            echo json_encode([
-                "status" => $e->getCode(),
-                "mensagem" => $e->getMessage()
-            ]);
+            Controller::RespostaJson()
+                ->status($e->getCode())
+                ->mensagem($e->getMessage())
+                ->enviar();
             return;
         }
-
         catch (PDOException $e)
         {    
             // Erros de banco são diferenciados dos demais erros internos da aplicação.
-            http_response_code(500);
-            echo json_encode([
-                "status" => 500,
-                "mensagem" => "Nao foi possivel criar esse usuario: " . $e->getMessage()
-            ]);
+            Controller::RespostaJson()
+                ->status(500)
+                ->mensagem("Nao foi possivel criar esse usuario: " . $e->getMessage())
+                ->enviar();
             return;
         }
-
         catch (Exception $e)
         {
             // Não expõe detalhes de exceções inesperadas durante o cadastro.
-            http_response_code(500);
-            echo json_encode([
-                "status" => 500,
-                "mensagem" => "Erro interno! tente novamente mais tarde"
-            ]);
+            Controller::RespostaJson()
+                ->status(500)
+                ->mensagem("Erro interno! tente novamente mais tarde")
+                ->enviar();
             return;
         }
     }
 
-    // Autentica o jogador.
+    /**
+     * Autentica o jogador.
+     * 
+     * @author Miguel Granville / Vinicius Grub
+     * @return void
+     */
     public function entrar () :void
     {
-        header("Content-Type: application/json");
-
         // Exige os campos do formulário antes de consultar as credenciais.
         foreach ($_POST as $chave => $valor) {
             if (trim((string) $valor) === '')
             {
-                http_response_code(400);
-                echo json_encode([
-                    "status" => 400,
-                    "mensagem" => "O campo \"" . $chave . "\" está vazio"
-                ]);
+                Controller::RespostaJson()
+                    ->status(400)
+                    ->mensagem("O campo \"" . $chave . "\" está vazio")
+                    ->enviar();
                 return;
             }    
         }
@@ -128,21 +135,18 @@ class UsuarioController extends Controller
         // Rejeita entradas acima dos limites conhecidos pelo cadastro.
         if (strlen($_POST["usuario"]) > 50)
         {
-            http_response_code(400);
-            echo json_encode([
-                "status"=>400,
-                "mensagem"=>"O campo \"usuario\" ultrapassa o tamanho maximo"
-            ]);
+            Controller::RespostaJson()
+                ->status(400)
+                ->mensagem("O campo \"usuario\" ultrapassa o tamanho maximo")
+                ->enviar();
             return;
         }
-
         else if (strlen($_POST["senha"]) > 256)
         {
-            http_response_code(400);
-            echo json_encode([
-                "status"=>400,
-                "mensagem"=>"O campo \"senha\" ultrapassa o tamanho maximo"
-            ]);
+            Controller::RespostaJson()
+                ->status(400)
+                ->mensagem("O campo \"senha\" ultrapassa o tamanho maximo")
+                ->enviar();
             return;
         }
 
@@ -159,21 +163,18 @@ class UsuarioController extends Controller
             // Usa uma resposta única para usuário inexistente e senha incorreta.
             if (!isset($usuario)) 
             {
-                http_response_code(401);
-                echo json_encode([
-                    "status" => 401,
-                    "mensagem" => "usuario ou senha incorretos"
-                ]);
+                Controller::RespostaJson()
+                    ->status(401)
+                    ->mensagem("usuario ou senha incorretos")
+                    ->enviar();
                 return;
             }
-
             else if (!password_verify($senha, $usuario->getSenhaHash()))
             {
-                http_response_code(401);
-                echo json_encode([
-                    "status" => 401,
-                    "mensagem" => "usuario ou senha incorretos"
-                ]);
+                Controller::RespostaJson()
+                    ->status(401)
+                    ->mensagem("usuario ou senha incorretos")
+                    ->enviar();
                 return;
             }
 
@@ -182,52 +183,50 @@ class UsuarioController extends Controller
             //  Armazena Acesso::USUARIO->value na posição $_SESSION["role"].
             $_SESSION["role"] = Acesso::USUARIO->value;
 
-            echo json_encode([
-                "status" => 200,
-                "mensagem" => "acesso liberado com sucesso",
-            ]);
+            Controller::RespostaJson()
+                ->status(200)
+                ->mensagem("acesso liberado com sucesso")
+                ->enviar();
             return;
         }
-
         catch (PDOException $e)
         {    
             // Falhas de persistência não são confundidas com credenciais inválidas.
-            http_response_code(500);
-            echo json_encode([
-                "status" => 500,
-                "mensagem" => "Nao foi possivel criar esse usuario"
-            ]);
+            Controller::RespostaJson()
+                ->status(500)
+                ->mensagem("Nao foi possivel criar esse usuario")
+                ->enviar();
             return;
         }
-
         catch (Exception $e)
         {
             // Oculta detalhes de falhas internas da autenticação.
-            http_response_code(500);
-            echo json_encode([
-                "status" => 500,
-                "mensagem" => "Erro interno! tente novamente mais tarde"
-            ]);
+            Controller::RespostaJson()
+                ->status(500)
+                ->mensagem("Erro interno! tente novamente mais tarde")
+                ->enviar();
             return;
         }
     }
 
-    // Retorna o jogador autenticado.
+    /**
+     * Retorna o jogador autenticado.
+     * 
+     * @author Miguel Granville / Vinicius Grub
+     * @return void
+     */
     public function eu () :void
     {
         $conexao = Conexao::getConexao();
         $meuId = $_SESSION["id"] ?? null;
 
-        header("Content-Type: application/json");
-
         // Sem ID de sessão, não há identidade para consultar ou devolver.
         if (!isset($meuId))
         {
-            http_response_code(401);
-            echo json_encode([
-                "status"=> 401,
-                "mensagem"=> "usuario nao foi identificado"
-            ]);
+            Controller::RespostaJson()
+                ->status(401)
+                ->mensagem("usuario nao foi identificado")
+                ->enviar();
             return;
         }
 
@@ -235,44 +234,51 @@ class UsuarioController extends Controller
         $meuUsuario = $usuarioDAO->buscarUsuario(TipoBusca::ID, $meuId);
         $role = $_SESSION["role"];
 
-        echo json_encode([
-            "id"=>$meuUsuario->getId(),
-            "nome"=>$meuUsuario->getNome(),
-            "role"=>$role
-        ]);
+        Controller::RespostaJson()
+            ->status(200)
+            ->adicionar("id", $meuUsuario->getId())
+            ->adicionar("nome", $meuUsuario->getNome())
+            ->adicionar("role", $role)
+            ->enviar();
         return;
     }
 
+    /**
+     * Remove a sessão do usuário.
+     * 
+     * @author Miguel Granville / Vinicius Grub
+     * @return void
+     */
     public function sair () :void
     {
-        header("Content-Type: application/json");
-
         //  Armazena null na posição $_SESSION["id"].
         $_SESSION["id"] = null;
         //  Armazena Acesso::VISITANTE->value na posição $_SESSION["role"].
         $_SESSION["role"] = Acesso::VISITANTE->value;
         
-        echo json_encode([
-            "status"=>200,
-            "mensagem"=>"usuario saiu de sua conta",
-            "refresh"=>true
-        ]);
+        Controller::RespostaJson()
+            ->status(200)
+            ->mensagem("usuario saiu de sua conta")
+            ->adicionar("refresh", true)
+            ->enviar();
         return;
     }
 
-    // Atualiza nome ou senha da conta autenticada.
+    /**
+     * Atualiza nome ou senha da conta autenticada.
+     * 
+     * @author Miguel Granville / Vinicius Grub
+     * @return void
+     */
     public function atualizar () :void
     {
-        header("Content-Type: application/json");
-
         $meuId = $_SESSION["id"] ?? null;
         if (!isset($meuId))
         {
-            http_response_code(401);
-            echo json_encode([
-                "status" => 401,
-                "mensagem" => "usuario nao foi identificado"
-            ]);
+            Controller::RespostaJson()
+                ->status(401)
+                ->mensagem("usuario nao foi identificado")
+                ->enviar();
             return;
         }
 
@@ -289,11 +295,10 @@ class UsuarioController extends Controller
 
         if ($erro !== null)
         {
-            http_response_code(400);
-            echo json_encode([
-                "status" => 400,
-                "mensagem" => $erro
-            ]);
+            Controller::RespostaJson()
+                ->status(400)
+                ->mensagem($erro)
+                ->enviar();
             return;
         }
 
@@ -305,11 +310,10 @@ class UsuarioController extends Controller
 
             if ($usuario === null || !password_verify($senhaAtual, $usuario->getSenhaHash()))
             {
-                http_response_code(401);
-                echo json_encode([
-                    "status" => 401,
-                    "mensagem" => "senha atual incorreta"
-                ]);
+                Controller::RespostaJson()
+                    ->status(401)
+                    ->mensagem("senha atual incorreta")
+                    ->enviar();
                 return;
             }
 
@@ -319,53 +323,53 @@ class UsuarioController extends Controller
                 $senhaNova !== "" ? password_hash($senhaNova, PASSWORD_DEFAULT) : null
             );
 
-            echo json_encode([
-                "status" => 200,
-                "mensagem" => "perfil atualizado",
-                "nome" => $nome !== "" ? $nome : $usuario->getNome()
-            ]);
+            Controller::RespostaJson()
+                ->status(200)
+                ->mensagem("perfil atualizado")
+                ->adicionar("nome", $nome !== "" ? $nome : $usuario->getNome())
+                ->enviar();
             return;
         }
-
         catch (DomainException $e)
         {
             // Propaga recusas esperadas, como nome já utilizado, com seu status de domínio.
-            http_response_code($e->getCode());
-            echo json_encode([
-                "status" => $e->getCode(),
-                "mensagem" => $e->getMessage()
-            ]);
+            Controller::RespostaJson()
+                ->status($e->getCode())
+                ->mensagem($e->getMessage())
+                ->enviar();
             return;
         }
-
         catch (Exception $e)
         {
             // Mantém o diagnóstico no servidor e a resposta pública genérica.
             error_log("UsuarioController::atualizar: " . $e->getMessage());
 
-            http_response_code(500);
-            echo json_encode([
-                "status" => 500,
-                "mensagem" => "Nao foi possivel atualizar o perfil"
-            ]);
+            Controller::RespostaJson()
+                ->status(500)
+                ->mensagem("Nao foi possivel atualizar o perfil")
+                ->enviar();
             return;
         }
     }
 
-    // Exclui a propria conta ou uma conta informada pelo administrador.
+    /**
+     * Exclui a propria conta ou uma conta informada pelo administrador.
+     * 
+     * @author Miguel Granville / Vinicius Grub
+     * @param int $id Identificador da conta a ser excluída
+     * @return void
+     */
     public function excluir (int $id) :void
     {
-        header("Content-Type: application/json");
-
         $meuId = $_SESSION["id"] ?? null;
         $souAdmin = ($_SESSION["role"] ?? null) === Acesso::ADMIN->value;
+        
         if (!isset($meuId) || (!$souAdmin && (int) $id !== (int) $meuId))
         {
-            http_response_code(403);
-            echo json_encode([
-                "status"=>403,
-                "mensagem"=>"Voce so pode excluir a sua propria conta"
-            ]);
+            Controller::RespostaJson()
+                ->status(403)
+                ->mensagem("Voce so pode excluir a sua propria conta")
+                ->enviar();
             return;
         }
 
@@ -374,11 +378,10 @@ class UsuarioController extends Controller
 
         if (!isset($usuarioExclusao))
         {
-            http_response_code(401);
-            echo json_encode([
-                "status"=>401,
-                "mensagem"=>"Não foi possivel excluir"
-            ]);
+            Controller::RespostaJson()
+                ->status(401)
+                ->mensagem("Não foi possivel excluir")
+                ->enviar();
             return;
         }
 
@@ -387,26 +390,21 @@ class UsuarioController extends Controller
             $this->sair();
             return;
         }
-
         catch (PDOException $e)
         {
-            http_response_code(500);
-            echo json_encode([
-                "status"=>500,
-                "mensagem"=>"O servidor não consegui excluir essa conta"
-            ]);
+            Controller::RespostaJson()
+                ->status(500)
+                ->mensagem("O servidor não consegui excluir essa conta")
+                ->enviar();
             return;
         }
-
         catch (Exception $e) 
         {
-            http_response_code(500);
-            echo json_encode([
-                "status"=>500,
-                "mensagem"=>"O servidor não consegui excluir essa conta"
-            ]);
+            Controller::RespostaJson()
+                ->status(500)
+                ->mensagem("O servidor não consegui excluir essa conta")
+                ->enviar();
             return;
         }
-        
     }
 }
