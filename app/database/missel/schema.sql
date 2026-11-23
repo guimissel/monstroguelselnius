@@ -20,14 +20,13 @@ DROP TRIGGER IF EXISTS trg_usuario_exclusao;
 DROP TRIGGER IF EXISTS trg_evolucao_monstro;
 
 DROP TABLE IF EXISTS monstro_batalha_usuario;
-DROP TABLE IF EXISTS batalha_robo;
+DROP TABLE IF EXISTS batalha;
 DROP TABLE IF EXISTS equipe_usuario;
 DROP TABLE IF EXISTS pokemon_usuario;
 DROP TABLE IF EXISTS monstro_usuario;
 DROP TABLE IF EXISTS log_loja;
 DROP TABLE IF EXISTS log_usuario;
 DROP TABLE IF EXISTS `log`;
-DROP TABLE IF EXISTS batalha;
 DROP TABLE IF EXISTS item_usuario;
 DROP TABLE IF EXISTS item_loja;
 DROP TABLE IF EXISTS pokemon_basico;
@@ -184,6 +183,38 @@ CREATE TABLE imunidades_tipo (
     FOREIGN KEY (id_tipo_imunidade) REFERENCES tipo(id_tipo) ON DELETE CASCADE ON UPDATE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
+CREATE TABLE eficaz_tipo (
+    id_tipo INT NOT NULL,
+    id_tipo_eficaz INT NOT NULL,
+    PRIMARY KEY (id_tipo, id_tipo_eficaz),
+    FOREIGN KEY (id_tipo) REFERENCES tipo(id_tipo) ON DELETE CASCADE ON UPDATE CASCADE,
+    FOREIGN KEY (id_tipo_eficaz) REFERENCES tipo(id_tipo) ON DELETE CASCADE ON UPDATE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+CREATE TABLE fraqueza_tipo (
+    id_tipo INT NOT NULL,
+    id_tipo_fraqueza INT NOT NULL,
+    PRIMARY KEY (id_tipo, id_tipo_fraqueza),
+    FOREIGN KEY (id_tipo) REFERENCES tipo(id_tipo) ON DELETE CASCADE ON UPDATE CASCADE,
+    FOREIGN KEY (id_tipo_fraqueza) REFERENCES tipo(id_tipo) ON DELETE CASCADE ON UPDATE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+CREATE TABLE imune_tipo (
+    id_tipo INT NOT NULL,
+    id_tipo_imune INT NOT NULL,
+    PRIMARY KEY (id_tipo, id_tipo_imune),
+    FOREIGN KEY (id_tipo) REFERENCES tipo(id_tipo) ON DELETE CASCADE ON UPDATE CASCADE,
+    FOREIGN KEY (id_tipo_imune) REFERENCES tipo(id_tipo) ON DELETE CASCADE ON UPDATE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+CREATE TABLE resiste_tipo (
+    id_tipo INT NOT NULL,
+    id_tipo_resiste INT NOT NULL,
+    PRIMARY KEY (id_tipo, id_tipo_resiste),
+    FOREIGN KEY (id_tipo) REFERENCES tipo(id_tipo) ON DELETE CASCADE ON UPDATE CASCADE,
+    FOREIGN KEY (id_tipo_resiste) REFERENCES tipo(id_tipo) ON DELETE CASCADE ON UPDATE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
 CREATE TABLE tipo_monstro (
     id_monstro INT NOT NULL,
     id_tipo INT NOT NULL,
@@ -247,16 +278,6 @@ CREATE TABLE batalha (
     CHECK (status IN ('em_andamento','vitoria','derrota','fuga')),
     CHECK (recompensa >= 0),
     CHECK (turno_atual >= 1)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
-
-CREATE TABLE batalha_robo (
-    id_batalha INT NOT NULL,
-    posicao TINYINT NOT NULL,
-    id_pokemon INT NOT NULL,
-    PRIMARY KEY (id_batalha, posicao),
-    FOREIGN KEY (id_batalha) REFERENCES batalha(id_batalha) ON DELETE CASCADE ON UPDATE CASCADE,
-    FOREIGN KEY (id_pokemon) REFERENCES monstro(id_monstro) ON DELETE RESTRICT ON UPDATE CASCADE,
-    CHECK (posicao BETWEEN 1 AND 3)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 CREATE TABLE `log` (
