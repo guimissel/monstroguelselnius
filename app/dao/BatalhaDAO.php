@@ -57,13 +57,19 @@ class BatalhaDAO extends DAO
      */
     private function inserirBatalha(int $idUsuario, bool$chefe): int
     {
+        $idUsuarioBot = $this->buscarUsuarioBot();
+
         if ($this->numeraSozinha())
         {
             // Insere uma nova batalha automática usando as chaves id_usuario e is_boss
             return $this->Inserir([
                 "tabela" => "batalha",
-                "colunas" => ["id_usuario", "is_boss"],
-                "valores" => ["id_usuario" => $idUsuario, "is_boss" => (int) $chefe]
+                "colunas" => ["id_usuario", "id_usuario_2", "is_boss"],
+                "valores" => [
+                    "id_usuario" => $idUsuario,
+                    "id_usuario_2" => $idUsuarioBot,
+                    "is_boss" => (int) $chefe
+                ]
             ], true);
         }
 
@@ -83,10 +89,11 @@ class BatalhaDAO extends DAO
                 // Insere a batalha de forma manual usando as chaves id_batalha, id_usuario e is_boss
                 $this->Inserir([
                     "tabela" => "batalha",
-                    "colunas" => ["id_batalha", "id_usuario", "is_boss"],
+                    "colunas" => ["id_batalha", "id_usuario", "id_usuario_2", "is_boss"],
                     "valores" => [
                         "id_batalha" => $proximo,
                         "id_usuario" => $idUsuario,
+                        "id_usuario_2" => $idUsuarioBot,
                         "is_boss" => (int) $chefe
                     ]
                 ]);
@@ -201,19 +208,33 @@ class BatalhaDAO extends DAO
             }
 
             $idBatalha =$this->inserirBatalha($idUsuario,$chefe);
+            $idUsuarioBot = $this->buscarUsuarioBot();
+
+            $equipeHumana = $this->Buscar([
+                "colunas" => "id_pokemon",
+                "tabela" => "equipe_usuario",
+                "pesquisa" => "id_usuario = :id ORDER BY posicao",
+                "valores" => ["id" => $idUsuario]
+            ], true);
+
+            foreach ($equipeHumana as $indice => $linha)
+            {
+                $this->inserirMonstroDaBatalha(
+                    $idBatalha,
+                    $idUsuario,
+                    (int) $linha["id_pokemon"],
+                    $indice
+                );
+            }
 
             foreach ($robo as $indice =>$idPokemon)
             {
-                // Insere os pokemons inimigos na batalha usando as chaves id_batalha, posicao e id_pokemon
-                $this->Inserir([
-                    "tabela" => "batalha_robo",
-                    "colunas" => ["id_batalha", "posicao", "id_pokemon"],
-                    "valores" => [
-                        "id_batalha" => $idBatalha,
-                        "posicao" => $indice + 1,
-                        "id_pokemon" => $idPokemon
-                    ]
-                ]);
+                $this->inserirMonstroDaBatalha(
+                    $idBatalha,
+                    $idUsuarioBot,
+                    $idPokemon,
+                    $indice
+                );
             }
 
             $this->FinalizarTransaction();
@@ -240,11 +261,27 @@ class BatalhaDAO extends DAO
     private function conquistarPokemons(int $idBatalha, int$idUsuario): array
     {
         // Busca os pokemons inimigos da batalha informando se o jogador já os tem usando as chaves usuario e batalha
+        $batalha =$this->Buscar([
+            "colunas" => "id_usuario_2",
+            "tabela" => "batalha",
+            "pesquisa" => "id_batalha = :batalha",
+            "valores" => ["batalha" => $idBatalha]
+        ]);
+
+        if (!$batalha)
+        {
+            throw new RegraDeJogoException("Batalha nao encontrada", 404);
+        }
+
         $roboData =$this->Buscar([
-            "colunas" => "r.id_pokemon, b.nome, EXISTS (SELECT 1 FROM pokemon_usuario pu WHERE pu.id_usuario = :usuario AND pu.id_pokemon = r.id_pokemon) AS tinha",
-            "tabela" => ["batalha_robo r", "LEFT JOIN pokemon_basico b", "ON b.id_pokemon = r.id_pokemon"],
-            "pesquisa" => "r.id_batalha = :batalha ORDER BY r.posicao",
-            "valores" => ["usuario" => $idUsuario, "batalha" => $idBatalha]
+            "colunas" => "mb.id_monstro AS id_pokemon, m.nome, EXISTS (SELECT 1 FROM pokemon_usuario pu WHERE pu.id_usuario = :usuario AND pu.id_pokemon = mb.id_monstro) AS tinha",
+            "tabela" => ["monstro_batalha_usuario mb", "JOIN monstro m", "ON m.id_monstro = mb.id_monstro"],
+            "pesquisa" => "mb.id_batalha = :batalha AND mb.id_usuario = :bot",
+            "valores" => [
+                "usuario" => $idUsuario,
+                "batalha" => $idBatalha,
+                "bot" => (int) $batalha["id_usuario_2"]
+            ]
         ], true);
 
         $lista = [];
@@ -373,5 +410,90 @@ class BatalhaDAO extends DAO
             $this->ReverterTransaction();
             throw $erro;
         }
+    }
+
+    private function buscarUsuarioBot(): int
+    {
+        $bot = $this->Buscar([
+            "colunas" => "id_usuario",
+            "tabela" => "usuario",
+            "pesquisa" => "is_bot = 1 AND is_ativo = 1 ORDER BY id_usuario LIMIT 1",
+            "valores" => []
+        ]);
+
+        if (!$bot)
+        {
+            throw new RuntimeException("Nenhum usuario bot cadastrado");
+        }
+
+        return (int) $bot["id_usuario"];
+    }
+
+    private function inserirMonstroDaBatalha(
+        int $idBatalha,
+        int $idUsuario,
+        int $idPokemon,
+        int $indice
+    ): void {
+        $monstro = $this->Buscar([
+            "colunas" => "vida_base",
+            "tabela" => "monstro",
+            "pesquisa" => "id_monstro = :id",
+            "valores" => ["id" => $idPokemon]
+        ]);
+
+        if (!$monstro)
+        {
+            throw new RuntimeException("Pokemon nao encontrado no catalogo");
+        }
+
+        $ataques = $this->Buscar([
+            "colunas" => "id_ataque",
+            "tabela" => "ataque_possivel_monstro",
+            "pesquisa" => "id_monstro = :id ORDER BY id_ataque LIMIT 4",
+            "valores" => ["id" => $idPokemon]
+        ], true);
+
+        if (count($ataques) === 0)
+        {
+            $ataquePadrao = $this->Buscar([
+                "colunas" => "id_ataque",
+                "tabela" => "ataque",
+                "pesquisa" => "is_ativo = 1 ORDER BY id_ataque LIMIT 1",
+                "valores" => []
+            ]);
+
+            if (!$ataquePadrao)
+            {
+                throw new RuntimeException("Nao existe ataque disponivel");
+            }
+
+            $idsAtaques = [(int) $ataquePadrao["id_ataque"]];
+        }
+        else
+        {
+            $idsAtaques = array_map(fn($ataque) => (int) $ataque["id_ataque"], $ataques);
+        }
+
+        $idsAtaques = array_pad($idsAtaques, 4, null);
+
+        $this->Inserir([
+            "tabela" => "monstro_batalha_usuario",
+            "colunas" => [
+                "id_monstro", "id_batalha", "id_usuario", "is_ativo", "vida_atual",
+                "id_ataque_1", "id_ataque_2", "id_ataque_3", "id_ataque_4"
+            ],
+            "valores" => [
+                "id_monstro" => $idPokemon,
+                "id_batalha" => $idBatalha,
+                "id_usuario" => $idUsuario,
+                "is_ativo" => $indice === 0 ? 1 : 0,
+                "vida_atual" => (int) $monstro["vida_base"],
+                "id_ataque_1" => $idsAtaques[0],
+                "id_ataque_2" => $idsAtaques[1],
+                "id_ataque_3" => $idsAtaques[2],
+                "id_ataque_4" => $idsAtaques[3]
+            ]
+        ]);
     }
 }
