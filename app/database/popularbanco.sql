@@ -1,5 +1,13 @@
 USE monstroguelselnius;
 
+-- Usuário adversário usado em todas as batalhas contra o sistema.
+INSERT INTO usuario (nome, senha, pokedolares, is_bot, is_ativo)
+VALUES ('Robo', 'bot-sem-login', 0, TRUE, TRUE)
+ON DUPLICATE KEY UPDATE
+    is_bot = TRUE,
+    is_ativo = TRUE,
+    senha = 'bot-sem-login';
+
 -- Dados iniciais da loja e itens entregues a contas novas.
 INSERT INTO item_loja (chave, nome, descricao, categoria, preco, imagem, cura_hp, cura_status, reviver, kit_inicial) VALUES
 ('potion','Poção','Recupera 20 de HP de um pokémon.','pocao_hp',50,'potion.png',20,NULL,0,3),
@@ -22,7 +30,7 @@ cura_status=VALUES(cura_status), reviver=VALUES(reviver), kit_inicial=VALUES(kit
 
 INSERT IGNORE INTO item_usuario (id_usuario, id_item_loja, quantidade)
 SELECT u.id_usuario, i.id_item_loja, i.kit_inicial
-FROM usuario u CROSS JOIN item_loja i WHERE i.kit_inicial > 0;
+FROM usuario u CROSS JOIN item_loja i WHERE i.kit_inicial > 0 AND u.is_bot = FALSE;
 
 INSERT INTO pokemon_basico (id_pokemon, nome) VALUES
 (1,'Bulbasaur'),(4,'Charmander'),(7,'Squirtle'),(16,'Pidgey'),(19,'Rattata'),
@@ -4493,14 +4501,21 @@ INSERT IGNORE INTO ataque_possivel_monstro (id_ataque, id_monstro) VALUES
 (90,59),
 (90,61),
 (90,62),
+(90,85),
+(90,86),
+(90,87),
 (90,92),
+(90,94),
 (90,99),
 (90,100),
 (90,102),
-(90,103),
 (90,104),
-(90,110),
+(90,105),
+(90,106),
+(90,107),
+(90,109),
 (90,112),
+(90,113),
 (90,115),
 (90,117),
 (90,120),
