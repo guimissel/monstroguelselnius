@@ -1,22 +1,33 @@
 <?php
+
+/**
+ * Controla as operações relacionadas à loja de itens
+ * 
+ * @author Miguel Granville / Vinicius Grub
+ * @method void listar()
+ * @method void comprar(string $chave)
+ */
 class LojaController extends Controller
 {
     private const MAXIMO_POR_COMPRA = 99;
 
-    // Lista os itens disponiveis e o saldo do jogador.
+    /**
+     * Lista os itens disponíveis e o saldo do jogador.
+     * 
+     * @author Miguel Granville / Vinicius Grub
+     * @return void
+     */
     public function listar(): void
     {
-        header("Content-Type: application/json");
-
         $meuId = $_SESSION["id"] ?? null;
+        
         // A loja apresenta o saldo e o catálogo específicos da conta autenticada.
         if (!isset($meuId))
         {
-            http_response_code(401);
-            echo json_encode([
-                "status" => 401,
-                "mensagem" => "usuario nao foi identificado"
-            ]);
+            Controller::RespostaJson()
+                ->status(401)
+                ->mensagem("usuario nao foi identificado")
+                ->enviar();
             return;
         }
 
@@ -27,49 +38,52 @@ class LojaController extends Controller
             $itens = [];
 
             // Converte os objetos do catálogo para estruturas que possam ser serializadas em JSON.
-            foreach ($lojaDAO->listar((int) $meuId) as $item) {
+            foreach ($lojaDAO->listar((int) $meuId) as $item) 
+            {
                 $itens[] = $item->paraArray();
             }
 
             $inventarioDAO = InventarioDAO::NovaInstancia();
             $pokedolares = $inventarioDAO->pokedolares((int) $meuId);
 
-            echo json_encode([
-                "status" => 200,
-                "pokedolares" => $pokedolares,
-                "itens" => $itens
-            ]);
+            Controller::RespostaJson()
+                ->status(200)
+                ->adicionar("pokedolares", $pokedolares)
+                ->adicionar("itens", $itens)
+                ->enviar();
             return;
         }
-
         catch (Exception $e)
         {
             // O detalhe da falha fica no log para não vazar configuração ou dados internos.
             error_log("LojaController::listar: " . $e->getMessage());
 
-            http_response_code(500);
-            echo json_encode([
-                "status" => 500,
-                "mensagem" => "Nao foi possivel carregar a loja"
-            ]);
+            Controller::RespostaJson()
+                ->status(500)
+                ->mensagem("Nao foi possivel carregar a loja")
+                ->enviar();
             return;
         }
     }
 
-    // Compra uma quantidade de um item da loja.
+    /**
+     * Compra uma quantidade de um item da loja.
+     * 
+     * @author Miguel Granville / Vinicius Grub
+     * @param string $chave O identificador do item a ser comprado
+     * @return void
+     */
     public function comprar(string $chave): void
     {
-        header("Content-Type: application/json");
-
         $meuId = $_SESSION["id"] ?? null;
+        
         // Impede compras associadas a uma sessão sem jogador identificado.
         if (!isset($meuId))
         {
-            http_response_code(401);
-            echo json_encode([
-                "status" => 401,
-                "mensagem" => "usuario nao foi identificado"
-            ]);
+            Controller::RespostaJson()
+                ->status(401)
+                ->mensagem("usuario nao foi identificado")
+                ->enviar();
             return;
         }
 
@@ -82,11 +96,10 @@ class LojaController extends Controller
         // Limita a quantidade solicitada para manter a operação dentro das regras da loja.
         if ($quantidadeInvalida || $quantidadeNegativa || $quantidadeNula)
         {
-            http_response_code(400);
-            echo json_encode([
-                "status" => 400,
-                "mensagem" => "Quantidade invalida (de 1 a " . self::MAXIMO_POR_COMPRA . ")"
-            ]);
+            Controller::RespostaJson()
+                ->status(400)
+                ->mensagem("Quantidade invalida (de 1 a " . self::MAXIMO_POR_COMPRA . ")")
+                ->enviar();
             return;
         }
 
@@ -96,36 +109,32 @@ class LojaController extends Controller
             $lojaDAO = LojaDAO::NovaInstancia();
             $resultado = $lojaDAO->comprar((int) $meuId, $chave, $quantidade);
 
-            echo json_encode([
-                "status" => 200,
-                "mensagem" => "compra realizada",
-                "pokedolares" => $resultado["pokedolares"],
-                "quantidade" => $resultado["quantidade"]
-            ]);
+            Controller::RespostaJson()
+                ->status(200)
+                ->mensagem("compra realizada")
+                ->adicionar("pokedolares", $resultado["pokedolares"])
+                ->adicionar("quantidade", $resultado["quantidade"])
+                ->enviar();
             return;
         }
-
         catch (DomainException $e)
         {
             // Expõe recusas previstas, como falta de saldo, com o status correspondente.
-            http_response_code($e->getCode());
-            echo json_encode([
-                "status" => $e->getCode(),
-                "mensagem" => $e->getMessage()
-            ]);
+            Controller::RespostaJson()
+                ->status($e->getCode())
+                ->mensagem($e->getMessage())
+                ->enviar();
             return;
         }
-
         catch (Exception $e)
         {
             // Registra a causa técnica sem repassá-la como parte da resposta ao jogador.
             error_log("LojaController::comprar: " . $e->getMessage());
 
-            http_response_code(500);
-            echo json_encode([
-                "status" => 500,
-                "mensagem" => "Nao foi possivel concluir a compra"
-            ]);
+            Controller::RespostaJson()
+                ->status(500)
+                ->mensagem("Nao foi possivel concluir a compra")
+                ->enviar();
             return;
         }
     }

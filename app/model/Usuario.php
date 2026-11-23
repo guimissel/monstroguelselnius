@@ -6,7 +6,6 @@ class Usuario
     use Id;
     use Nome;
 
-    private string $usuario;
     private ?string $senhaHash;
 
     // Aceita hash nulo para objetos usados em respostas que não precisam carregar credenciais.
