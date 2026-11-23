@@ -10,6 +10,13 @@ enum Acesso: string
 }
 
 // Centraliza a autorização de rotas e o destino de navegação quando o acesso é recusado.
+/**
+ * @author Miguel Granville
+ * @method _construct (array $restricaoAcesso, string $rota, string $redirecionar = "/monstroguelselnius/login")
+ * @method string getRedirecionamento()
+ * @method array getRestricao()
+ * @method string acessar()
+ */
 class AutenticacaoController extends Controller
 {
     private array $restricaoAcesso;
