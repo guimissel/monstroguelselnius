@@ -3,6 +3,15 @@ ini_set('display_errors', '1');
 ini_set('display_startup_errors', '1');
 error_reporting(E_ALL);
 
+// enumeração para os caminhos de log
+enum CaminhoLogs: string 
+{
+    case USUARIO = "./logs/usuario.log";
+    case ERROS = "./logs/erros.log";
+    case AUTH = "./logs/auth.log";
+}
+
+// carrega o autoload
 require_once __DIR__ . "/autoload.php";
 
 // chamar rotas da api
@@ -11,6 +20,11 @@ require_once __DIR__ . '/routes/ApiRoutes.php';
 // caminho base para todas rotas
 $caminhoBase = "/monstroguelselnius";
 $caminhoApi = "/monstroguelselnius/";
+
+// cria os arquivos de logs
+Log::CriarArquivo(CaminhoLogs::USUARIO->value);
+Log::CriarArquivo(CaminhoLogs::ERROS->value);
+Log::CriarArquivo(CaminhoLogs::AUTH->value);
 
 // instancia um roteador
 $roteador = Roteador::NovaInstancia();

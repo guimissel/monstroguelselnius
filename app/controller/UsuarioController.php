@@ -44,6 +44,7 @@ class UsuarioController extends Controller
         }
         else if (strlen($_POST["senha"]) > 256)
         {
+            
             Controller::RespostaJson()
                 ->status(400)
                 ->mensagem("O campo \"senha\" ultrapassa o tamanho maximo")
@@ -51,15 +52,18 @@ class UsuarioController extends Controller
             return;
         }
 
+        // tenta criar o usuario
         try 
         {
             // Armazena somente o hash da senha e inicia a sessão após a persistência da conta.
             $conexao = Conexao::getConexao();
 
+            // dados vindos do input
             $nome = $_POST["usuario"];
             $senha = $_POST["senha"];
             $senhaHash = password_hash($senha, PASSWORD_DEFAULT);
 
+            // cria um novo usuario para ser usado no sistema
             $usuario = new Usuario(
                 -1,
                 //  Informa o parâmetro $nome nesta assinatura ou chamada.
@@ -67,18 +71,30 @@ class UsuarioController extends Controller
                 $senhaHash
             );
 
+            // cria a instancia do DAO
             $usuarioDAO = UsuarioDAO::NovaInstancia();
 
+            // pede para o DAO criar usuario
             $usuario = $usuarioDAO->criarUsuario($usuario);
-            
-            //  Armazena $usuario->getId() na posição $_SESSION["id"].
-            $_SESSION["id"] = $usuario->getId();
+            $id = $usuario->getId();
+
+            // sla
+            $_SESSION["id"] = $id;
+
             //  Armazena Acesso::USUARIO->value na posição $_SESSION["role"].
             $_SESSION["role"] = Acesso::USUARIO->value;
 
+            // escreve o log em um arquivo
+            Log::EscreverArquivo()
+                ->arquivo(CaminhoLogs::USUARIO->value)
+                ->conteudo("Novo usuario foi criado $nome com o id $id e cargo Acesso::USUARIO\n")
+                ->funcoes(["FILE_APPEND"])
+                ->escrever();
+                
+            // responde com um json
             Controller::RespostaJson()
                 ->status(200)
-                ->mensagem("usuario criado com sucesso")
+                ->mensagem("Usuario criado com sucesso")
                 ->adicionar("refresh", true)
                 ->enviar();
             return;
