@@ -56,7 +56,11 @@ class LojaController extends Controller
         catch (Exception $e)
         {
             // O detalhe da falha fica no log para não vazar configuração ou dados internos.
-            error_log("LojaController::listar: " . $e->getMessage());
+            Log::EscreverArquivo(
+                "[" . date("Y-m-d H:i:s") . "] [ERRO] LojaController::listar: " . $e->getMessage() . PHP_EOL,
+                "logs/sistema.log",
+                ["FILE_APPEND", "LOCK_EX"]
+            );
 
             Controller::RespostaJson()
                 ->status(500)
@@ -109,6 +113,12 @@ class LojaController extends Controller
             $lojaDAO = LojaDAO::NovaInstancia();
             $resultado = $lojaDAO->comprar((int) $meuId, $chave, $quantidade);
 
+            Log::EscreverArquivo(
+                "[" . date("Y-m-d H:i:s") . "] [INFO] LojaController::comprar: Usuario ID {$meuId} comprou {$quantidade}x '{$chave}'" . PHP_EOL,
+                "logs/sistema.log",
+                ["FILE_APPEND", "LOCK_EX"]
+            );
+
             Controller::RespostaJson()
                 ->status(200)
                 ->mensagem("compra realizada")
@@ -129,7 +139,11 @@ class LojaController extends Controller
         catch (Exception $e)
         {
             // Registra a causa técnica sem repassá-la como parte da resposta ao jogador.
-            error_log("LojaController::comprar: " . $e->getMessage());
+            Log::EscreverArquivo(
+                "[" . date("Y-m-d H:i:s") . "] [ERRO] LojaController::comprar: " . $e->getMessage() . PHP_EOL,
+                "logs/sistema.log",
+                ["FILE_APPEND", "LOCK_EX"]
+            );
 
             Controller::RespostaJson()
                 ->status(500)

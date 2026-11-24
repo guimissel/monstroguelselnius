@@ -51,7 +51,11 @@ class InventarioController extends Controller
         catch (Exception $e)
         {
             // Mantém o detalhe operacional no log e uma mensagem segura para o cliente.
-            error_log("InventarioController::listar: " . $e->getMessage());
+            Log::EscreverArquivo(
+                "[" . date("Y-m-d H:i:s") . "] [ERRO] InventarioController::listar: " . $e->getMessage() . PHP_EOL,
+                "logs/sistema.log",
+                ["FILE_APPEND", "LOCK_EX"]
+            );
 
             Controller::RespostaJson()
                 ->status(500)
@@ -90,6 +94,12 @@ class InventarioController extends Controller
             if ($chave === "pokebola") 
             {
                 $resultado = $inventarioDAO->abrirPokebola((int) $meuId);
+
+                Log::EscreverArquivo(
+                    "[" . date("Y-m-d H:i:s") . "] [INFO] InventarioController::usar: Usuario ID {$meuId} abriu uma pokebola" . PHP_EOL,
+                    "logs/sistema.log",
+                    ["FILE_APPEND", "LOCK_EX"]
+                );
                 
                 Controller::RespostaJson()
                     ->status(200)
@@ -110,6 +120,12 @@ class InventarioController extends Controller
                 return;
             }
 
+            Log::EscreverArquivo(
+                "[" . date("Y-m-d H:i:s") . "] [INFO] InventarioController::usar: Usuario ID {$meuId} usou o item '{$chave}'" . PHP_EOL,
+                "logs/sistema.log",
+                ["FILE_APPEND", "LOCK_EX"]
+            );
+
             Controller::RespostaJson()
                 ->status(200)
                 ->mensagem("item usado")
@@ -128,7 +144,11 @@ class InventarioController extends Controller
         catch (Exception $e)
         {
             // Evita expor detalhes internos em falhas inesperadas do inventário.
-            error_log("InventarioController::usar: " . $e->getMessage());
+            Log::EscreverArquivo(
+                "[" . date("Y-m-d H:i:s") . "] [ERRO] InventarioController::usar: " . $e->getMessage() . PHP_EOL,
+                "logs/sistema.log",
+                ["FILE_APPEND", "LOCK_EX"]
+            );
 
             Controller::RespostaJson()
                 ->status(500)

@@ -28,7 +28,11 @@ class PokemonController extends Controller
         }
         catch (Exception $e)
         {
-            error_log("PokemonController::listar: " . $e->getMessage());
+            Log::EscreverArquivo(
+                "[" . date("Y-m-d H:i:s") . "] [ERRO] PokemonController::listar: " . $e->getMessage() . PHP_EOL,
+                "logs/sistema.log",
+                ["FILE_APPEND", "LOCK_EX"]
+            );
 
             Controller::RespostaJson()
                 ->status(500)

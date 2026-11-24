@@ -60,7 +60,11 @@ class PerfilController extends Controller
         catch (Exception $e)
         {
             // O log preserva o diagnóstico; a resposta orienta sobre a dependência do esquema.
-            error_log("PerfilController::ver: " . $e->getMessage());
+            Log::EscreverArquivo(
+                "[" . date("Y-m-d H:i:s") . "] [ERRO] PerfilController::ver: " . $e->getMessage() . PHP_EOL,
+                "logs/sistema.log",
+                ["FILE_APPEND", "LOCK_EX"]
+            );
 
             Controller::RespostaJson()
                 ->status(500)

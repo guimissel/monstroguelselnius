@@ -58,6 +58,12 @@ class AutenticacaoController extends Controller
             $acesso === null ||
             !in_array($acesso, $this->restricaoAcesso, true)
         ) {
+            Log::EscreverArquivo(
+                "[" . date("Y-m-d H:i:s") . "] [AVISO] AutenticacaoController::acessar: Acesso negado a rota '{$this->rota}' para papel '{$role}'" . PHP_EOL,
+                "logs/sistema.log",
+                ["FILE_APPEND", "LOCK_EX"]
+            );
+
             http_response_code(403);
             return json_encode([
                 "status" => 403,

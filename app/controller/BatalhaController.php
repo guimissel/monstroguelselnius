@@ -38,6 +38,12 @@ class BatalhaController extends Controller
             $batalhaDAO = BatalhaDAO::NovaInstancia();
             $dados = $batalhaDAO->iniciar((int) $meuId);
 
+            Log::EscreverArquivo(
+                "[" . date("Y-m-d H:i:s") . "] [INFO] BatalhaController::iniciar: Batalha ID {$dados["id"]} iniciada pelo usuario ID {$meuId}" . PHP_EOL,
+                "logs/sistema.log",
+                ["FILE_APPEND", "LOCK_EX"]
+            );
+
             // retorno do json como resposta
             Controller::RespostaJson()
                 ->status(200)
@@ -66,6 +72,12 @@ class BatalhaController extends Controller
         // exception generica $e
         catch (Exception $e)
         {
+            Log::EscreverArquivo(
+                "[" . date("Y-m-d H:i:s") . "] [ERRO] BatalhaController::iniciar: " . $e->getMessage() . PHP_EOL,
+                "logs/sistema.log",
+                ["FILE_APPEND", "LOCK_EX"]
+            );
+
             // resposta montado em json
             Controller::RespostaJson()
                 ->status(500)
@@ -134,6 +146,12 @@ class BatalhaController extends Controller
             // envia para o DAO finalizar
             $dadosBatalha = $batalhaDAO->finalizar($idBatalha, (int) $meuId, $resultado, $vivos);
 
+            Log::EscreverArquivo(
+                "[" . date("Y-m-d H:i:s") . "] [INFO] BatalhaController::finalizar: Batalha ID {$idBatalha} finalizada pelo usuario ID {$meuId} ({$resultado})" . PHP_EOL,
+                "logs/sistema.log",
+                ["FILE_APPEND", "LOCK_EX"]
+            );
+
             // envia a resposta
             Controller::RespostaJson()
                 ->status(200)
@@ -162,7 +180,11 @@ class BatalhaController extends Controller
         catch (Exception $e)
         {
             // Mantém informações de diagnóstico fora da resposta normal da partida.
-            error_log("BatalhaController::finalizar: " . $e->getMessage());
+            Log::EscreverArquivo(
+                "[" . date("Y-m-d H:i:s") . "] [ERRO] BatalhaController::finalizar: " . $e->getMessage() . PHP_EOL,
+                "logs/sistema.log",
+                ["FILE_APPEND", "LOCK_EX"]
+            );
             
             // envia resposta na rest
             Controller::RespostaJson()

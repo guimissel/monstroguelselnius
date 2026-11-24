@@ -54,7 +54,11 @@ class EquipeController extends Controller
         catch (Exception $e)
         {
             // Registra detalhes apenas no servidor e mantém a mensagem pública estável.
-            error_log("EquipeController::listar: " . $e->getMessage());
+            Log::EscreverArquivo(
+                "[" . date("Y-m-d H:i:s") . "] [ERRO] EquipeController::listar: " . $e->getMessage() . PHP_EOL,
+                "logs/sistema.log",
+                ["FILE_APPEND", "LOCK_EX"]
+            );
 
             // envia a resposta com a exception generics
             Controller::RespostaJson()
@@ -110,6 +114,12 @@ class EquipeController extends Controller
             // pede ao DAO para evoluir o pokemon do usuario
             $resultado = $dao->evoluir((int) $meuId, $idPokemon);
 
+            Log::EscreverArquivo(
+                "[" . date("Y-m-d H:i:s") . "] [INFO] EquipeController::evoluir: Usuario ID {$meuId} evoluiu {$resultado["antigo"]["nome"]} para {$resultado["novo"]["nome"]}" . PHP_EOL,
+                "logs/sistema.log",
+                ["FILE_APPEND", "LOCK_EX"]
+            );
+
             // envia a resposta em json
             Controller::RespostaJson()
                 ->status(200)
@@ -136,7 +146,11 @@ class EquipeController extends Controller
         catch (Exception $e)
         {
             // Falhas inesperadas não devem expor detalhes internos ao cliente.
-            error_log("EquipeController::evoluir: " . $e->getMessage());
+            Log::EscreverArquivo(
+                "[" . date("Y-m-d H:i:s") . "] [ERRO] EquipeController::evoluir: " . $e->getMessage() . PHP_EOL,
+                "logs/sistema.log",
+                ["FILE_APPEND", "LOCK_EX"]
+            );
 
             // envia a resposta
             Controller::RespostaJson()
@@ -201,6 +215,12 @@ class EquipeController extends Controller
             // pede para o DAO salvar a equipe do usuario
             $dao->salvar((int) $meuId, $ids);
 
+            Log::EscreverArquivo(
+                "[" . date("Y-m-d H:i:s") . "] [INFO] EquipeController::salvar: Usuario ID {$meuId} salvou equipe [" . implode(",", $ids) . "]" . PHP_EOL,
+                "logs/sistema.log",
+                ["FILE_APPEND", "LOCK_EX"]
+            );
+
             // envia a resposta de sucesso
             Controller::RespostaJson()
                 ->status(200)
@@ -225,7 +245,11 @@ class EquipeController extends Controller
         catch (Exception $e)
         {
             // Detalhes técnicos ficam no log; a API retorna uma mensagem genérica.
-            error_log("EquipeController::salvar: " . $e->getMessage());
+            Log::EscreverArquivo(
+                "[" . date("Y-m-d H:i:s") . "] [ERRO] EquipeController::salvar: " . $e->getMessage() . PHP_EOL,
+                "logs/sistema.log",
+                ["FILE_APPEND", "LOCK_EX"]
+            );
 
             // envia a resposta de erro
             Controller::RespostaJson()

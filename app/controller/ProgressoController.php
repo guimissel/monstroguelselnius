@@ -58,6 +58,12 @@ class ProgressoController extends Controller
                 "historico" => $dao->historico($idUsuario, null, true)
             ], JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES | JSON_THROW_ON_ERROR);
 
+            Log::EscreverArquivo(
+                "[" . date("Y-m-d H:i:s") . "] [INFO] ProgressoController::exportar: Progresso exportado pelo usuario ID {$idUsuario}" . PHP_EOL,
+                "logs/sistema.log",
+                ["FILE_APPEND", "LOCK_EX"]
+            );
+
             header("Content-Type: application/json; charset=utf-8");
             header("Content-Disposition: attachment; filename=\"progresso-{$idUsuario}.json\"");
             header("Cache-Control: no-store, private");
@@ -65,7 +71,11 @@ class ProgressoController extends Controller
         }
         catch (Exception $e)
         {
-            error_log("ProgressoController::exportar: " . $e->getMessage());
+            Log::EscreverArquivo(
+                "[" . date("Y-m-d H:i:s") . "] [ERRO] ProgressoController::exportar: " . $e->getMessage() . PHP_EOL,
+                "logs/sistema.log",
+                ["FILE_APPEND", "LOCK_EX"]
+            );
 
             Controller::RespostaJson()
                 ->status(500)
@@ -142,6 +152,12 @@ class ProgressoController extends Controller
             $dao = PerfilDAO::NovaInstancia();
             $dao->importarProgresso((int) $idUsuario, ...$progresso);
 
+            Log::EscreverArquivo(
+                "[" . date("Y-m-d H:i:s") . "] [INFO] ProgressoController::importar: Progresso importado pelo usuario ID {$idUsuario}" . PHP_EOL,
+                "logs/sistema.log",
+                ["FILE_APPEND", "LOCK_EX"]
+            );
+
             Controller::RespostaJson()
                 ->status(200)
                 ->mensagem("Progresso importado. O progresso anterior desta conta foi substituido.")
@@ -151,6 +167,12 @@ class ProgressoController extends Controller
         catch (JsonException | InvalidArgumentException | DomainException $e) 
         {
             // Erros de formato ou regras de importação são devolvidos como entrada inválida.
+            Log::EscreverArquivo(
+                "[" . date("Y-m-d H:i:s") . "] [AVISO] ProgressoController::importar (usuario ID {$idUsuario}): " . $e->getMessage() . PHP_EOL,
+                "logs/sistema.log",
+                ["FILE_APPEND", "LOCK_EX"]
+            );
+
             Controller::RespostaJson()
                 ->status(400)
                 ->mensagem($e->getMessage())
@@ -161,7 +183,11 @@ class ProgressoController extends Controller
         catch (Throwable $e) 
         {
             // Falhas inesperadas ficam no log e não revelam detalhes da persistência.
-            error_log("ProgressoController::importar: " . $e->getMessage());
+            Log::EscreverArquivo(
+                "[" . date("Y-m-d H:i:s") . "] [ERRO] ProgressoController::importar: " . $e->getMessage() . PHP_EOL,
+                "logs/sistema.log",
+                ["FILE_APPEND", "LOCK_EX"]
+            );
             
             // resposta em json
             Controller::RespostaJson()
@@ -230,7 +256,6 @@ class ProgressoController extends Controller
                 throw new InvalidArgumentException("A colecao contem Pokémon duplicados");
             }
 
-            //  Armazena true na posição $idsColecao[$id].
             $idsColecao[$id] = true;
             if ($pokemon["naEquipe"]) 
             {
@@ -264,13 +289,9 @@ class ProgressoController extends Controller
             }
 
             if (count(array_unique($equipe)) !== count($equipe)
-                //  Acrescenta à validação a condição || count($equipe) > 3.
                 || count($equipe) > 3
-                //  Acrescenta à validação a condição || array_diff($equipe, array_keys($idsColecao)).
                 || array_diff($equipe, array_keys($idsColecao))
-                //  Acrescenta à validação a condição || array_diff($equipeMarcada, $equipe).
                 || array_diff($equipeMarcada, $equipe)
-                //  Acrescenta à validação a condição || array_diff($equipe, $equipeMarcada).
                 || array_diff($equipe, $equipeMarcada)
             ) 
             {
@@ -294,13 +315,9 @@ class ProgressoController extends Controller
         foreach ($dados["itens"] as $item) 
         {
             if (!is_array($item)
-                //  Acrescenta à validação a condição || !is_int($item["quantidade"] ?? null).
                 || !is_int($item["quantidade"] ?? null)
-                //  Acrescenta à validação a condição || $item["quantidade"] < 0.
                 || $item["quantidade"] < 0
-                //  Acrescenta à validação a condição || $item["quantidade"] > 1000000.
                 || $item["quantidade"] > 1000000
-                //  Acrescenta à validação a condição || (!is_string($item["chave"] ?? null) && !is_string($item["nome"] ?? null)).
                 || (!is_string($item["chave"] ?? null) && !is_string($item["nome"] ?? null))
             ) {
                 throw new InvalidArgumentException("Dados de item invalidos");
@@ -310,7 +327,6 @@ class ProgressoController extends Controller
             $nome = $item["nome"] ?? null;
 
             if (($chave !== null && ($chave === "" || strlen($chave) > 30))
-                //  Acrescenta à validação a condição || ($nome !== null && ($nome === "" || strlen($nome) > 60)).
                 || ($nome !== null && ($nome === "" || strlen($nome) > 60))
             ) {
                 throw new InvalidArgumentException("Identificador de item invalido");
@@ -322,15 +338,10 @@ class ProgressoController extends Controller
         // Verifica datas e recompensas para que a restauração não grave partidas incoerentes.
         foreach ($dados["historico"] as $batalha) {
             if (!is_array($batalha)
-                //  Acrescenta à validação a condição || !in_array($batalha["status"] ?? null, ["vitoria", "derrota", "fuga"], true).
                 || !in_array($batalha["status"] ?? null, ["vitoria", "derrota", "fuga"], true)
-                //  Acrescenta à validação a condição || !is_int($batalha["recompensa"] ?? null).
                 || !is_int($batalha["recompensa"] ?? null)
-                //  Acrescenta à validação a condição || $batalha["recompensa"] < 0.
                 || $batalha["recompensa"] < 0
-                //  Acrescenta à validação a condição || $batalha["recompensa"] > 2147483647.
                 || $batalha["recompensa"] > 2147483647
-                //  Acrescenta à validação a condição || !is_bool($batalha["chefe"] ?? false).
                 || !is_bool($batalha["chefe"] ?? false)
             ) {
                 throw new InvalidArgumentException("Dados de batalha invalidos");
@@ -387,9 +398,7 @@ class ProgressoController extends Controller
         $erros = DateTimeImmutable::getLastErrors();
         
         if ($data === false
-            //  Acrescenta à validação a condição || ($erros !== false && ($erros["warning_count"] > 0 || $erros["error_count"] > 0)).
             || ($erros !== false && ($erros["warning_count"] > 0 || $erros["error_count"] > 0))
-            //  Acrescenta à validação a condição || $data->format("Y-m-d H:i:s") !== $valor.
             || $data->format("Y-m-d H:i:s") !== $valor
         ) {
             throw new InvalidArgumentException("Data do arquivo invalida");

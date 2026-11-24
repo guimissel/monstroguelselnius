@@ -44,7 +44,6 @@ class UsuarioController extends Controller
         }
         else if (strlen($_POST["senha"]) > 256)
         {
-            
             Controller::RespostaJson()
                 ->status(400)
                 ->mensagem("O campo \"senha\" ultrapassa o tamanho maximo")
@@ -66,7 +65,6 @@ class UsuarioController extends Controller
             // cria um novo usuario para ser usado no sistema
             $usuario = new Usuario(
                 -1,
-                //  Informa o parâmetro $nome nesta assinatura ou chamada.
                 $nome,
                 $senhaHash
             );
@@ -78,18 +76,14 @@ class UsuarioController extends Controller
             $usuario = $usuarioDAO->criarUsuario($usuario);
             $id = $usuario->getId();
 
-            // sla
             $_SESSION["id"] = $id;
-
-            //  Armazena Acesso::USUARIO->value na posição $_SESSION["role"].
             $_SESSION["role"] = Acesso::USUARIO->value;
 
-            // escreve o log em um arquivo
-            Log::EscreverArquivo()
-                ->arquivo(CaminhoLogs::USUARIO->value)
-                ->conteudo("Novo usuario foi criado $nome com o id $id e cargo Acesso::USUARIO\n")
-                ->funcoes(["FILE_APPEND"])
-                ->escrever();
+            Log::EscreverArquivo(
+                "[" . date("Y-m-d H:i:s") . "] [INFO] UsuarioController::criar: Nova conta criada (ID {$id}, nome '{$nome}')" . PHP_EOL,
+                "logs/sistema.log",
+                ["FILE_APPEND", "LOCK_EX"]
+            );
                 
             // responde com um json
             Controller::RespostaJson()
@@ -109,7 +103,13 @@ class UsuarioController extends Controller
             return;
         }
         catch (PDOException $e)
-        {    
+        {
+            Log::EscreverArquivo(
+                "[" . date("Y-m-d H:i:s") . "] [ERRO] UsuarioController::criar (PDO): " . $e->getMessage() . PHP_EOL,
+                "logs/sistema.log",
+                ["FILE_APPEND", "LOCK_EX"]
+            );
+
             // Erros de banco são diferenciados dos demais erros internos da aplicação.
             Controller::RespostaJson()
                 ->status(500)
@@ -119,6 +119,12 @@ class UsuarioController extends Controller
         }
         catch (Exception $e)
         {
+            Log::EscreverArquivo(
+                "[" . date("Y-m-d H:i:s") . "] [ERRO] UsuarioController::criar: " . $e->getMessage() . PHP_EOL,
+                "logs/sistema.log",
+                ["FILE_APPEND", "LOCK_EX"]
+            );
+
             // Não expõe detalhes de exceções inesperadas durante o cadastro.
             Controller::RespostaJson()
                 ->status(500)
@@ -179,6 +185,12 @@ class UsuarioController extends Controller
             // Usa uma resposta única para usuário inexistente e senha incorreta.
             if (!isset($usuario)) 
             {
+                Log::EscreverArquivo(
+                    "[" . date("Y-m-d H:i:s") . "] [AVISO] UsuarioController::entrar: Tentativa de login com usuario inexistente '{$nome}'" . PHP_EOL,
+                    "logs/sistema.log",
+                    ["FILE_APPEND", "LOCK_EX"]
+                );
+
                 Controller::RespostaJson()
                     ->status(401)
                     ->mensagem("usuario ou senha incorretos")
@@ -187,6 +199,12 @@ class UsuarioController extends Controller
             }
             else if (!password_verify($senha, $usuario->getSenhaHash()))
             {
+                Log::EscreverArquivo(
+                    "[" . date("Y-m-d H:i:s") . "] [AVISO] UsuarioController::entrar: Senha incorreta para o usuario '{$nome}'" . PHP_EOL,
+                    "logs/sistema.log",
+                    ["FILE_APPEND", "LOCK_EX"]
+                );
+
                 Controller::RespostaJson()
                     ->status(401)
                     ->mensagem("usuario ou senha incorretos")
@@ -194,10 +212,14 @@ class UsuarioController extends Controller
                 return;
             }
 
-            //  Armazena $usuario->getId() na posição $_SESSION["id"].
             $_SESSION["id"] = $usuario->getId();
-            //  Armazena Acesso::USUARIO->value na posição $_SESSION["role"].
             $_SESSION["role"] = Acesso::USUARIO->value;
+
+            Log::EscreverArquivo(
+                "[" . date("Y-m-d H:i:s") . "] [INFO] UsuarioController::entrar: Usuario ID {$usuario->getId()} ('{$nome}') autenticado" . PHP_EOL,
+                "logs/sistema.log",
+                ["FILE_APPEND", "LOCK_EX"]
+            );
 
             Controller::RespostaJson()
                 ->status(200)
@@ -206,7 +228,13 @@ class UsuarioController extends Controller
             return;
         }
         catch (PDOException $e)
-        {    
+        {
+            Log::EscreverArquivo(
+                "[" . date("Y-m-d H:i:s") . "] [ERRO] UsuarioController::entrar (PDO): " . $e->getMessage() . PHP_EOL,
+                "logs/sistema.log",
+                ["FILE_APPEND", "LOCK_EX"]
+            );
+
             // Falhas de persistência não são confundidas com credenciais inválidas.
             Controller::RespostaJson()
                 ->status(500)
@@ -216,6 +244,12 @@ class UsuarioController extends Controller
         }
         catch (Exception $e)
         {
+            Log::EscreverArquivo(
+                "[" . date("Y-m-d H:i:s") . "] [ERRO] UsuarioController::entrar: " . $e->getMessage() . PHP_EOL,
+                "logs/sistema.log",
+                ["FILE_APPEND", "LOCK_EX"]
+            );
+
             // Oculta detalhes de falhas internas da autenticação.
             Controller::RespostaJson()
                 ->status(500)
@@ -267,10 +301,16 @@ class UsuarioController extends Controller
      */
     public function sair () :void
     {
-        //  Armazena null na posição $_SESSION["id"].
+        $idAnterior = $_SESSION["id"] ?? "desconhecido";
+
         $_SESSION["id"] = null;
-        //  Armazena Acesso::VISITANTE->value na posição $_SESSION["role"].
         $_SESSION["role"] = Acesso::VISITANTE->value;
+
+        Log::EscreverArquivo(
+            "[" . date("Y-m-d H:i:s") . "] [INFO] UsuarioController::sair: Usuario ID {$idAnterior} encerrou a sessao" . PHP_EOL,
+            "logs/sistema.log",
+            ["FILE_APPEND", "LOCK_EX"]
+        );
         
         Controller::RespostaJson()
             ->status(200)
@@ -339,6 +379,12 @@ class UsuarioController extends Controller
                 $senhaNova !== "" ? password_hash($senhaNova, PASSWORD_DEFAULT) : null
             );
 
+            Log::EscreverArquivo(
+                "[" . date("Y-m-d H:i:s") . "] [INFO] UsuarioController::atualizar: Usuario ID {$meuId} atualizou o perfil" . PHP_EOL,
+                "logs/sistema.log",
+                ["FILE_APPEND", "LOCK_EX"]
+            );
+
             Controller::RespostaJson()
                 ->status(200)
                 ->mensagem("perfil atualizado")
@@ -358,7 +404,11 @@ class UsuarioController extends Controller
         catch (Exception $e)
         {
             // Mantém o diagnóstico no servidor e a resposta pública genérica.
-            error_log("UsuarioController::atualizar: " . $e->getMessage());
+            Log::EscreverArquivo(
+                "[" . date("Y-m-d H:i:s") . "] [ERRO] UsuarioController::atualizar: " . $e->getMessage() . PHP_EOL,
+                "logs/sistema.log",
+                ["FILE_APPEND", "LOCK_EX"]
+            );
 
             Controller::RespostaJson()
                 ->status(500)
@@ -382,6 +432,12 @@ class UsuarioController extends Controller
         
         if (!isset($meuId) || (!$souAdmin && (int) $id !== (int) $meuId))
         {
+            Log::EscreverArquivo(
+                "[" . date("Y-m-d H:i:s") . "] [AVISO] UsuarioController::excluir: Tentativa nao autorizada de excluir conta ID {$id} por usuario ID " . ($meuId ?? "visitante") . PHP_EOL,
+                "logs/sistema.log",
+                ["FILE_APPEND", "LOCK_EX"]
+            );
+
             Controller::RespostaJson()
                 ->status(403)
                 ->mensagem("Voce so pode excluir a sua propria conta")
@@ -403,11 +459,24 @@ class UsuarioController extends Controller
 
         try {
             $usuarioDAO->excluirUsuario($usuarioExclusao);
+
+            Log::EscreverArquivo(
+                "[" . date("Y-m-d H:i:s") . "] [INFO] UsuarioController::excluir: Conta ID {$id} excluida por usuario ID {$meuId}" . PHP_EOL,
+                "logs/sistema.log",
+                ["FILE_APPEND", "LOCK_EX"]
+            );
+
             $this->sair();
             return;
         }
         catch (PDOException $e)
         {
+            Log::EscreverArquivo(
+                "[" . date("Y-m-d H:i:s") . "] [ERRO] UsuarioController::excluir (PDO): " . $e->getMessage() . PHP_EOL,
+                "logs/sistema.log",
+                ["FILE_APPEND", "LOCK_EX"]
+            );
+
             Controller::RespostaJson()
                 ->status(500)
                 ->mensagem("O servidor não consegui excluir essa conta")
@@ -416,6 +485,12 @@ class UsuarioController extends Controller
         }
         catch (Exception $e) 
         {
+            Log::EscreverArquivo(
+                "[" . date("Y-m-d H:i:s") . "] [ERRO] UsuarioController::excluir: " . $e->getMessage() . PHP_EOL,
+                "logs/sistema.log",
+                ["FILE_APPEND", "LOCK_EX"]
+            );
+
             Controller::RespostaJson()
                 ->status(500)
                 ->mensagem("O servidor não consegui excluir essa conta")
