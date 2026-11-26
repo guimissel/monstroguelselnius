@@ -95,7 +95,7 @@ function mostrarErroTecnico(texto) {
     console.error(texto);
 
     const caixa = document.createElement("pre");
-    caixa.textContent = "Detalhe do erro (mande este texto para quem esta ajudando):\n" + texto;
+    caixa.textContent = "" + texto;
     caixa.style.cssText = "position:fixed;left:0;right:0;top:0;z-index:9999;margin:0;padding:10px 44px 10px 12px;" +
         "max-height:45vh;overflow:auto;white-space:pre-wrap;word-break:break-word;font:13px/1.4 monospace;" +
         "color:#fff;background:#a02010;user-select:text";
