@@ -76,6 +76,10 @@ define("ROTAS_API_NEEDAUTH", [
             (BatalhaController::NovaInstancia())->iniciar();
         },
 
+        "api/batalha/{id}/turno" => function ($id) {
+            (BatalhaController::NovaInstancia())->turno($id);
+        },
+
         "api/batalha/{id}/finalizar" => function ($id) {
             (BatalhaController::NovaInstancia())->finalizar($id);
         }

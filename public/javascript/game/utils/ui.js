@@ -136,7 +136,7 @@ function mostrarVoltar(acao) {
 
 function iniciarTempo(aoAcabar) {
     pararTempo();
-    let restante = TEMPO_ESCOLHA;
+    let restante = CONFIG_BATALHA.tempoEscolha || TEMPO_ESCOLHA;
     const atualizar = () => {
         tempoEl.textContent = restante + "s";
         tempoEl.classList.toggle("urgente", restante <= 5);
@@ -263,11 +263,12 @@ function escolherAlvoItem(chave, resolverAcao) {
 // Lista os substitutos possíveis e conduz a troca de Pokémon.
 function abrirPainelTroca(resolverAcao) {
     const bloqueado = estado.cooldownTroca > 0;
+    const roundsBloqueados = Math.max(1, (CONFIG_BATALHA.cooldownTroca || COOLDOWN_TROCA) - 1);
     abrirPainelTime({
         titulo: "Pokémons",
         aviso: bloqueado
             ? `Troca bloqueada por mais ${estado.cooldownTroca} round${estado.cooldownTroca > 1 ? "s" : ""}.`
-            : "Trocar gasta o seu turno e bloqueia novas trocas por 2 rounds.",
+            : `Trocar gasta o seu turno e bloqueia novas trocas por ${roundsBloqueados} round${roundsBloqueados > 1 ? "s" : ""}.`,
         validar: (mon, i) => {
             if (i === estado.jogador.equipe.indiceAtivo && !mon.estaDesmaiado()) return "em batalha";
             if (mon.hp <= 0) return "desmaiado";

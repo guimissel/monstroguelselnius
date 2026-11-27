@@ -1,234 +1,259 @@
-// Regras, status, rodada e encerramento da batalha.
-async function podeAgir(lado, mon) {
-    const nome = nomeLog(lado, mon);
+// Execução dos turnos da batalha integrados com a validação no backend e as configurações da partida.
+//
+// IMPORTANTE:
+//   O frontend NÃO calcula mais dano, chance de acerto, crítico, efetividade,
+//   status, inteligência do robô ou resultado da batalha.
+//   Toda escolha do jogador é enviada para POST /api/batalha/{id}/turno,
+//   e este arquivo apenas reproduz visualmente os eventos retornados pelo servidor
+//   usando as configurações recebidas em CONFIG_BATALHA.
 
-    if (mon.status === "sleep") {
-        if (mon.sono > 0) {
-            mon.sono--;
-            await dizer(`${nome} está dormindo...`);
-            return false;
-        }
-        mon.status = null;
-        atualizarInfo(lado);
-        await dizer(`${nome} acordou!`);
-    }
-
-    if (mon.status === "freeze") {
-        if (Math.random() < 0.2) {
-            mon.status = null;
-            atualizarInfo(lado);
-            await dizer(`${nome} descongelou!`);
-        } else {
-            await dizer(`${nome} está congelado e não consegue se mover!`);
-            return false;
-        }
-    }
-
-    if (mon.status === "paralysis" && Math.random() < 0.25) {
-        await dizer(`${nome} está paralisado! Não consegue se mover!`);
-        return false;
-    }
-
-    return true;
-}
-
-async function aplicarStatus(lado, alvo, status, avisarFalha) {
-    const nome = nomeLog(lado, alvo);
-
-    if (alvo.status || alvo.tipos.some((t) => IMUNE_STATUS[status].includes(t))) {
-        if (avisarFalha) await dizer(alvo.status ? "Mas falhou!" : `Não afeta ${nome}...`);
-        return;
-    }
-
-    alvo.status = status;
-    if (status === "sleep") alvo.sono = 1 + Math.floor(Math.random() * 3);
-    atualizarInfo(lado);
-    await dizer(`${nome} ${STATUS[status].frase}`);
-}
-
-async function causarDano(lado, mon, dano) {
-    mon.receberDano(dano);
+/**
+ * Atualiza a barra de vida e status na tela quando há cura ou alteração de status.
+ *
+ * @param {string} lado       "jogador" ou "robo"
+ * @param {number} novoHp     HP atual vindo do servidor
+ * @param {number} dano       Quantidade de dano (opcional, para animar impacto)
+ */
+async function aplicarDanoNaTela(lado, novoHp) {
+    const mon = ativo(lado);
+    mon.hp = novoHp;
     atualizarInfo(lado);
     animar(lado, "dano", 600);
     await esperar(850);
 }
 
-async function atacar(lado, golpe) {
-    const alvoLado = outro(lado);
-    const atq = ativo(lado);
-    const def = ativo(alvoLado);
+/**
+ * Sincroniza todos os dados do estado local (HP, status, ativo, rodada e cooldown)
+ * com o snapshot autoritativo enviado pelo servidor ao final da requisição.
+ *
+ * @param {Object} estadoServidor Snapshot retornado em resposta.estado
+ */
+function sincronizarEstadoComServidor(estadoServidor) {
+    if (!estadoServidor) return;
 
-    if (!(await podeAgir(lado, atq))) return;
-
-    await dizer(`${nomeLog(lado, atq)} usou ${golpe.nome}!`);
-    animar(lado, lado === "jogador" ? "ataqueJogador" : "ataqueRobo", 350);
-    await esperar(350);
-
-    if (golpe.precisao && Math.random() * 100 >= golpe.precisao) {
-        await dizer("Mas errou!");
-        return;
+    if (typeof estadoServidor.turno === "number") {
+        estado.rodada = estadoServidor.turno;
+    }
+    if (typeof estadoServidor.cooldownTroca === "number") {
+        estado.cooldownTroca = estadoServidor.cooldownTroca;
+    }
+    if (typeof estadoServidor.fim === "boolean") {
+        estado.fim = estadoServidor.fim;
     }
 
-    if (!golpe.poder) {
-        // golpe que so causa status
-        await aplicarStatus(alvoLado, def, golpe.status, true);
-        return;
-    }
-
-    const r = atq.calcularDanoContra(def, golpe);
-
-    if (r.ef === 0) {
-        await dizer(`Não afeta ${nomeLog(alvoLado, def)}...`);
-        return;
-    }
-
-    await causarDano(alvoLado, def, r.dano);
-
-    if (r.critico) await dizer("Foi um acerto crítico!");
-    if (r.ef > 1) await dizer(r.ef >= 4 ? "É supereficaz! (4x)" : "É supereficaz!");
-    if (r.ef < 1) await dizer(r.ef <= 0.25 ? "É pouco eficaz... (0.25x)" : "É pouco eficaz...");
-
-    // drenagem (cura) ou recuo
-    if (golpe.drenagem && r.dano > 0) {
-        const valor = Math.floor(r.dano * Math.abs(golpe.drenagem) / 100);
-        if (golpe.drenagem > 0 && valor > 0) {
-            atq.curar(valor);
-            atualizarInfo(lado);
-            await dizer(`${nomeLog(lado, atq)} recuperou HP!`);
-        } else if (golpe.drenagem < 0 && valor > 0) {
-            await causarDano(lado, atq, valor);
-            await dizer(`${nomeLog(lado, atq)} se machucou com o recuo!`);
-        }
-    }
-
-    if (!def.estaDesmaiado() && golpe.status && Math.random() * 100 < golpe.chanceStatus) {
-        await aplicarStatus(alvoLado, def, golpe.status, false);
-    }
-
-    if (def.estaDesmaiado()) await processarDesmaio(alvoLado);
-    if (!estado.fim && atq.estaDesmaiado()) await processarDesmaio(lado);
-}
-
-// pokemon desmaiou: o robo manda o proximo, o jogador escolhe. sem pokemons = fim
-async function processarDesmaio(lado) {
-    const mon = ativo(lado);
-    LADOS[lado].sprite.classList.add("desmaiou");
-    LADOS[lado].sombra.classList.add("sumiu");
-    await dizer(`${nomeLog(lado, mon)} desmaiou!`);
-
-    const treinador = estado[lado];
-
-    if (treinador.equipe.proximoVivo() < 0) {
-        await terminar(lado === "robo");
-        return;
-    }
-
-    // cada treinador escolhe do seu jeito (o jogador na tela, o robo sozinho)
-    treinador.equipe.indiceAtivo = await treinador.escolherSubstituto();
-    await dizer(treinador.mensagemEntrada(treinador.equipe.ativo));
-    mostrarPokemon(lado);
-}
-
-async function trocarJogador(indice) {
-    await dizer(`Volte, ${ativo("jogador").nome}!`);
-    LADOS.jogador.sprite.classList.add("desmaiou");
-    LADOS.jogador.sombra.classList.add("sumiu");
-    await esperar(400);
-    estado.jogador.equipe.indiceAtivo = indice;
-    await dizer(estado.jogador.mensagemEntrada(ativo("jogador")));
-    mostrarPokemon("jogador");
-    await esperar(300);
-}
-
-async function usarItem({ item: chave, alvo }) {
-    const item = ITENS[chave];
-    const mon = estado.jogador.equipe.pokemons[alvo];
-
-    // so aplica o efeito se o banco confirmar que o jogador ainda tem o item
-    if (!(await gastarItemNoBanco(chave))) {
-        await dizer("Você não tem mais esse item!");
-        estado.itens[chave] = 0;
-        return;
-    }
-    estado.itens[chave]--;
-
-    await dizer(`Você usou ${item.nome} em ${mon.nome}!`);
-
-    if (item.reviver) {
-        mon.reviver();
-    } else {
-        if (item.cura) mon.curar(item.cura === "max" ? mon.maxHp : item.cura);
-        if (item.cura_status === "todos" || (item.cura_status && item.cura_status.includes(mon.status))) {
-            mon.limparStatus();
-        }
-    }
-
-    if (alvo === estado.jogador.equipe.indiceAtivo) atualizarInfo("jogador");
-    await esperar(800);
-    await dizer(item.reviver ? `${mon.nome} voltou à batalha!` : `${mon.nome} está melhor!`);
-}
-
-async function executarRodada(acao) {
-    if (acao.tipo === "fugir") {
-        await dizer("Você fugiu da batalha!");
-        await terminar(false, true);
-        return;
-    }
-
-    const jogador = ativo("jogador");
-    const robo = ativo("robo");
-    const golpeRobo = robo.golpes[estado.robo.escolherAcao(estado).indice];
-
-    if (acao.tipo === "trocar") {
-        await trocarJogador(acao.indice);
-        estado.cooldownTroca = COOLDOWN_TROCA;
-        await atacar("robo", golpeRobo);
-    } else if (acao.tipo === "item") {
-        await usarItem(acao);
-        await atacar("robo", golpeRobo);
-    } else {
-        const golpeJogador = jogador.golpes[acao.indice];
-        const ordem = [
-            { lado: "jogador", mon: jogador, golpe: golpeJogador },
-            { lado: "robo", mon: robo, golpe: golpeRobo }
-        ];
-
-        // prioridade do golpe, depois velocidade, empate sorteia
-        ordem.sort((a, b) =>
-            (b.golpe.prioridade - a.golpe.prioridade) ||
-            (b.mon.velocidadeEfetiva - a.mon.velocidadeEfetiva) ||
-            (Math.random() - 0.5));
-
-        for (const { lado, mon, golpe } of ordem) {
-            if (estado.fim) break;
-            // se o pokemon desmaiou ou foi trocado antes de agir, perde o turno
-            if (ativo(lado) !== mon || mon.estaDesmaiado()) continue;
-            await atacar(lado, golpe);
-        }
-    }
-
-    if (!estado.fim) await fimDoRound();
-}
-
-async function fimDoRound() {
+    // Sincroniza HP, status e índice ativo dos dois times
     for (const lado of ["jogador", "robo"]) {
-        const mon = ativo(lado);
-        if (estado.fim || mon.estaDesmaiado()) continue;
-        if (mon.status !== "poison" && mon.status !== "burn") continue;
+        const listaServidor = estadoServidor[lado];
+        if (!Array.isArray(listaServidor)) continue;
 
-        await dizer(`${nomeLog(lado, mon)} sofre com ${mon.status === "poison" ? "o veneno" : "a queimadura"}!`);
-        await causarDano(lado, mon, Math.max(1, Math.floor(mon.maxHp / 8)));
-        if (mon.estaDesmaiado()) await processarDesmaio(lado);
+        const equipe = estado[lado].equipe;
+        listaServidor.forEach((dadosMon, idx) => {
+            const monLocal = equipe.pokemons[idx];
+            if (!monLocal) return;
+
+            monLocal.hp = dadosMon.hp;
+            monLocal.maxHp = dadosMon.maxHp;
+            monLocal.status = dadosMon.status || null;
+            monLocal.is_ativo = !!dadosMon.is_ativo;
+
+            if (dadosMon.is_ativo) {
+                equipe.indiceAtivo = idx;
+            }
+        });
+    }
+}
+
+/**
+ * Reproduz sequencialmente a lista de eventos gerada pelo MotorDeBatalha no servidor.
+ * Cada evento representa um acontecimento do turno (mensagem, ataque, dano, troca, etc.).
+ *
+ * @param {Array} eventos Lista de eventos [{ tipo, dados }, ...]
+ * @returns {Promise<boolean>} true se o evento de fim de batalha já foi tratado
+ */
+async function reproduzirEventos(eventos) {
+    let tratouFim = false;
+    let jaSincronizou = false;
+
+    for (const evento of eventos || []) {
+        const dados = evento.dados || {};
+
+        switch (evento.tipo) {
+            case "mensagem":
+                // Escreve a mensagem no log com efeito de digitação e aguarda leitura
+                await dizer(dados.texto);
+                break;
+
+            case "animacao_ataque":
+                // Executa a animação de investida do atacante
+                animar(dados.lado, dados.lado === "jogador" ? "ataqueJogador" : "ataqueRobo", 350);
+                await esperar(350);
+                break;
+
+            case "dano":
+                // Atualiza HP do alvo atingido e anima o sprite piscando
+                await aplicarDanoNaTela(dados.lado, dados.hp);
+                break;
+
+            case "cura": {
+                // Atualiza HP e status do pokémon curado (ativo ou no banco)
+                const alvoIdx = typeof dados.alvo === "number" ? dados.alvo : estado.jogador.equipe.indiceAtivo;
+                const mon = estado.jogador.equipe.pokemons[alvoIdx];
+                if (mon) {
+                    mon.hp = dados.hp;
+                    mon.status = dados.status || null;
+                }
+                if (alvoIdx === estado.jogador.equipe.indiceAtivo) {
+                    atualizarInfo("jogador");
+                }
+                await esperar(800);
+                if (dados.texto) await dizer(dados.texto);
+                break;
+            }
+
+            case "atualizar_info": {
+                // Atualiza barra/badge de status (ex.: queimadura, sono, cura por drenagem)
+                const mon = ativo(dados.lado);
+                if (typeof dados.hp === "number") mon.hp = dados.hp;
+                if ("status" in dados) mon.status = dados.status || null;
+                atualizarInfo(dados.lado);
+                break;
+            }
+
+            case "item_usado":
+                // Desconta 1 unidade no contador local do inventário exibido no painel
+                if (dados.chave && estado.itens[dados.chave] > 0) {
+                    estado.itens[dados.chave]--;
+                }
+                break;
+
+            case "item_esgotado":
+                if (dados.chave) {
+                    estado.itens[dados.chave] = 0;
+                }
+                break;
+
+            case "desmaio":
+                // Zera HP visual e anima a queda do sprite
+                ativo(dados.lado).hp = 0;
+                atualizarInfo(dados.lado);
+                LADOS[dados.lado].sprite.classList.add("desmaiou");
+                LADOS[dados.lado].sombra.classList.add("sumiu");
+                if (dados.texto) await dizer(dados.texto);
+                break;
+
+            case "troca": {
+                // Troca de pokémon (jogador ou robô)
+                const lado = dados.lado;
+                if (lado === "jogador") {
+                    LADOS.jogador.sprite.classList.add("desmaiou");
+                    LADOS.jogador.sombra.classList.add("sumiu");
+                    await esperar(300);
+                }
+                estado[lado].equipe.indiceAtivo = dados.indice;
+                if (dados.texto) await dizer(dados.texto);
+                mostrarPokemon(lado);
+                await esperar(300);
+                break;
+            }
+
+            case "troca_forcada": {
+                // O pokémon ativo do jogador desmaiou, mas ainda há reserva viva:
+                // abre o painel para o jogador escolher o substituto e envia ao servidor.
+                const novoIndice = await estado.jogador.escolherSubstituto();
+                const respostaTroca = await enviarAcaoNoServidor(estado.idBatalha, {
+                    tipo: "trocar_forcado",
+                    indice: novoIndice
+                });
+
+                if (respostaTroca.sair) return { tratouFim: true, jaSincronizou: true };
+                if (respostaTroca.erro) {
+                    await dizer(respostaTroca.erro);
+                    break;
+                }
+
+                const resSub = await reproduzirEventos(respostaTroca.eventos);
+                if (resSub.tratouFim) tratouFim = true;
+                sincronizarEstadoComServidor(respostaTroca.estado);
+                jaSincronizou = true;
+                break;
+            }
+
+            case "fim":
+                // O servidor já finalizou a batalha e calculou recompensa + conquistas
+                tratouFim = true;
+                await encerrarInterfaceBatalha(dados);
+                break;
+
+            default:
+                console.warn("Evento de batalha desconhecido:", evento);
+        }
     }
 
-    if (estado.fim) return;
-    estado.rodada++;
-    if (estado.cooldownTroca > 0) estado.cooldownTroca--;
+    return { tratouFim, jaSincronizou };
+}
+
+/**
+ * Envia a jogada escolhida pelo jogador para validação no backend e reproduz o turno.
+ * Usa as configurações de batalha carregadas em CONFIG_BATALHA.
+ *
+ * @param {Object} acao { tipo: "golpe"|"trocar"|"item"|"fugir", ... }
+ */
+async function executarRodada(acao) {
+    // Validação preventiva rápida no cliente usando CONFIG_BATALHA antes de chamar o servidor
+    if (acao.tipo === "trocar" && estado.cooldownTroca > 0) {
+        await dizer(`Troca bloqueada por mais ${estado.cooldownTroca} round(s).`);
+        return;
+    }
+
+    // Monta o payload exatamente como o endpoint /api/batalha/{id}/turno espera
+    let payload;
+    if (acao.tipo === "fugir") {
+        payload = { tipo: "fugir" };
+    } else if (acao.tipo === "trocar") {
+        payload = { tipo: "trocar", indice: acao.indice };
+    } else if (acao.tipo === "item") {
+        payload = { tipo: "item", item: acao.item, alvo: acao.alvo };
+    } else {
+        payload = { tipo: "golpe", indice: acao.indice };
+    }
+
+    const resposta = await enviarAcaoNoServidor(estado.idBatalha, payload);
+
+    // Se a sessão expirou, o redirecionamento já foi disparado
+    if (resposta.sair) {
+        estado.fim = true;
+        return;
+    }
+
+    // Caso o servidor recuse a jogada por regra de jogo (ex.: item sem efeito, cooldown),
+    // exibe a mensagem retornada e permite que o jogador escolha outra ação no mesmo turno.
+    if (resposta.erro) {
+        await dizer(resposta.erro);
+        return;
+    }
+
+    // Reproduz os eventos e sincroniza caso a troca forçada já não tenha aplicado estado mais recente
+    const { tratouFim, jaSincronizou } = await reproduzirEventos(resposta.eventos);
+    if (!jaSincronizou) {
+        sincronizarEstadoComServidor(resposta.estado);
+    }
+
+    // Garantia adicional caso o estado indique fim sem evento explícito
+    if (estado.fim && !tratouFim) {
+        const resultado = resposta.estado?.vencedor === "jogador"
+            ? "vitoria"
+            : (resposta.estado?.vencedor === "robo" ? "derrota" : "fuga");
+        const vivos = estado.jogador.equipe.vivos().length;
+        const dadosFim = await fecharBatalhaNoServidor(resultado, vivos);
+        await encerrarInterfaceBatalha({ resultado, ...dadosFim });
+    }
 }
 
 // ===================== fim de jogo =====================
 
-// conta quais pokemons do robo entraram na colecao
+/**
+ * Informa ao jogador quais pokémons inimigos entraram para sua coleção após a vitória.
+ */
 async function anunciarConquistas(pokemons) {
     const nomes = (lista) => lista.map((p) => p.nome).join(", ").replace(/, ([^,]*)$/, " e $1");
     const novos = pokemons.filter((p) => p.novo);
@@ -238,32 +263,35 @@ async function anunciarConquistas(pokemons) {
     if (repetidos.length) await dizer(`Você já tinha ${nomes(repetidos)}.`);
 }
 
-async function terminar(vitoria, fugiu = false) {
+/**
+ * Atualiza a interface ao fim da batalha usando os valores reais calculados pelo servidor.
+ *
+ * @param {Object} dadosFim { resultado, recompensa, pokedolares, pokemons, erro? }
+ */
+async function encerrarInterfaceBatalha(dadosFim) {
     estado.fim = true;
     pararTempo();
     fecharPainel();
 
-    const resultado = fugiu ? "fuga" : (vitoria ? "vitoria" : "derrota");
-    const vivos = estado.jogador.equipe.vivos().length;
-
-    // acabou o suspense: some o trovao e volta a musica de sempre
+    // Se era batalha de chefe, desliga trovões e volta para a música normal
     if (estado.robo.chefe) iniciarMusica(false);
 
-    if (vitoria) await dizer(estado.robo.chefe ? "Você derrotou o chefe!" : "Você venceu a batalha!");
-    else if (!fugiu) await dizer("Todos os seus pokémons desmaiaram...");
+    if (dadosFim.erro) {
+        await dizer(dadosFim.erro);
+    } else if (dadosFim.recompensa > 0) {
+        await dizer(`Você ganhou ${dadosFim.recompensa} pokédollars! Agora você tem ${dadosFim.pokedolares}.`);
+    } else {
+        await dizer("Você não ganhou pokédollars.");
+    }
 
-    const resposta = await fecharBatalhaNoServidor(resultado, vivos);
-
-    if (resposta.erro) await dizer(resposta.erro);
-    else if (resposta.recompensa > 0) await dizer(`Você ganhou ${resposta.recompensa} pokédollars! Agora você tem ${resposta.pokedolares}.`);
-    else await dizer("Você não ganhou pokédollars.");
-
-    if (vitoria && !resposta.erro) await anunciarConquistas(resposta.pokemons || []);
+    if (dadosFim.resultado === "vitoria" && !dadosFim.erro) {
+        await anunciarConquistas(dadosFim.pokemons || []);
+    }
 
     bloquearMenu(false);
     mostrarVoltar(null);
     montarBotoes([
-        // revanche sem recarregar a pagina (recarregar acumularia entradas no historico do botao voltar)
+        // Revanche sem recarregar a página (recarregar acumularia entradas no histórico do navegador)
         { texto: "Revanche", onclick: () => { fugaEnviada = false; saidaLiberada = false; iniciar(); } },
         { texto: "Equipe", onclick: () => (location.href = URL_EQUIPE) },
         { texto: "Loja", onclick: () => (location.href = URL_LOJA) },
@@ -272,7 +300,5 @@ async function terminar(vitoria, fugiu = false) {
 }
 
 // ===================== sair da batalha =====================
-
-// Sair no meio da batalha (voltar, fechar a aba, recarregar, digitar outro endereco) faz perder:
-// conta como fuga e nao paga pokedollars. O navegador pergunta antes, e se a pessoa sair mesmo
-// a batalha e fechada no servidor como fuga.
+// Sair no meio da batalha (voltar, fechar aba, recarregar) conta como fuga
+// e é registrado no servidor por jogo.js via sendBeacon para /finalizar.

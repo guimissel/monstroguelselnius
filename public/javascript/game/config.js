@@ -1,20 +1,82 @@
-// Configuracoes, elementos do DOM e estado inicial do jogo.
+// Configurações, elementos do DOM e estado inicial do jogo.
+// As constantes padrão abaixo são atualizadas automaticamente pelas configurações
+// enviadas pelo servidor (ConfigBatalha) ao iniciar cada batalha.
 // ===================== configuracoes =====================
 
 const API = "https://pokeapi.co/api/v2";
-const NIVEL_JOGADOR = 10;      // nivel baixo: os pokemons ficam fracos e a batalha mais equilibrada
-const NIVEL_ROBO = 10;         // (o chefe vem do servidor com o seu proprio nivel)
-const PODER_MAX_CHEFE = 45;    // o chefe so usa golpes ate esse poder (senao ele derruba o time em 2 ou 3 golpes)
-const TEMPO_ESCOLHA = 20;      // segundos para escolher a jogada
-const COOLDOWN_TROCA = 3;      // 3 porque o round da troca tambem conta (sobram 2 rounds bloqueados)
-const MAX_POKEMON_ID = 151;    // sorteia pokemons da 1a geracao
+let NIVEL_JOGADOR = 10;        // nível usado para calcular os atributos do jogador
+let NIVEL_ROBO = 10;           // nível base do oponente (o chefe também envia o próprio nível)
+let PODER_MAX_CHEFE = 45;      // limite de poder dos golpes do chefe
+let TEMPO_ESCOLHA = 20;        // segundos para o jogador escolher a jogada
+let COOLDOWN_TROCA = 3;        // 3 pois o turno da troca já conta (sobram 2 rounds bloqueados)
+const MAX_POKEMON_ID = 151;    // 1ª geração
 const URL_HOME = "/monstroguelselnius/home";
 const URL_LOGIN = "/monstroguelselnius/login";
 const URL_LOJA = "/monstroguelselnius/loja";
 const URL_EQUIPE = "/monstroguelselnius/equipe";
 
-// o seu time vem do banco (tela /equipe). o time do robo e sorteado pelo servidor entre os pokemons basicos
-// (se voce vencer, os pokemons dele vao para a sua colecao)
+// Objeto centralizado com as configurações ativas da batalha atual.
+// É preenchido com as regras vindas do backend (/api/batalha/iniciar).
+const CONFIG_BATALHA = {
+    nivelJogador: NIVEL_JOGADOR,
+    nivelRobo: NIVEL_ROBO,
+    nivelChefe: NIVEL_ROBO,
+    poderMaxChefe: PODER_MAX_CHEFE,
+    tempoEscolha: TEMPO_ESCOLHA,
+    cooldownTroca: COOLDOWN_TROCA,
+    batalhasParaChefe: 7,
+    recompensaDerrota: 20,
+    imuneStatus: {
+        burn: ["fire"],
+        paralysis: ["electric"],
+        poison: ["poison", "steel"],
+        freeze: ["ice"],
+        sleep: []
+    }
+};
+
+/**
+ * Aplica as configurações recebidas do servidor (ConfigBatalha) no frontend,
+ * mantendo temporizador, cooldown de troca e níveis sincronizados com o backend.
+ *
+ * @param {Object|null} cfg Configurações retornadas por /api/batalha/iniciar
+ */
+function aplicarConfiguracoesBatalha(cfg) {
+    if (!cfg || typeof cfg !== "object") return;
+
+    if (typeof cfg.nivelJogador === "number") {
+        CONFIG_BATALHA.nivelJogador = cfg.nivelJogador;
+        NIVEL_JOGADOR = cfg.nivelJogador;
+    }
+    if (typeof cfg.nivelRobo === "number") {
+        CONFIG_BATALHA.nivelRobo = cfg.nivelRobo;
+        NIVEL_ROBO = cfg.nivelRobo;
+    }
+    if (typeof cfg.nivelChefe === "number") {
+        CONFIG_BATALHA.nivelChefe = cfg.nivelChefe;
+    }
+    if (typeof cfg.poderMaxChefe === "number") {
+        CONFIG_BATALHA.poderMaxChefe = cfg.poderMaxChefe;
+        PODER_MAX_CHEFE = cfg.poderMaxChefe;
+    }
+    if (typeof cfg.tempoEscolha === "number") {
+        CONFIG_BATALHA.tempoEscolha = cfg.tempoEscolha;
+        TEMPO_ESCOLHA = cfg.tempoEscolha;
+    }
+    if (typeof cfg.cooldownTroca === "number") {
+        CONFIG_BATALHA.cooldownTroca = cfg.cooldownTroca;
+        COOLDOWN_TROCA = cfg.cooldownTroca;
+    }
+    if (typeof cfg.batalhasParaChefe === "number") {
+        CONFIG_BATALHA.batalhasParaChefe = cfg.batalhasParaChefe;
+    }
+    if (typeof cfg.recompensaDerrota === "number") {
+        CONFIG_BATALHA.recompensaDerrota = cfg.recompensaDerrota;
+    }
+    if (cfg.imuneStatus && typeof cfg.imuneStatus === "object") {
+        CONFIG_BATALHA.imuneStatus = cfg.imuneStatus;
+    }
+}
 
 const NOMES_TIPOS = {
     normal: "Normal", fire: "Fogo", water: "Água", electric: "Elétrico",
@@ -32,17 +94,17 @@ const STATUS = {
     freeze:    { sigla: "CON", frase: "foi congelado!" }
 };
 
-// tipos que nao podem receber cada status
+// Tipos imunes a cada condição de status (mantido para referência visual)
 const IMUNE_STATUS = {
     burn: ["fire"], paralysis: ["electric"], poison: ["poison", "steel"],
     freeze: ["ice"], sleep: []
 };
 
-// itens do jogador: vem do banco (api/inventario) quando o jogo carrega
+// Itens do jogador: preenchido por carregarInventario() (api/inventario)
 // chave -> { nome, img, cura ("max" ou numero), cura_status ("todos" ou lista), reviver }
 let ITENS = {};
 
-// golpes que nao funcionam num sistema simples (2 turnos, recarga, auto-ko...)
+// Golpes que não funcionam no sistema simples (mantido como referência)
 const GOLPES_PROIBIDOS = new Set([
     "explosion", "self-destruct", "fly", "dig", "bounce", "dive", "solar-beam", "solar-blade",
     "sky-attack", "skull-bash", "razor-wind", "hyper-beam", "giga-impact", "focus-punch",

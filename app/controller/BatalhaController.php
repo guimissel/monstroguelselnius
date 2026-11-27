@@ -1,29 +1,31 @@
 <?php
 
 /**
- * O controlador de batalha
- * 
- * @author Miguel Granville / Vinicius grub
- * @method void iniciar ()
- * @method void finalizar (string $id)
+ * Controlador de Batalha — expõe os endpoints HTTP de início, turno e finalização.
+ *
+ * Toda a validação de sessão, parâmetros e regras de domínio acontece aqui e no
+ * MotorDeBatalha/BatalhaDAO, impedindo que o navegador manipule o resultado da luta.
+ *
+ * @author Miguel Granville / Vinicius Grub
+ * @method void iniciar()
+ * @method void turno(string $id)
+ * @method void finalizar(string $id)
  */
 class BatalhaController extends Controller
 {
     /**
-     * Inicia uma nova batalha
-     * 
+     * Inicia uma nova batalha, sorteando o time adversário no servidor e
+     * retornando as configurações e o estado inicial completo para o frontend.
+     *
      * @author Miguel Granville / Vinicius Grub
-     * @return void não tem retorno garantindo que foi criada, exceto o status
+     * @return void
      */
     public function iniciar(): void
     {
-        // verifica se a sessão é null
         $meuId = $_SESSION["id"] ?? null;
 
-        // A batalha e seu estado pertencem ao jogador autenticado nesta sessão.
-        if (!isset($meuId))
-        {
-            // resposta de erro 401
+        // A batalha e seu estado pertencem exclusivamente ao jogador autenticado na sessão
+        if (!isset($meuId)) {
             Controller::RespostaJson()
                 ->status(401)
                 ->mensagem("Usuário não foi identificado")
@@ -31,12 +33,9 @@ class BatalhaController extends Controller
             return;
         }
 
-        // tenta fazer o inicio da batalha
-        try
-        {
-            // A camada de domínio prepara o adversário e determina o nível do encontro.
+        try {
             $batalhaDAO = BatalhaDAO::NovaInstancia();
-            $dados = $batalhaDAO->iniciar((int) $meuId);
+            $dados      = $batalhaDAO->iniciar((int) $meuId);
 
             Log::EscreverArquivo(
                 "[" . date("Y-m-d H:i:s") . "] [INFO] BatalhaController::iniciar: Batalha ID {$dados["id"]} iniciada pelo usuario ID {$meuId}" . PHP_EOL,
@@ -44,69 +43,56 @@ class BatalhaController extends Controller
                 ["FILE_APPEND", "LOCK_EX"]
             );
 
-            // retorno do json como resposta
+            // Devolve ID, dados do oponente, configurações da batalha e estado inicial sincronizado
             Controller::RespostaJson()
                 ->status(200)
                 ->adicionar("id", $dados["id"])
                 ->adicionar("robo", $dados["robo"])
                 ->adicionar("chefe", $dados["chefe"])
                 ->adicionar("nivel", $dados["nivel"])
+                ->adicionar("configuracoes", $dados["configuracoes"])
+                ->adicionar("batalha", $dados["batalha"])
                 ->enviar();
             return;
-        }
-
-        // retorna a exception de domain
-        catch (DomainException $e)
-        {
-            // Regras de jogo indicam o status HTTP adequado para a recusa.
+        } catch (DomainException $e) {
             Controller::RespostaJson()
-                ->status($e->getCode())
+                ->status($e->getCode() ?: 400)
                 ->mensagem($e->getMessage())
                 ->enviar();
-
-            // trata a exception
-            throw $e;
             return;
-        }
-
-        // exception generica $e
-        catch (Exception $e)
-        {
+        } catch (Exception $e) {
             Log::EscreverArquivo(
                 "[" . date("Y-m-d H:i:s") . "] [ERRO] BatalhaController::iniciar: " . $e->getMessage() . PHP_EOL,
                 "logs/sistema.log",
                 ["FILE_APPEND", "LOCK_EX"]
             );
 
-            // resposta montado em json
             Controller::RespostaJson()
                 ->status(500)
-                ->mensagem("Não foi possivel iniciar a batalha")
+                ->mensagem("Não foi possível iniciar a batalha")
                 ->adicionar("detalhe", $e->getMessage())
                 ->enviar();
-            
-            // trata a exception
-            throw $e;
             return;
         }
     }
 
     /**
-     * Finaliza uma batalha e concede a recompensa
-     * 
+     * Processa uma jogada/turno enviada pelo jogador durante a batalha.
+     *
+     * Aceita corpo JSON ou parâmetros POST tradicionais com:
+     *   - tipo: 'golpe' | 'trocar' | 'trocar_forcado' | 'item' | 'fugir'
+     *   - indice: inteiro (para golpe, troca voluntária ou troca forçada)
+     *   - item / alvo: chave do item e índice do pokémon alvo (para item)
+     *
      * @author Miguel Granville / Vinicius Grub
-     * @param string $id identifica a batalha que sera finalizada
-     * @return void não retorna nenhuma confirmação que foi finalizado
+     * @param string $id ID da batalha recebido pela rota
+     * @return void
      */
-    public function finalizar(string $id): void
+    public function turno(string $id): void
     {
-        // procura o id dentro da sessão
         $meuId = $_SESSION["id"] ?? null;
 
-        // Evita finalizar batalhas em nome de um jogador não identificado.
-        if (!isset($meuId))
-        {
-            // envia uma resposta de não autorizado
+        if (!isset($meuId)) {
             Controller::RespostaJson()
                 ->status(401)
                 ->mensagem("Usuário não foi identificado")
@@ -114,22 +100,99 @@ class BatalhaController extends Controller
             return;
         }
 
-        // resultado da batalha (vitoria, derrota, fuga)
+        $idBatalha = filter_var($id, FILTER_VALIDATE_INT);
+        if ($idBatalha === false || $idBatalha < 1) {
+            Controller::RespostaJson()
+                ->status(400)
+                ->mensagem("ID da batalha inválido")
+                ->enviar();
+            return;
+        }
+
+        // Lê a ação enviada via JSON (fetch application/json) ou via formulário $_POST
+        $entrada = $this->lerCorpoAcao();
+        $tipo    = trim((string) ($entrada["tipo"] ?? ""));
+
+        if (!in_array($tipo, ["golpe", "trocar", "trocar_forcado", "item", "fugir"], true)) {
+            Controller::RespostaJson()
+                ->status(400)
+                ->mensagem("Ação de batalha inválida")
+                ->enviar();
+            return;
+        }
+
+        $acao = [
+            "tipo"   => $tipo,
+            "indice" => $entrada["indice"] ?? null,
+            "item"   => $entrada["item"] ?? null,
+            "alvo"   => $entrada["alvo"] ?? null
+        ];
+
+        try {
+            $batalhaDAO = BatalhaDAO::NovaInstancia();
+            $resultado  = $batalhaDAO->processarTurno($idBatalha, (int) $meuId, $acao);
+
+            Log::EscreverArquivo(
+                "[" . date("Y-m-d H:i:s") . "] [INFO] BatalhaController::turno: Batalha ID {$idBatalha}, usuario ID {$meuId}, acao '{$tipo}'" . PHP_EOL,
+                "logs/sistema.log",
+                ["FILE_APPEND", "LOCK_EX"]
+            );
+
+            Controller::RespostaJson()
+                ->status(200)
+                ->adicionar("eventos", $resultado["eventos"])
+                ->adicionar("estado", $resultado["estado"])
+                ->enviar();
+            return;
+        } catch (DomainException $e) {
+            Controller::RespostaJson()
+                ->status($e->getCode() ?: 400)
+                ->mensagem($e->getMessage())
+                ->enviar();
+            return;
+        } catch (Exception $e) {
+            Log::EscreverArquivo(
+                "[" . date("Y-m-d H:i:s") . "] [ERRO] BatalhaController::turno: " . $e->getMessage() . PHP_EOL,
+                "logs/sistema.log",
+                ["FILE_APPEND", "LOCK_EX"]
+            );
+
+            Controller::RespostaJson()
+                ->status(500)
+                ->mensagem("Não foi possível processar o turno da batalha")
+                ->adicionar("detalhe", $e->getMessage())
+                ->enviar();
+            return;
+        }
+    }
+
+    /**
+     * Finaliza uma batalha (usado principalmente para registrar fuga via sendBeacon ao sair da página).
+     * Vitórias e derrotas também são validadas contra os pontos de vida salvos no banco.
+     *
+     * @author Miguel Granville / Vinicius Grub
+     * @param string $id Identifica a batalha que será finalizada
+     * @return void
+     */
+    public function finalizar(string $id): void
+    {
+        $meuId = $_SESSION["id"] ?? null;
+
+        if (!isset($meuId)) {
+            Controller::RespostaJson()
+                ->status(401)
+                ->mensagem("Usuário não foi identificado")
+                ->enviar();
+            return;
+        }
+
         $resultado = $_POST["resultado"] ?? "";
-
-        // vivos passa por uma validação para verificar se é um numero INTEIRO válido
-        $vivos = filter_var($_POST["vivos"] ?? 0, FILTER_VALIDATE_INT);
-
-        // id da batalha passa por uma validação para verificar se é um número INTEIRO válido
+        $vivos     = filter_var($_POST["vivos"] ?? 0, FILTER_VALIDATE_INT);
         $idBatalha = filter_var($id, FILTER_VALIDATE_INT);
 
-        // verifica se esta contido numa lista de resultados válidos
         $resultadoValido = in_array($resultado, ["vitoria", "derrota", "fuga"], true);
 
-        // Confere o formato e os valores aceitos antes de registrar o resultado da partida.
-        if (!$resultadoValido || $vivos === false || $idBatalha === false)
-        {
-            // responde com json e usa o método para enviar
+        if (!$resultadoValido || $vivos === false || $idBatalha === false) {
             Controller::RespostaJson()
                 ->status(400)
                 ->mensagem("Os dados passados da batalha são inválidos")
@@ -137,13 +200,8 @@ class BatalhaController extends Controller
             return;
         }
 
-        // tenta finalizar a batalha no banco de dados
-        try
-        {
-            // O DAO valida a titularidade e aplica recompensas e progresso em conjunto.
-            $batalhaDAO = BatalhaDAO::NovaInstancia();
-
-            // envia para o DAO finalizar
+        try {
+            $batalhaDAO   = BatalhaDAO::NovaInstancia();
             $dadosBatalha = $batalhaDAO->finalizar($idBatalha, (int) $meuId, $resultado, $vivos);
 
             Log::EscreverArquivo(
@@ -152,7 +210,6 @@ class BatalhaController extends Controller
                 ["FILE_APPEND", "LOCK_EX"]
             );
 
-            // envia a resposta
             Controller::RespostaJson()
                 ->status(200)
                 ->adicionar("recompensa", $dadosBatalha["recompensa"])
@@ -160,42 +217,43 @@ class BatalhaController extends Controller
                 ->adicionar("pokemons", $dadosBatalha["pokemons"])
                 ->enviar();
             return;
-        }
-
-        // problema de dominio
-        catch (DomainException $e)
-        {
-            // Devolve ao cliente a recusa de domínio sem mascarar seu status.
+        } catch (DomainException $e) {
             Controller::RespostaJson()
-                ->status($e->getCode())
+                ->status($e->getCode() ?: 400)
                 ->mensagem($e->getMessage())
                 ->enviar();
-
-            // trata a exception
-            throw $e;
             return;
-        }
-
-        // trata uma exception <T> 
-        catch (Exception $e)
-        {
-            // Mantém informações de diagnóstico fora da resposta normal da partida.
+        } catch (Exception $e) {
             Log::EscreverArquivo(
                 "[" . date("Y-m-d H:i:s") . "] [ERRO] BatalhaController::finalizar: " . $e->getMessage() . PHP_EOL,
                 "logs/sistema.log",
                 ["FILE_APPEND", "LOCK_EX"]
             );
-            
-            // envia resposta na rest
+
             Controller::RespostaJson()
-                ->status($e->getCode())
-                ->mensagem("Não foi possivel finalizar a batalha")
+                ->status(500)
+                ->mensagem("Não foi possível finalizar a batalha")
                 ->adicionar("detalhe", $e->getMessage())
                 ->enviar();
-
-            // trata a exception
-            throw $e;
             return;
         }
+    }
+
+    /**
+     * Lê o payload da ação enviado via JSON ou formulário POST.
+     */
+    private function lerCorpoAcao(): array
+    {
+        if (!empty($_POST)) {
+            return $_POST;
+        }
+
+        $bruto = file_get_contents("php://input");
+        if ($bruto === false || trim($bruto) === "") {
+            return [];
+        }
+
+        $json = json_decode($bruto, true);
+        return is_array($json) ? $json : [];
     }
 }

@@ -1,4 +1,4 @@
-// Utilitarios, inventario, servidor e integracao com PokeAPI.
+// Utilitários, inventário, comunicação com o servidor da batalha e sprites da PokeAPI.
 const ativo = (lado) => estado[lado].equipe.ativo;
 const outro = (lado) => (lado === "jogador" ? "robo" : "jogador");
 
@@ -20,7 +20,7 @@ function formatarNome(nome) {
     return nome.split("-").map((p) => p.charAt(0).toUpperCase() + p.slice(1)).join(" ");
 }
 
-// nome que aparece no log (o inimigo ganha o sufixo)
+// Nome que aparece no log (o inimigo ganha o sufixo " inimigo")
 function nomeLog(lado, mon) {
     return lado === "robo" ? `${mon.nome} inimigo` : mon.nome;
 }
@@ -32,7 +32,7 @@ const caminhoImg = (arquivo) => "public/img/" + encodeURI(arquivo);
 async function carregarInventario() {
     const resposta = await fetch("/monstroguelselnius/api/inventario");
 
-    // sessao expirou: volta para o login
+    // Sessão expirou: volta para o login
     if (resposta.status === 401) {
         location.href = URL_LOGIN;
         throw new Error("sessao expirada");
@@ -44,13 +44,13 @@ async function carregarInventario() {
     estado.itens = {};
 
     for (const item of dados.itens) {
-        // a Pedra Evolutiva e para a tela da equipe, nao para a batalha
+        // Pedra Evolutiva e Pokébola não são usadas dentro da batalha
         if (item.categoria === "evolucao" || item.categoria === "pokebola") continue;
 
         ITENS[item.chave] = {
             nome: item.nome,
             img: item.imagem,
-            cura: item.efeito.curaHp === -1 ? "max" : item.efeito.curaHp,   // 0 = nao cura
+            cura: item.efeito.curaHp === -1 ? "max" : item.efeito.curaHp,   // 0 = não cura HP
             cura_status: item.efeito.curaStatus,
             reviver: item.efeito.reviver
         };
@@ -58,23 +58,12 @@ async function carregarInventario() {
     }
 }
 
-// gasta 1 unidade no banco. false = nao tem mais o item
-async function gastarItemNoBanco(chave) {
-    try {
-        const resposta = await fetch(`/monstroguelselnius/api/inventario/${encodeURIComponent(chave)}/usar`, { method: "POST" });
-        return resposta.ok;
-    } catch (erro) {
-        return false;
-    }
-}
-
 // ===================== equipe (banco de dados) =====================
 
-// ids da equipe salva do jogador + ids dos pokemons basicos (so usados se o servidor nao sortear o robo)
+// IDs da equipe salva do jogador + IDs dos pokémons básicos
 async function carregarEquipe() {
     const resposta = await fetch("/monstroguelselnius/api/equipe");
 
-    // sessao expirou: volta para o login
     if (resposta.status === 401) {
         location.href = URL_LOGIN;
         throw new Error("sessao expirada");
@@ -88,9 +77,9 @@ async function carregarEquipe() {
     };
 }
 
-// ===================== batalha (recompensa no servidor) =====================
+// ===================== batalha (validacao no servidor) =====================
 
-// mostra o erro tecnico numa faixa vermelha no topo (da para copiar o texto ou tirar print)
+// Mostra o erro técnico numa faixa vermelha no topo para facilitar diagnóstico
 function mostrarErroTecnico(texto) {
     console.error(texto);
 
@@ -108,19 +97,20 @@ function mostrarErroTecnico(texto) {
     document.body.append(caixa, fechar);
 }
 
-// abre a batalha no servidor: devolve o id e o time do robo ({ id, robo: [ids] }).
-// sem isso o jogo funciona, mas nao paga pokedolares nem entrega pokemons
+/**
+ * Abre a batalha no servidor.
+ * O servidor sorteia o time do robô, registra os monstros e golpes no banco,
+ * e devolve as configurações da batalha e o estado inicial completo.
+ */
 async function abrirBatalhaNoServidor() {
     try {
         const resposta = await fetch("/monstroguelselnius/api/batalha/iniciar", { method: "POST" });
 
-        // sessao expirou: volta para o login
         if (resposta.status === 401) {
             location.href = URL_LOGIN;
             return { sair: true };
         }
 
-        // le como texto primeiro: se o php soltar algum aviso antes do json, da para mostrar
         const texto = await resposta.text();
         let corpo;
         try {
@@ -130,7 +120,7 @@ async function abrirBatalhaNoServidor() {
             return null;
         }
 
-        // 409: o jogador ainda nao escolheu a equipe
+        // 409: o jogador ainda não escolheu a equipe
         if (resposta.status === 409) return { semEquipe: true };
 
         if (!resposta.ok) {
@@ -138,16 +128,18 @@ async function abrirBatalhaNoServidor() {
             return null;
         }
 
-        // robo normal: 3 pokemons. chefe: 1 so
         if (!corpo.id || !Array.isArray(corpo.robo) || corpo.robo.length !== (corpo.chefe ? 1 : 3)) {
             mostrarErroTecnico("Abrir a batalha: resposta inesperada do servidor:\n" + texto.slice(0, 600));
             return null;
         }
+
         return {
             id: corpo.id,
             robo: corpo.robo,
             chefe: !!corpo.chefe,
-            nivel: corpo.nivel
+            nivel: corpo.nivel,
+            configuracoes: corpo.configuracoes || null,
+            batalha: corpo.batalha || null
         };
     } catch (erro) {
         mostrarErroTecnico("Abrir a batalha: " + erro);
@@ -155,13 +147,60 @@ async function abrirBatalhaNoServidor() {
     }
 }
 
-// avisa como a batalha terminou. quem calcula o dinheiro e o servidor
+/**
+ * Envia a ação escolhida pelo jogador para o backend processar o turno.
+ * Toda a lógica de dano, status, precisão, crítico, IA do robô e vitória/derrota
+ * é calculada no servidor e devolvida como uma lista de eventos + estado atualizado.
+ *
+ * @param {number} idBatalha ID da batalha aberta
+ * @param {Object} acao      { tipo: 'golpe'|'trocar'|'trocar_forcado'|'item'|'fugir', ... }
+ * @returns {Promise<Object>} { eventos, estado } ou { erro, sair? }
+ */
+async function enviarAcaoNoServidor(idBatalha, acao) {
+    try {
+        const resposta = await fetch(`/monstroguelselnius/api/batalha/${idBatalha}/turno`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(acao)
+        });
+
+        if (resposta.status === 401) {
+            location.href = URL_LOGIN;
+            return { sair: true, erro: "Sessão expirada." };
+        }
+
+        const texto = await resposta.text();
+        let corpo;
+        try {
+            corpo = JSON.parse(texto);
+        } catch (erro) {
+            mostrarErroTecnico(`Processar turno (HTTP ${resposta.status}). Resposta não é JSON:\n${texto.slice(0, 600)}`);
+            return { erro: "Erro de comunicação com o servidor." };
+        }
+
+        if (!resposta.ok) {
+            if (corpo.detalhe) {
+                mostrarErroTecnico(`Turno (HTTP ${resposta.status}): ${corpo.mensagem}\nMotivo: ${corpo.detalhe}`);
+            }
+            return { erro: corpo.mensagem || "Jogada recusada pelo servidor.", status: resposta.status };
+        }
+
+        return corpo;
+    } catch (erro) {
+        console.error(erro);
+        return { erro: "Falha de rede ao enviar a jogada." };
+    }
+}
+
+/**
+ * Envia o encerramento explícito da batalha (usado em fuga ou fallback).
+ */
 async function fecharBatalhaNoServidor(resultado, vivos) {
     if (!estado.idBatalha) return { erro: "Não consegui registrar a batalha, então não há recompensa." };
 
     try {
         const dados = new FormData();
-        dados.append("resultado", resultado);   // vitoria, derrota ou fuga
+        dados.append("resultado", resultado);
         dados.append("vivos", vivos);
 
         const resposta = await fetch(`/monstroguelselnius/api/batalha/${estado.idBatalha}/finalizar`, {
@@ -181,131 +220,88 @@ async function fecharBatalhaNoServidor(resultado, vivos) {
     }
 }
 
-// ===================== pokeapi =====================
+// ===================== pokeapi (apenas sprites visuais) =====================
 
 const cacheApi = new Map();
 
-// Centraliza chamadas HTTP e o tratamento comum das respostas da API.
 function buscar(url) {
     if (!cacheApi.has(url)) {
         const promessa = fetch(url).then((r) => {
             if (!r.ok) throw new Error(`Erro ${r.status} em ${url}`);
             return r.json();
         });
-        // se falhar, deixa tentar de novo depois
         promessa.catch(() => cacheApi.delete(url));
         cacheApi.set(url, promessa);
     }
     return cacheApi.get(url);
 }
 
-// tabela de tipos: quem e forte, fraco e imune contra quem
-
-
-function normalizarGolpe(m) {
-    const categoria = m.meta?.category?.name;
-    const ailment = m.meta?.ailment?.name;
-    const causaStatus = STATUS[ailment] ? ailment : null;
-    const causaDano = m.damage_class.name !== "status";
-
-    if (causaDano) {
-        if (!m.power || m.power < 40 || !CATEGORIAS_DANO.includes(categoria)) return null;
-    } else if (categoria !== "ailment" || !causaStatus) {
-        return null;
-    }
-
-    return {
-        nome: formatarNome(m.name),
-        tipo: m.type.name,
-        poder: causaDano ? m.power : 0,
-        precisao: m.accuracy,                       // null = nunca erra
-        classe: m.damage_class.name,                // physical, special ou status
-        prioridade: m.priority,
-        status: causaStatus,
-        chanceStatus: causaDano ? (m.meta.ailment_chance || 10) : 100,
-        drenagem: m.meta?.drain || 0                // positivo cura, negativo e recuo
+/**
+ * Busca os sprites (parados e animados) do pokémon na PokeAPI.
+ * Caso a API externa falhe ou esteja lenta, usa os caminhos diretos padrão de sprites
+ * para não impedir a batalha que já está validada no servidor.
+ */
+async function carregarSpritesPokemon(id, chefe = false) {
+    const baseRaw = "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon";
+    const fallback = {
+        frente: chefe ? `${baseRaw}/shiny/${id}.png` : `${baseRaw}/${id}.png`,
+        costas: chefe ? `${baseRaw}/back/shiny/${id}.png` : `${baseRaw}/back/${id}.png`,
+        frenteAnim: null,
+        costasAnim: null
     };
-}
 
-async function escolherGolpes(dados, tipos, nivel, poderMax = Infinity) {
-    const candidatos = dados.moves
-        .filter((m) => !GOLPES_PROIBIDOS.has(m.move.name) && m.version_group_details.some(
-            (v) => v.move_learn_method.name === "level-up" && v.level_learned_at <= nivel))
-        .map((m) => m.move.url);
+    try {
+        const dados = await buscar(`${API}/pokemon/${id}`);
+        const animado = dados.sprites.versions?.["generation-v"]?.["black-white"]?.animated;
 
-    embaralhar(candidatos);
-
-    const respostas = await Promise.all(
-        candidatos.slice(0, 16).map((url) => buscar(url).catch(() => null))
-    );
-    const validos = respostas.filter(Boolean).map(normalizarGolpe).filter(Boolean)
-        .filter((g) => !g.poder || g.poder <= poderMax);
-
-    const pontos = (g) => g.poder * ((g.precisao || 100) / 100) * (tipos.includes(g.tipo) ? 1.5 : 1);
-    const danos = validos.filter((g) => g.poder).sort((a, b) => pontos(b) - pontos(a));
-    const resto = embaralhar([...danos.slice(3), ...validos.filter((g) => !g.poder)]);
-
-    // 3 melhores de dano + 1 variado (pode ser de status)
-    const escolhidos = [...danos.slice(0, 3), ...resto].slice(0, 4);
-
-    // garante pelo menos um golpe de dano (e completa com Tackle se faltar golpe)
-    const semDano = !escolhidos.some((g) => g.poder);
-    if (escolhidos.length < 4 || semDano) {
-        if (escolhidos.length >= 4) escolhidos.pop();
-        if (!escolhidos.some((g) => g.nome === GOLPE_PADRAO.nome)) escolhidos.push(GOLPE_PADRAO);
+        return {
+            frente: (chefe && dados.sprites.front_shiny) || dados.sprites.front_default || fallback.frente,
+            costas: (chefe && dados.sprites.back_shiny) || dados.sprites.back_default || dados.sprites.front_default || fallback.costas,
+            frenteAnim: (chefe && animado?.front_shiny) || animado?.front_default || null,
+            costasAnim: (chefe && animado?.back_shiny) || animado?.back_default || null
+        };
+    } catch (erro) {
+        console.warn(`PokeAPI indisponível para sprites do Pokémon #${id}, usando fallback.`, erro);
+        return fallback;
     }
-    return escolhidos;
 }
 
-// chefe = versao brilhante ("shiny", cores diferentes) e com golpes limitados em PODER_MAX_CHEFE
-async function criarPokemon(id, nivel, chefe = false) {
-    const dados = await buscar(`${API}/pokemon/${id}`);
-
-    const base = {};
-    dados.stats.forEach((s) => (base[s.stat.name] = s.base_stat));
-
-    const animado = dados.sprites.versions?.["generation-v"]?.["black-white"]?.animated;
-
-    const stat = (b) => Math.floor((2 * b * nivel) / 100) + 5;
-    const tipos = dados.types.map((t) => t.type.name);
-    const maxHp = Math.floor((2 * base.hp * nivel) / 100) + nivel + 10;
+/**
+ * Constrói uma instância de Pokemon no frontend usando os dados autoritativos
+ * vindos do servidor (HP, atributos, tipos, status e golpes) + sprites visuais.
+ */
+async function criarPokemonDoServidor(dadosServidor, chefe = false) {
+    const sprites = await carregarSpritesPokemon(dadosServidor.id, chefe);
 
     return new Pokemon({
-        id,
-        nome: formatarNome(dados.name),
-        nivel,
-        tipos,
-        maxHp,
-        hp: maxHp,
-        atk: stat(base.attack),
-        def: stat(base.defense),
-        spa: stat(base["special-attack"]),
-        spd: stat(base["special-defense"]),
-        spe: stat(base.speed),
-        golpes: await escolherGolpes(dados, tipos, nivel, chefe ? PODER_MAX_CHEFE : Infinity),
-        status: null,
+        id: dadosServidor.id,
+        nome: dadosServidor.nome,
+        nivel: dadosServidor.nivel,
+        tipos: dadosServidor.tipos,
+        maxHp: dadosServidor.maxHp,
+        hp: dadosServidor.hp,
+        atk: dadosServidor.atk,
+        def: dadosServidor.def,
+        spa: dadosServidor.spa,
+        spd: dadosServidor.spd,
+        spe: dadosServidor.spe,
+        golpes: dadosServidor.golpes,
+        status: dadosServidor.status || null,
         sono: 0,
-        frente: (chefe && dados.sprites.front_shiny) || dados.sprites.front_default,
-        costas: (chefe && dados.sprites.back_shiny) || dados.sprites.back_default || dados.sprites.front_default,
-        // sprites animados (GIF). Nem todo pokemon tem; sem eles vale a imagem parada
-        frenteAnim: (chefe && animado?.front_shiny) || animado?.front_default || null,
-        costasAnim: (chefe && animado?.back_shiny) || animado?.back_default || null
+        is_ativo: !!dadosServidor.is_ativo,
+        frente: sprites.frente,
+        costas: sprites.costas,
+        frenteAnim: sprites.frenteAnim,
+        costasAnim: sprites.costasAnim
     });
 }
 
-// sorteia ids sem repetir. "lista" e de onde sortear (sem ela, vale a 1a geracao inteira)
-function sortearIds(qtd, proibidos = [], lista = null) {
-    const candidatos = lista || Array.from({ length: MAX_POKEMON_ID }, (_, i) => i + 1);
-    return embaralhar(candidatos.filter((id) => !proibidos.includes(id))).slice(0, qtd);
-}
-
-// Carrega uma imagem antes de usá-la para evitar atrasos durante a batalha.
+// Precarrega uma imagem antes de usá-la para evitar atrasos durante a batalha.
 function precarregarImagem(url) {
+    if (!url) return Promise.resolve();
     return new Promise((resolve) => {
         const img = new Image();
         img.onload = img.onerror = () => resolve();
         img.src = url;
     });
 }
-
-// ===================== log =====================
